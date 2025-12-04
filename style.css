@@ -1,0 +1,899 @@
+/* -------- Global Reset -------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.3s ease;
+}
+
+/* -------- Global Variables -------- */
+:root {
+  --white: #fff;
+  --text-color: #000000;
+  --primary-color: #000;
+  --secondary-color: #272B2F;
+  --ui-bg: #fff;
+}
+
+/* -------- Page Layout Setup -------- */
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--ui-bg);
+  color: var(--text-color);
+}
+
+button{
+  background-color: var(--primary-color);
+  color: var(--white);
+  font-size: 18px;
+  height: 50px;
+  width: 200px;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+button:hover{
+  background: var(--secondary-color)
+}
+
+input, select{
+  border: 1px solid gray;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+select{
+  text-align: center;
+  text-align-last: center;
+}
+
+.wrapper {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -------- Navigation Bar -------- */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: var(--primary-color);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.navigation-bar {
+  max-width: 1300px;
+  height: 100%;
+  margin: auto;
+  padding: 0 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navigation-bar a {
+  color: var(--white);
+  text-decoration: none;
+  font-size: 18px;
+  opacity: 0.70;
+}
+
+.navigation-bar a:hover,
+.navigation-bar a.active-nav {
+  opacity: 1;
+}
+
+.title-page-area{
+  font-size: 30px;
+  font-weight: 600;
+  opacity: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  cursor: default;
+  user-select: none;
+}
+
+.title-link{
+  font-size: 30px;
+  font-weight: 600;
+  opacity: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  cursor: pointer;
+  user-select: none;
+}
+
+.page-logo {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+}
+
+/* -------- Navigation Bar Links -------- */
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.nav-links li {
+  list-style: none;
+  margin: 0 8px;
+  padding-right: 10px;
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.nav-links li:last-child {
+  border-right: none;
+}
+
+.nav-links-menu-toggle {
+  display: none;
+  font-size: 24px;
+  color: var(--white);
+  cursor: pointer;
+}
+
+/* -------- Appearance Area Style -------- */
+.appearance-area {
+  display: flex;
+  align-items: center;
+}
+
+.dark-mode-btn {
+  width: 50px;
+  height: 50px;
+  background: var(--secondary-color);
+  color: var(--white);
+  border-radius: 6px;
+  font-size: 20px;
+  text-align: center;
+  line-height: 50px;
+  cursor: pointer;
+  margin-left: 10px;
+  opacity: 0.8;
+}
+
+.dark-mode-btn:hover {
+  opacity: 1;
+}
+
+/* -------- Page Content Style -------- */
+.content {
+  flex: 1;
+  padding-top: 50px;
+}
+
+/* -------- Page Links Style -------- */
+.content a {
+  font-size: 20px;
+  padding: 12px 20px;
+  background: var(--primary-color);
+  color: var(--white);
+  border-radius: 6px;
+  text-decoration: none;
+  text-align: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.content a:hover {
+  background: var(--secondary-color);
+}
+
+/* -------- Main Section Style -------- */
+.page-content {
+  margin-top: 70px;
+  padding: 0 60px;
+  background: var(--ui-bg);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: left;
+  margin-bottom: 40px;
+}
+
+.page-content.active-section {
+  display: flex;
+}
+
+.color-text {
+  color: var(--primary-color);
+}
+
+.page-content p {
+  font-size: 16px;
+  max-width: 700px;
+  margin: 20px 0 30px;
+}
+
+/* ---------- Table Styling ------- */
+table {
+  border-collapse: collapse;
+  background: #fff; 
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+   margin-bottom: 20px; border: 1px solid #ddd; 
+   width: 80%; /* Set a specific width or use max-width for better display */ 
+   max-width: 900px; 
+} 
+
+th, td { 
+  padding: 12px 16px; 
+  text-align: center; 
+  border-bottom: 1px solid #ddd; 
+} 
+
+th { 
+  background-color: #f4f4f4; 
+  font-weight: bold; 
+  color: #333; 
+} /* Hover effect for data rows */ 
+
+tbody tr:hover { 
+  background-color: #f9f9f9; 
+} 
+
+/* -------- BELOW THIS AREA , CHECK FOR IDs that needs DISPLAY FLEX FOR HIDDEN STYLE FUNCTION TO WORK --------*/
+
+/*-- Class tag for flex use instead of ID tag --*/
+.flex{
+  display: flex;
+}
+
+
+/* -------- nav1 Main Menu -------- */
+.main-menu-header, .main-menu-buttons{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* -------- nav2 Records Menu -------- */
+.records-menu-buttons{
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* -- h2 style -- */
+
+.navigation-ui h2{
+  text-align: center;
+}
+
+#nav2NewCustomer label, #nav2NewPatient label{
+  margin-bottom: 3px;
+}
+
+.customer-and-patient input, .customer-and-patient select{
+  width: 250px;
+  padding: 8px;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.date-field input{
+  width: 70px
+}
+
+#newPatientAddBtn, #newCustomerAddBtn, #newPrescriptionAddBtn{
+  margin-top: 25px;
+}
+
+/* -- Select Patient Table Style -- */
+#nav2NewPrescriptionSelectPatientMenu{
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.select-patient-search-area{
+  margin-bottom: 25px;
+}
+
+.select-patient-main-table {
+  display: flex;
+  justify-content: center; /* Center the table within its container */
+}
+
+
+
+/* -- forms style -- */
+.patient-profile-container{
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+  gap: 40px;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+#patientProfileDisplayForm label{
+  margin-bottom: 3px;
+}
+
+#newPrescriptionSelectPatientMenu, .patient-profile-container-division-1, .patient-profile-container-division-2{
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#newPrescriptionSelectPatientMenu{
+  margin-top: 15px;
+}
+
+#patientProfileDisplayForm input{
+  width: 200px;
+  padding: 8px;
+  margin-bottom: 5px;
+}
+
+#eyeExaminationForm input{
+  width: 70px;
+  padding: 4px;
+  margin: 3px;
+}
+
+#nav2NewCustomerInputArea, #nav2NewPatientInputArea{
+  margin-top: 25px;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#nav2NewPrescription h3, #nav2NewPrescription h4{
+  margin-top: 25px;
+  margin-bottom: 20px;
+}
+
+.column-display, #eyeExaminationFormIdAndDate, #nav2NewCustomer, #nav2NewPatient, #nav2NewPrescription, #newPrescriptionPatientForm, #patientProfileDisplayForm, #eyeExaminationForm{
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#newPrescriptionPatientForm h3, #newPrescriptionPatientForm h4{
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+#eyeExaminationFormIdAndDate input{
+  width: 250px;
+  padding: 8px;
+  margin-bottom: 5px;
+}
+
+
+
+/* -- Case History Format -- */
+#caseHistoryForm{
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+  gap: 40px;
+  margin-bottom: 30px;
+}
+
+#caseHistoryForm label{
+  margin-top: 10px;
+  margin-bottom: 3px;
+}
+
+#caseHistoryForm input{
+  width: 300px;
+  height: 100px;
+}
+
+/* -- Preliminaries Format -- */
+#eyeExaminationPreliminaryFormUvaAndPaContainer,
+#eyeExaminationPreliminaryFormUvaHeader, #eyeExaminationPreliminaryFormUvaOd, #eyeExaminationPreliminaryFormUvaOs
+#eyeExaminationPreliminaryFormPaHeader, #eyeExaminationPreliminaryFormPaOd, #eyeExaminationPreliminaryFormPaOs{
+  flex-direction: row;
+  justify-content: center;
+  text-align: center;
+}
+
+#eyeExaminationPreliminaryFormUva, #eyeExaminationPreliminaryFormPa{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  margin-top: 15px;
+}
+
+#eyeExaminationFormIdAndDate{
+  margin-bottom: 15px;
+}
+
+#eyeExaminationPreliminaryForm{
+  margin-top: 15px;
+}
+
+#eyeExaminationPreliminaryFormUvaOd label, #eyeExaminationPreliminaryFormUvaOs label,
+#eyeExaminationPreliminaryFormPaOd label, #eyeExaminationPreliminaryFormPaOs label{
+  margin-top: 5px;
+}
+
+#eyeExaminationPreliminaryFormUvaHeader{
+  margin-left: 40px;
+  gap: 35px;
+}
+
+#eyeExaminationPreliminaryFormPaHeader{
+  margin-left: 50px;
+}
+
+#eyeExaminationPreliminaryFormUvaAndPaContainer{
+  gap: 100px;
+  margin-right: 70px;
+  margin-bottom: 40px;
+}
+
+.v-line-uva-pa{
+  margin-top: 5px;
+  border-left: 1px solid var(--text-color); 
+  height: 150px;     
+  margin: 0 10px;  
+}
+
+/* -- HRX Prescription TABLE Form Style --*/
+#eyeExaminationPreliminaryFormHrx, 
+#eyeExaminationPreliminaryFormHrxOdHeader, #eyeExaminationPreliminaryFormHrxOdDistance, #eyeExaminationPreliminaryFormHrxOdNear, #eyeExaminationPreliminaryFormHrxOdAdd,
+#eyeExaminationPreliminaryFormHrxOsHeader, #eyeExaminationPreliminaryFormHrxOsDistance, #eyeExaminationPreliminaryFormHrxOsNear, #eyeExaminationPreliminaryFormHrxOsAdd{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+}
+
+#eyeExaminationPreliminaryFormHrxOd, #eyeExaminationPreliminaryFormHrxOs, #eyeExaminationPreliminaryFormHrxNotes{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#eyeExaminationPreliminaryFormHrx{
+  gap: 50px;
+  margin-top: 10px;
+}
+
+#eyeExaminationPreliminaryFormHrxOdHeader, #eyeExaminationPreliminaryFormHrxOsHeader{
+  margin-left: 0px;
+  gap: 45px;
+}
+
+#eyeExaminationPreliminaryFormHrxOdNear, #eyeExaminationPreliminaryFormHrxOsNear{
+  margin-left: 28px;
+}
+
+#eyeExaminationPreliminaryFormHrxOdAdd, #eyeExaminationPreliminaryFormHrxOsAdd{
+  margin-right: 270px;
+}
+
+.hrx-axis-label{
+  margin-right: 5px;
+}
+
+.hrx-pd-label{
+  margin-right: 5px;
+}
+
+.hrx-va-label{
+  margin-right: 5px;
+}
+
+#eyeExaminationPreliminaryFormHrxNotes input{
+  width: 450px;
+  height: 100px;
+}
+
+#eyeExaminationPreliminaryFormHrxNotes{
+  margin-top: 10px;
+  margin-bottom: 30px;
+}
+
+/* -- AR TABLE and Notes Form Style --*/
+#eyeExaminationArForm, #eyeExaminationArFormNotes{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#eyeExaminationArForm{
+  margin-bottom: 10px;
+}
+
+#eyeExaminationArFormOd, #eyeExaminationArFormOs{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+}
+
+#eyeExaminationArFormContainer{
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#eyeExaminationArFormHeader label{
+  margin-left:40px;
+}
+
+.ar-axis-label{
+  margin-right: 5px;
+}
+
+.ar-kr-label{
+  margin-right: 5px;
+}
+
+#eyeExaminationArFormNotes input{
+  width: 300px;
+  height: 100px; 
+}
+
+#eyeExaminationArFormNotes{
+  margin-left: 30px;
+}
+
+/* -- CL Parameters TABLE and Notes Form Style --*/
+#eyeExaminationArFormAndClParametersFormContainer, #eyeExaminationClParametersFormHeader, #eyeExaminationClParametersFormOd, #eyeExaminationClParametersFormOs{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+}
+
+#eyeExaminationClParametersFormContainer, #eyeExaminationClParametersForm, #eyeExaminationClParametersFormNotes{
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#eyeExaminationClParametersForm{
+  margin-bottom: 10px;
+}
+
+#eyeExaminationArFormAndClParametersFormContainer{
+  gap: 75px;
+  margin-right: 27px;
+  margin-bottom: 20px;
+}
+
+#eyeExaminationClParametersFormHeader label{
+  margin-left: 40px;
+}
+
+.cp-hvid-label{
+  margin-left: 15px;
+}
+
+.v-line-ar-clp{
+  margin-top: 15px;
+  border-left: 1px solid var(--text-color); 
+  height: 250px;     
+  margin: 0 10px;  
+}
+
+#eyeExaminationClParametersFormNotes input{
+  width: 300px;
+  height: 100px;
+}
+
+/* -- VT 7-- */
+#eyeExaminationVt7Form,
+#eyeExaminationVt7OdHeader, #eyeExaminationVt7OdDistance, #eyeExaminationVt7OdNear, #eyeExaminationVt7OdAdd,
+#eyeExaminationVt7OsHeader, #eyeExaminationVt7OsDistance, #eyeExaminationVt7OsNear, #eyeExaminationVt7OsAdd {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+}
+
+#eyeExaminationVt7FormOd, #eyeExaminationVt7FormOs, #eyeExaminationVt7FormNotes{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#generateRxContainer{
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.vt7-va-label{
+  margin-left: 10px;
+}
+
+#eyeExaminationVt7Form{
+  gap: 35px;
+  margin-bottom: 20px;
+}
+
+#eyeExaminationVt7OdHeader, #eyeExaminationVt7OsHeader{
+  margin-left: 20px;
+  gap: 45px;
+}
+
+#eyeExaminationVt7OdNear, #eyeExaminationVt7OsNear{
+  margin-left: 28px;
+}
+
+#eyeExaminationVt7OdAdd, #eyeExaminationVt7OsAdd{
+  margin-left: 34px;
+}
+
+#eyeExaminationVt7FormNotes{
+  margin-top: 5px;
+  margin-bottom: 35px;
+}
+
+#eyeExaminationVt7FormNotes input{
+  width: 450px;
+  height: 100px;
+}
+
+/* -- Final Rx -- */
+#finalPrescriptionFormContainer{
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#finalPrescriptionFormDateAndId input{
+  width: 200px;
+  padding: 8px;
+  margin-bottom: 5px;
+}
+
+#finalPrescriptionSpectecleForm input, #finalPrescriptionContactLensForm input{
+  width: 70px;
+  padding: 4px;
+  margin: 3px;
+}
+
+#finalPrescriptionSpectecleForm,
+#finalPrescriptionSpectecleFormOdHeader, #finalPrescriptionSpectecleFormOdDistance, #finalPrescriptionSpectecleFormOdNear, #finalPrescriptionSpectecleFormOdAdd,
+#finalPrescriptionSpectecleFormOsHeader, #finalPrescriptionSpectecleFormOsDistance, #finalPrescriptionSpectecleFormOsNear, #finalPrescriptionSpectecleFormOsAdd{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+}
+
+#finalPrescriptionFormDateAndId, #finalPrescriptionSpectecleFormDateAndId, #finalPrescriptionSpectecleFormOd, #finalPrescriptionSpectecleFormOs, #finalPrescriptionSpectecleFormNotes{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#finalPrescriptionSpectecleFormNotes{
+  margin-top: 5px;
+  margin-bottom: 15px;
+}
+
+#finalPrescriptionSpectecleFormNotes label{
+  margin-bottom: 5px;
+}
+
+#finalPrescriptionSpectecleFormNotes input{
+  width: 450px;
+  height: 100px;
+}
+
+#finalPrescriptionSpectecleForm{
+  gap: 35px;
+}
+
+#finalPrescriptionSpectecleFormOdHeader, #finalPrescriptionSpectecleFormOsHeader{
+  margin-left: 0px;
+  gap: 45px;
+}
+
+#finalPrescriptionSpectecleFormOdNear, #finalPrescriptionSpectecleFormOsNear{
+  margin-left: 28px;
+}
+
+#finalPrescriptionSpectecleFormOdAdd, #finalPrescriptionSpectecleFormOsAdd{
+ margin-right: 270px;
+}
+
+/* -- Final Prescription Contact Lens  -- */
+#finalPrescriptionContactLensForm, #finalPrescriptionContactLensFormNotes{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#finalPrescriptionContactLensFormOd, #finalPrescriptionContactLensFormOs{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+}
+
+#finalPrescriptionContactLensFormHeader{
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+  gap: 45px;
+  margin-left: 20px;
+}
+
+.frx-cl-axis-label{
+  margin-left: 0px;
+}
+
+#finalPrescriptionContactLensFormNotes{
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+#finalPrescriptionContactLensFormNotes label{
+  margin-bottom: 5px;
+}
+
+#finalPrescriptionContactLensFormNotes input{
+  width: 450px;
+  height: 100px;
+}
+
+/* -------- nav3 Sales Menu -------- */
+.sales-menu-buttons{
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* -------- nav4 Settings Menu -------- */
+.settings-menu-buttons{
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+
+/* -------- Footer -------- */
+.footer {
+  background: var(--primary-color);
+  color: var(--white);
+  text-align: center;
+  padding: 20px;
+  margin-top: auto;
+}
+
+/* -------- Modal Style -------- */
+.modal-copy-customer-to-patient{
+  display: none;
+}
+
+.modal-main-style {
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content-style {
+  background: var(--ui-bg);
+  margin: 120px auto;
+  padding: 25px;
+  width: 400px;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.modal-header-style {
+  font-size: 1.25rem;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.modal-body-style {
+  margin-top: 25px;
+  margin-bottom: 25px;
+}
+
+.modal-actions-style {
+  text-align: right;
+}
+
+.modal-actions-style button{
+  width: auto;
+  margin-left: 10px;
+}
+
+/* -------- Dark Mode Theme -------- */
+.color-text.darkMode {
+  color: #FFD700;
+}
+
+/* --------- Other Function Mode and Styles ----- */
+
+.uppercase{
+  text-transform: uppercase;
+}
+
+.hidden{
+display: none;
+}
+
+/* -------- Responsive Media -------- */
+@media (max-width: 1100px) {
+  .page-content {
+    padding: 0 30px;
+  }
+
+  .page-content p {
+    width: 90%;
+  }
+}
+
+/* ------- Mobile Device ------- */
+@media (max-width: 768px) {
+  .nav-links-menu-toggle {
+    display: block;
+  }
+  
+  .nav-links {
+    position: absolute;
+    top: calc(70px + 10px); /* navigation-bar height + gap */
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary-color);
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    border-radius: 8px;
+    display: none; /* hidden by default */
+    width: auto;
+    text-align: center;
+  }
+
+  .nav-links.show {
+    display: flex;
+  }
+
+  .nav-links li {
+    border: none;
+    margin: 10px 0;
+  }
+
+  .appearance-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+}
