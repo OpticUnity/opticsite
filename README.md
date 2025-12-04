@@ -1,4 +1,4 @@
-# opticsite
+# OpticSite
 
 STATUS : PROTOTYPE
 
