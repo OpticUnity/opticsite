@@ -230,7 +230,7 @@
                   class="date-part"
                 >
               </div>
-              <label for="newPatientInputAge">Age : </label><input id="newPatientInputAge">
+              <label for="newPatientInputAge">Age : </label><input id="newPatientInputAge" readonly>
               <button id="newPatientAddBtn">Add</button>
               <button id="newPatientBackBtn">Back</button>
             </div>
@@ -242,14 +242,14 @@
               <h2>New Prescription</h2>
               <h3>Select a Patient</h3>
               <p>Select a patient for the new prescription</p>
-              <button id="nav2NewPrescriptionSelectPatientBtn">Select</button>
+              <button id="nav2NewPrescriptionSelectPatientMenuBtn">Select</button>
             </div>
             <div id="nav2NewPrescriptionSelectPatientMenu" class="flex hidden">
               <h3>Select a Patient</h3>
               <p>Select a patient for the new prescription in the table below.</p>
               <div class="select-patient-table-container">
                 <div class="select-patient-search-area">
-                  <label>Search : </label><input>
+                  <label>Search : </label><input id="selectPatientSearchBarInput" placeholder="ID, NAME, OR NUMBER">
                 </div>
                 <div class="select-patient-main-table">
                   <table>
@@ -268,7 +268,10 @@
                     </tbody>
                   </table>
                 </div>
+                <div id="selectPatientPagination" class="pagination-controls">
+                </div>
               </div>
+              <button id="add10SamplesOfPx">Add 10 Samples</button> <!-- PROTOTYPING DELETE IN FINAL PUBLICATION -->
               <button id="nav2NewPrescriptionSelectPatientMenuBackBtn">Back</button>
             </div>
             <div id="newPrescriptionPatientForm" class="flex hidden">
@@ -290,25 +293,53 @@
                     <label for="patientProfileAge">Age : </label><input id="patientProfileAge" readonly>
                   </div>
                 </div>
-              </div>
-
-              <h3>Case History</h3> <!-- Will be saved as data of a patient (together with patient profile items when searched/loaded) -->
-              <div id="caseHistoryForm" class="flex">
-                <div class="column-display flex">
-                  <label for="caseHistoryGeneralHealthHx">General Health Hx : </label><input id="caseHistoryGeneralHealthHx">
-                </div>
-                <div class="column-display flex">
-                  <label for="caseHistoryOcularHx">Ocular Hx: </label><input id="caseHistoryOcularHx">
-                </div>
+                <label for="patientProfileNotes">Patient Notes : </label>
+                <textarea id="patientProfileNotes"></textarea>
               </div>
               
               <h3>Eye Examination</h3> <!-- Will have own ID and displayed as a list in loading patient records -->
-                <div id="eyeExaminationForm" class="flex">
-                  <div id="eyeExaminationFormIdAndDate" class="flex">
-                   <label for="eyeExaminationId">TEST ID : </label><input id="eyeExaminationId" readonly> <!-- readonly computer generated -->
-                   <label for="eyeExaminationDateCreated">Date Created : </label><input id="eyeExaminationDateCreated"> <!-- Current date as default -->
+                <div id="eyeExaminationForm" class="eye-examination-form flex">
+                  <div id="eyeExaminationFormIdAndDate" class="eye-examination-form-id-and-date flex">
+                   <label for="eyeExaminationId">TEST ID : </label><input id="eyeExaminationId" class="eye-exmaination-id" readonly> <!-- readonly computer generated -->
+                   <label>Date Created : </label>
+                    <div class="date-field"><!-- Current date as default -->
+                      <input
+                        id=""
+                        type="text"
+                        maxlength="2"
+                        placeholder="MM"
+                        class="date-part"
+                      >
+                      <span> - </span>
+                      <input
+                        id=""
+                        type="text"
+                        maxlength="2"
+                        placeholder="DD"
+                        class="date-part"
+                      >
+                      <span> - </span>
+                      <input
+                        id=""
+                        type="text"
+                        maxlength="4"
+                        placeholder="YYYY"
+                        class="date-part"
+                      >
+                    </div> 
                   </div>
                   <!-- Preliminary Examination Form HRx VA , UVA , PHA -->
+
+                  <h4>Case History</h4>
+                  <div id="caseHistoryForm" class="case-history-form flex">
+                    <div class="column-display flex">
+                      <label for="caseHistoryGeneralHealthHx">General Health Hx : </label><textarea id="caseHistoryGeneralHealthHx"></textarea>
+                    </div>
+                    <div class="column-display flex">
+                      <label for="caseHistoryOcularHx">Ocular Hx: </label><textarea id="caseHistoryOcularHx"></textarea>
+                    </div>
+                  </div>
+
                   <h4>Preliminary</h4>
 
                   <div id="eyeExaminationPreliminaryForm">
@@ -734,6 +765,9 @@
   </body>
 
   <!-- scripts -->
-  <script  src="./script.js"></script>
+  <script  src="scripts/ui-and-navigation.js"></script>
+  <script  src="scripts/id-and-form.js"></script>
+  <script  src="scripts/storage.js"></script>
+  <!-- <script  src="scripts/prototyping.js"></script> -->
 
 </html>

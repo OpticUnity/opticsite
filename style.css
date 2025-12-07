@@ -43,7 +43,7 @@ button:hover{
   background: var(--secondary-color)
 }
 
-input, select{
+textarea ,input, select{
   border: 1px solid gray;
   border-radius: 6px;
   font-size: 16px;
@@ -227,9 +227,9 @@ table {
   border-collapse: collapse;
   background: #fff; 
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-   margin-bottom: 20px; border: 1px solid #ddd; 
-   width: 80%; /* Set a specific width or use max-width for better display */ 
-   max-width: 900px; 
+  margin-bottom: 20px; border: 1px solid #ddd; 
+  width: 900px; /* Set a specific width or use max-width for better display */ 
+  max-width: 1200px; 
 } 
 
 th, td { 
@@ -248,7 +248,36 @@ tbody tr:hover {
   background-color: #f9f9f9; 
 } 
 
-/* -------- BELOW THIS AREA , CHECK FOR IDs that needs DISPLAY FLEX FOR HIDDEN STYLE FUNCTION TO WORK --------*/
+/* ------------ TABLE  PAGINATION STYLES ------------- */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  gap: 5px;
+}
+
+.pagination-controls button {
+  width: auto;
+  height: 35px;
+  min-width: 35px;
+  padding: 0 10px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.pagination-controls .active-page {
+  background-color: var(--secondary-color);
+  color: var(--white);
+  pointer-events: none; /* Disable click on current page */
+}
+
+.pagination-controls .disabled-page {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 
 /*-- Class tag for flex use instead of ID tag --*/
 .flex{
@@ -290,10 +319,6 @@ tbody tr:hover {
   text-align: center;
 }
 
-.date-field input{
-  width: 70px
-}
-
 #newPatientAddBtn, #newCustomerAddBtn, #newPrescriptionAddBtn{
   margin-top: 25px;
 }
@@ -305,6 +330,10 @@ tbody tr:hover {
   text-align: center;
 }
 
+#selectPatientSearchBarInput{
+  padding: 7px;
+}
+
 .select-patient-search-area{
   margin-bottom: 25px;
 }
@@ -314,6 +343,11 @@ tbody tr:hover {
   justify-content: center; /* Center the table within its container */
 }
 
+.select-patient-button{
+  width: 100px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
 
 
 /* -- forms style -- */
@@ -341,12 +375,13 @@ tbody tr:hover {
 }
 
 #patientProfileDisplayForm input{
-  width: 200px;
-  padding: 8px;
+  width: 250px;
+  padding: 10px;
   margin-bottom: 5px;
+  text-align: center;
 }
 
-#eyeExaminationForm input{
+.eye-examination-form input{
   width: 70px;
   padding: 4px;
   margin: 3px;
@@ -375,10 +410,23 @@ tbody tr:hover {
   margin-bottom: 30px;
 }
 
-#eyeExaminationFormIdAndDate input{
+.eye-examination-form-id-and-date input{
   width: 250px;
   padding: 8px;
   margin-bottom: 5px;
+}
+
+#patientProfileNotes{
+  padding: 8px;
+  width: 500px;
+  height: 150px;
+  outline: none;
+  vertical-align: top;
+  resize: none;
+}
+
+.eye-exmaination-id{
+  width: 250px;
 }
 
 
@@ -397,9 +445,13 @@ tbody tr:hover {
   margin-bottom: 3px;
 }
 
-#caseHistoryForm input{
+#caseHistoryForm textarea{
+  padding: 8px;
   width: 300px;
-  height: 100px;
+  height: 150px;
+  outline: none;
+  vertical-align: top;
+  resize: none;
 }
 
 /* -- Preliminaries Format -- */
@@ -763,6 +815,10 @@ tbody tr:hover {
   height: 100px;
 }
 
+#newPrescriptionBackBtn{
+  margin-top: 50px;
+}
+
 /* -------- nav3 Sales Menu -------- */
 .sales-menu-buttons{
   margin-top: 25px;
@@ -839,14 +895,18 @@ tbody tr:hover {
   color: #FFD700;
 }
 
-/* --------- Other Function Mode and Styles ----- */
-
-.uppercase{
-  text-transform: uppercase;
-}
+/* --------- Other Priority Function Mode and Styles ----- */
 
 .hidden{
 display: none;
+}
+
+.date-field input{
+  width: 70px
+}
+
+.uppercase{
+  text-transform: uppercase;
 }
 
 /* -------- Responsive Media -------- */
