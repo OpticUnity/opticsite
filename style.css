@@ -5,6 +5,12 @@
   box-sizing: border-box;
   font-family: 'Poppins', sans-serif;
   transition: all 0.3s ease;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none;   /* Safari */
+  -khtml-user-select: none;    /* Konqueror HTML */
+  -moz-user-select: none;      /* Old versions of Firefox */
+  -ms-user-select: none;       /* Internet Explorer/Edge */
+  user-select: none;           /* Standard syntax */
 }
 
 /* -------- Global Variables -------- */
@@ -43,21 +49,66 @@ button:hover{
   background: var(--secondary-color)
 }
 
-textarea ,input, select{
-  border: 1px solid gray;
-  border-radius: 6px;
-  font-size: 16px;
-}
-
-select{
-  text-align: center;
-  text-align-last: center;
-}
-
 .wrapper {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+/* ---------- Table Styling ------- */
+table {
+  border-collapse: collapse;
+  background: #fff; 
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px; border: 1px solid #ddd; 
+  width: 900px; /* Set a specific width or use max-width for better display */ 
+  max-width: 1200px; 
+} 
+
+th, td { 
+  padding: 12px 16px; 
+  text-align: center; 
+  border-bottom: 1px solid #ddd; 
+} 
+
+th { 
+  background-color: #f4f4f4; 
+  font-weight: bold; 
+  color: #333; 
+} /* Hover effect for data rows */ 
+
+tbody tr:hover { 
+  background-color: #f9f9f9; 
+} 
+
+/* -- Table Pagination Styles -- */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  gap: 5px;
+}
+
+.pagination-controls button {
+  width: auto;
+  height: 35px;
+  min-width: 35px;
+  padding: 0 10px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.pagination-controls .active-page {
+  background-color: var(--secondary-color);
+  color: var(--white);
+  pointer-events: none; /* Disable click on current page */
+}
+
+.pagination-controls .disabled-page {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* -------- Navigation Bar -------- */
@@ -86,7 +137,7 @@ nav {
   color: var(--white);
   text-decoration: none;
   font-size: 18px;
-  opacity: 0.70;
+  opacity: 0.75;
 }
 
 .navigation-bar a:hover,
@@ -106,7 +157,7 @@ nav {
   user-select: none;
 }
 
-.title-link{
+#titleLink{
   font-size: 30px;
   font-weight: 600;
   opacity: 1;
@@ -128,6 +179,7 @@ nav {
 .nav-links {
   display: flex;
   flex-wrap: wrap;
+  margin-left: 10px;
 }
 
 .nav-links li {
@@ -178,21 +230,16 @@ nav {
   padding-top: 50px;
 }
 
-/* -------- Page Links Style -------- */
-.content a {
-  font-size: 20px;
-  padding: 12px 20px;
-  background: var(--primary-color);
-  color: var(--white);
+textarea ,input, select{
+  border: 1px solid gray;
   border-radius: 6px;
-  text-decoration: none;
+  font-size: 16px;
+  width: 250px;
+  padding: 8px;
+  margin-bottom: 5px;
   text-align: center;
-  align-items: center;
-  gap: 8px;
-}
-
-.content a:hover {
-  background: var(--secondary-color);
+  background-color: var(--ui-bg);
+  color: var(--text-color);
 }
 
 /* -------- Main Section Style -------- */
@@ -216,126 +263,133 @@ nav {
   color: var(--primary-color);
 }
 
-.page-content p {
+.page-content h2{
+  font-size: 30px;
+}
+
+.page-content p{
   font-size: 16px;
   max-width: 700px;
   margin: 20px 0 30px;
 }
 
-/* ---------- Table Styling ------- */
-table {
-  border-collapse: collapse;
-  background: #fff; 
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px; border: 1px solid #ddd; 
-  width: 900px; /* Set a specific width or use max-width for better display */ 
-  max-width: 1200px; 
-} 
-
-th, td { 
-  padding: 12px 16px; 
-  text-align: center; 
-  border-bottom: 1px solid #ddd; 
-} 
-
-th { 
-  background-color: #f4f4f4; 
-  font-weight: bold; 
-  color: #333; 
-} /* Hover effect for data rows */ 
-
-tbody tr:hover { 
-  background-color: #f9f9f9; 
-} 
-
-/* ------------ TABLE  PAGINATION STYLES ------------- */
-.pagination-controls {
-  display: flex;
-  justify-content: center;
+/* --- Page Links Style --- */
+.content a {
+  font-size: 20px;
+  padding: 12px 20px;
+  background: var(--primary-color);
+  color: var(--white);
+  border-radius: 6px;
+  text-decoration: none;
+  text-align: center;
   align-items: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  gap: 8px;
+  width: 200px;
+  height: 50px;
+}
+
+.content a:hover {
+  background: var(--secondary-color);
+}
+
+.nav-menu-links{
+  margin-top: 45px;
+  display: flex;
+  flex-direction: column;
+  gap: 45px;
+}
+
+/* --- Form Layouts --- */
+
+.fill-out-form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
   gap: 5px;
 }
 
-.pagination-controls button {
-  width: auto;
-  height: 35px;
-  min-width: 35px;
-  padding: 0 10px;
-  margin: 0;
-  font-size: 14px;
+.date-field{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
 }
 
-.pagination-controls .active-page {
-  background-color: var(--secondary-color);
-  color: var(--white);
-  pointer-events: none; /* Disable click on current page */
+.date-field input{
+  width: 70px;
+  text-align: center;
 }
 
-.pagination-controls .disabled-page {
-  opacity: 0.5;
+.form-action-buttons{
+  margin-top: 25px;
+}
+
+/* Red border for validation errors */
+.input-error {
+  border: 2px solid #ff4d4d;
+}
+
+/* Style for readonly fields to show they are auto-generated */
+input[readonly] {
+  background-color: var(--ui-bg);
   cursor: not-allowed;
 }
 
-
-/*-- Class tag for flex use instead of ID tag --*/
-.flex{
-  display: flex;
+.eye-examination-form .date-field input{
+  width: 70px;
+  text-align: center;
+  align-items: center;
 }
 
+/* -------- Home Page -------- */
 
-/* -------- nav1 Main Menu -------- */
-.main-menu-header, .main-menu-buttons{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.home-page-header{
+  font-size: 36px;
+}
+
+.page-content .home-page-subtitle{
+  font-size: 20px;
+  margin-top: 40px;
   text-align: center;
 }
 
-/* -------- nav2 Records Menu -------- */
-.records-menu-buttons{
+.home-page-menu-links{
   margin-top: 25px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  gap: 45px;
 }
 
-/* -- h2 style -- */
-
-.navigation-ui h2{
-  text-align: center;
+/* -------- Select Patient -------- */
+.select-patient-search-area{
+  margin-bottom: 25px;
 }
 
-#nav2NewCustomer label, #nav2NewPatient label{
-  margin-bottom: 3px;
+.select-patient-button{
+width: 80px;
+  height: 35px;
+  font-size: 14px;
+  margin-bottom: 0; /* Override the global button margin */
+  padding: 5px;
 }
 
-.customer-and-patient input, .customer-and-patient select{
-  width: 250px;
-  padding: 8px;
-  margin-bottom: 5px;
-  text-align: center;
-}
-
-#newPatientAddBtn, #newCustomerAddBtn, #newPrescriptionAddBtn{
-  margin-top: 25px;
-}
-
-/* -- Select Patient Table Style -- */
-#nav2NewPrescriptionSelectPatientMenu{
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-#selectPatientSearchBarInput{
-  padding: 7px;
+#selectPatientSearchBarInput:focus {
+  border-color: var(--secondary-color);
+  outline: none;
 }
 
 .select-patient-search-area{
-  margin-bottom: 25px;
+  align-items: center;
+  gap: 5px;
+}
+
+.new-prescription-select-patient-menu{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
+  gap: 5px;
 }
 
 .select-patient-main-table {
@@ -343,160 +397,147 @@ tbody tr:hover {
   justify-content: center; /* Center the table within its container */
 }
 
-.select-patient-button{
-  width: 100px;
-  margin-top: 0px;
-  margin-bottom: 0px;
-}
-
-
-/* -- forms style -- */
-.patient-profile-container{
-  flex-direction: row;
-  align-items: center;
-  text-align: center;
-  gap: 40px;
-  margin-top: 30px;
-  margin-bottom: 30px;
-}
-
-#patientProfileDisplayForm label{
-  margin-bottom: 3px;
-}
-
-#newPrescriptionSelectPatientMenu, .patient-profile-container-division-1, .patient-profile-container-division-2{
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-#newPrescriptionSelectPatientMenu{
-  margin-top: 15px;
-}
-
-#patientProfileDisplayForm input{
-  width: 250px;
-  padding: 10px;
-  margin-bottom: 5px;
-  text-align: center;
-}
-
-.eye-examination-form input{
-  width: 70px;
-  padding: 4px;
-  margin: 3px;
-}
-
-#nav2NewCustomerInputArea, #nav2NewPatientInputArea{
-  margin-top: 25px;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-#nav2NewPrescription h3, #nav2NewPrescription h4{
-  margin-top: 25px;
-  margin-bottom: 20px;
-}
-
-.column-display, #eyeExaminationFormIdAndDate, #nav2NewCustomer, #nav2NewPatient, #nav2NewPrescription, #newPrescriptionPatientForm, #patientProfileDisplayForm, #eyeExaminationForm{
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-#newPrescriptionPatientForm h3, #newPrescriptionPatientForm h4{
-  margin-top: 30px;
-  margin-bottom: 30px;
-}
-
-.eye-examination-form-id-and-date input{
-  width: 250px;
-  padding: 8px;
-  margin-bottom: 5px;
-}
-
-#patientProfileNotes{
-  padding: 8px;
-  width: 500px;
-  height: 150px;
-  outline: none;
-  vertical-align: top;
-  resize: none;
-}
-
-.eye-exmaination-id{
-  width: 250px;
-}
-
-
-
-/* -- Case History Format -- */
-#caseHistoryForm{
-  flex-direction: row;
-  align-items: center;
-  text-align: center;
-  gap: 40px;
-  margin-bottom: 30px;
-}
-
-#caseHistoryForm label{
-  margin-top: 10px;
-  margin-bottom: 3px;
-}
-
-#caseHistoryForm textarea{
-  padding: 8px;
-  width: 300px;
-  height: 150px;
-  outline: none;
-  vertical-align: top;
-  resize: none;
-}
-
-/* -- Preliminaries Format -- */
-#eyeExaminationPreliminaryFormUvaAndPaContainer,
-#eyeExaminationPreliminaryFormUvaHeader, #eyeExaminationPreliminaryFormUvaOd, #eyeExaminationPreliminaryFormUvaOs
-#eyeExaminationPreliminaryFormPaHeader, #eyeExaminationPreliminaryFormPaOd, #eyeExaminationPreliminaryFormPaOs{
-  flex-direction: row;
-  justify-content: center;
-  text-align: center;
-}
-
-#eyeExaminationPreliminaryFormUva, #eyeExaminationPreliminaryFormPa{
+/* -- Prescription ID Block -- */
+.prescription-id-block {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
-  margin-top: 15px;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 5px;
 }
 
-#eyeExaminationFormIdAndDate{
+.prescription-id-block input {
+  width: 250px;
+  padding: 8px;
+}
+
+.prescription-id-block .date-field input {
+  width: 70px;
+  padding: 4px;
+}
+
+/* -------- New Prescription Style -------- */
+
+.main-eye-examination-form{
+  display: flex;
+  flex-direction: column;
+}
+
+.eye-examination-header{
+  margin-top: 10px;
+}
+
+.change-patient-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
+}
+
+.change-patient-container button{
+  width: 100px;
+  height: 45px;
+}
+
+/* -- Patient Profile --*/
+.patient-profile-section{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.patient-profile-container{
+  align-items: center;
+  text-align: center;
+  gap: 40px;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+.patient-profile-id-number{
+  margin-top: 20px;
+}
+
+.patient-profile-textarea{
+  padding: 8px;
+  width: 450px;
+  height: 150px;
+  outline: none;
+  vertical-align: top;
+  resize: none;
+}
+
+.patient-profile-container-division-1, .patient-profile-container-division-2{
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* -- Rx Method Selection -- */
+.prescription-method-selection{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+/* -- Copy Rx Form -- */
+.copy-prescription-form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+/* -- Copy Rx Cl Form -- */
+.copy-prescription-form-cl{
+  display: flex;
+  flex-direction: column;
+  margin-top: 25px;
+  margin-bottom: 40px;
+  align-items: center;
+}
+
+.copy-prescription-form-cl-header{
+  margin-bottom: 25px;
+}
+
+.copy-prescription-contact-lens-label{
+  margin-left: 18px;
+  gap: 46px;
+}
+
+.copy-rx-cl-notes-container{
+  margin-left: 25px;
+}
+
+/* -- Eye Examination -- */
+.eye-examination-form{
+  align-items: center;
+}
+
+/* -- Preliminary Style -- */
+
+.eye-examination-form-preliminary{
+  align-items: center;
+  gap: 70px;
+  margin-right: 70px;
+}
+
+.eye-examination-form-test-id-label{
+  margin-top: 30px;
+}
+
+.preliminary-header{
+  margin-top: 30px;
   margin-bottom: 15px;
 }
 
-#eyeExaminationPreliminaryForm{
-  margin-top: 15px;
-}
-
-#eyeExaminationPreliminaryFormUvaOd label, #eyeExaminationPreliminaryFormUvaOs label,
-#eyeExaminationPreliminaryFormPaOd label, #eyeExaminationPreliminaryFormPaOs label{
-  margin-top: 5px;
-}
-
-#eyeExaminationPreliminaryFormUvaHeader{
-  margin-left: 40px;
-  gap: 35px;
-}
-
-#eyeExaminationPreliminaryFormPaHeader{
-  margin-left: 50px;
-}
-
-#eyeExaminationPreliminaryFormUvaAndPaContainer{
-  gap: 100px;
-  margin-right: 70px;
-  margin-bottom: 40px;
+.eye-examination-form input, .eye-examination-form-preliminary input{
+  width: 70px;
+  padding: 4px;
+  margin: 3px;
 }
 
 .v-line-uva-pa{
@@ -506,139 +547,92 @@ tbody tr:hover {
   margin: 0 10px;  
 }
 
-/* -- HRX Prescription TABLE Form Style --*/
-#eyeExaminationPreliminaryFormHrx, 
-#eyeExaminationPreliminaryFormHrxOdHeader, #eyeExaminationPreliminaryFormHrxOdDistance, #eyeExaminationPreliminaryFormHrxOdNear, #eyeExaminationPreliminaryFormHrxOdAdd,
-#eyeExaminationPreliminaryFormHrxOsHeader, #eyeExaminationPreliminaryFormHrxOsDistance, #eyeExaminationPreliminaryFormHrxOsNear, #eyeExaminationPreliminaryFormHrxOsAdd{
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+.fill-out-form .eye-examination-form .eye-examination-id{
+  width: 250px;
+  padding: 8px;
+  margin-bottom: 5px;
+}
+
+.preliminary-uva, .preliminary-ph{
+  gap: 10px;
+}
+
+.eye-test-label-uva{
+  margin-left: 85px;
+}
+
+.eye-test-label-uva-dist{
+  margin-left: 55px;
+}
+
+.eye-test-label-uva-near{
+  margin-left: 25px;
+}
+
+.eye-test-label-1{
+  margin-top: 5px;
+}
+
+.eye-test-label-ph{
+ margin-left: 32px;
+}
+
+.eye-test-label-ph-dist{
+  margin-left: 50px;
+}
+
+/* -- HRX -- */
+
+.eye-test-label-hrx{
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+/* -- AR and CL Style -- */
+
+.ar-clp-container{
   text-align: center;
-}
-
-#eyeExaminationPreliminaryFormHrxOd, #eyeExaminationPreliminaryFormHrxOs, #eyeExaminationPreliminaryFormHrxNotes{
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
-}
-
-#eyeExaminationPreliminaryFormHrx{
-  gap: 50px;
-  margin-top: 10px;
-}
-
-#eyeExaminationPreliminaryFormHrxOdHeader, #eyeExaminationPreliminaryFormHrxOsHeader{
-  margin-left: 0px;
-  gap: 45px;
-}
-
-#eyeExaminationPreliminaryFormHrxOdNear, #eyeExaminationPreliminaryFormHrxOsNear{
-  margin-left: 28px;
-}
-
-#eyeExaminationPreliminaryFormHrxOdAdd, #eyeExaminationPreliminaryFormHrxOsAdd{
-  margin-right: 270px;
-}
-
-.hrx-axis-label{
-  margin-right: 5px;
-}
-
-.hrx-pd-label{
-  margin-right: 5px;
-}
-
-.hrx-va-label{
-  margin-right: 5px;
-}
-
-#eyeExaminationPreliminaryFormHrxNotes input{
-  width: 450px;
-  height: 100px;
-}
-
-#eyeExaminationPreliminaryFormHrxNotes{
-  margin-top: 10px;
-  margin-bottom: 30px;
-}
-
-/* -- AR TABLE and Notes Form Style --*/
-#eyeExaminationArForm, #eyeExaminationArFormNotes{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-#eyeExaminationArForm{
-  margin-bottom: 10px;
-}
-
-#eyeExaminationArFormOd, #eyeExaminationArFormOs{
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  text-align: center;
-}
-
-#eyeExaminationArFormContainer{
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-#eyeExaminationArFormHeader label{
-  margin-left:40px;
-}
-
-.ar-axis-label{
-  margin-right: 5px;
-}
-
-.ar-kr-label{
-  margin-right: 5px;
-}
-
-#eyeExaminationArFormNotes input{
-  width: 300px;
-  height: 100px; 
-}
-
-#eyeExaminationArFormNotes{
-  margin-left: 30px;
-}
-
-/* -- CL Parameters TABLE and Notes Form Style --*/
-#eyeExaminationArFormAndClParametersFormContainer, #eyeExaminationClParametersFormHeader, #eyeExaminationClParametersFormOd, #eyeExaminationClParametersFormOs{
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  text-align: center;
-}
-
-#eyeExaminationClParametersFormContainer, #eyeExaminationClParametersForm, #eyeExaminationClParametersFormNotes{
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-#eyeExaminationClParametersForm{
-  margin-bottom: 10px;
-}
-
-#eyeExaminationArFormAndClParametersFormContainer{
   gap: 75px;
-  margin-right: 27px;
-  margin-bottom: 20px;
+  margin-top: 30px;
 }
 
-#eyeExaminationClParametersFormHeader label{
-  margin-left: 40px;
+.ar-clp-container input{
+  width: 70px;
+  padding: 4px;
+  margin: 3px;
 }
 
-.cp-hvid-label{
-  margin-left: 15px;
+.ar-clp-container textarea{
+  padding: 8px;
+  width: 350px;
+  height: 100px;
+  outline: none;
+  vertical-align: top;
+  resize: none;
+}
+
+.ar-label-container{
+  display: flex;
+  flex-direction: row;
+  gap:50px;
+  margin-left: 60px;
+  margin-top: 10px;
+}
+
+.clp-label-container{
+  display: flex;
+  flex-direction: row;
+  gap: 50px;
+  margin-left: 100px;
+  margin-top: 10px;
+}
+
+.ar-form-notes, .clp-form-notes{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
 }
 
 .v-line-ar-clp{
@@ -648,195 +642,150 @@ tbody tr:hover {
   margin: 0 10px;  
 }
 
-#eyeExaminationClParametersFormNotes input{
-  width: 300px;
-  height: 100px;
+/* -- VT7 Form -- */
+.vt7-header{
+  margin-top: 30px;
 }
 
-/* -- VT 7-- */
-#eyeExaminationVt7Form,
-#eyeExaminationVt7OdHeader, #eyeExaminationVt7OdDistance, #eyeExaminationVt7OdNear, #eyeExaminationVt7OdAdd,
-#eyeExaminationVt7OsHeader, #eyeExaminationVt7OsDistance, #eyeExaminationVt7OsNear, #eyeExaminationVt7OsAdd {
+.generate-btn-container{
+  margin-top: 30px;
+  gap: 15px;
+  align-items: center;
+}
+
+/* -- Final Rx Form -- */
+.main-final-prescription{
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.final-prescription-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+}
+
+.frx-header{
+  margin-top: 15px;
+}
+
+
+/* -- Final Rx Contact Lens -- */
+
+.contact-lens-frx-btn-selection{
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.contact-lens-frx-btn-selection button{
+  width: 150px;
+}
+
+.contact-lens-frx-btn-container{
+  gap: 10px;
+}
+
+.add-rx-btn-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.new-rx-back-btn-link{
+  margin-top: 20px;
+}
+
+/* ---- Prescription Form Format ---- */
+
+.prescription-format-form{
   display: flex;
   flex-direction: row;
-  align-items: center;
-  text-align: center;
+  gap: 25px;
 }
 
-#eyeExaminationVt7FormOd, #eyeExaminationVt7FormOs, #eyeExaminationVt7FormNotes{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-#generateRxContainer{
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.vt7-va-label{
-  margin-left: 10px;
-}
-
-#eyeExaminationVt7Form{
-  gap: 35px;
-  margin-bottom: 20px;
-}
-
-#eyeExaminationVt7OdHeader, #eyeExaminationVt7OsHeader{
-  margin-left: 20px;
-  gap: 45px;
-}
-
-#eyeExaminationVt7OdNear, #eyeExaminationVt7OsNear{
-  margin-left: 28px;
-}
-
-#eyeExaminationVt7OdAdd, #eyeExaminationVt7OsAdd{
-  margin-left: 34px;
-}
-
-#eyeExaminationVt7FormNotes{
-  margin-top: 5px;
-  margin-bottom: 35px;
-}
-
-#eyeExaminationVt7FormNotes input{
-  width: 450px;
-  height: 100px;
-}
-
-/* -- Final Rx -- */
-#finalPrescriptionFormContainer{
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-#finalPrescriptionFormDateAndId input{
-  width: 200px;
-  padding: 8px;
-  margin-bottom: 5px;
-}
-
-#finalPrescriptionSpectecleForm input, #finalPrescriptionContactLensForm input{
+.prescription-format-form input{
   width: 70px;
   padding: 4px;
   margin: 3px;
 }
 
-#finalPrescriptionSpectecleForm,
-#finalPrescriptionSpectecleFormOdHeader, #finalPrescriptionSpectecleFormOdDistance, #finalPrescriptionSpectecleFormOdNear, #finalPrescriptionSpectecleFormOdAdd,
-#finalPrescriptionSpectecleFormOsHeader, #finalPrescriptionSpectecleFormOsDistance, #finalPrescriptionSpectecleFormOsNear, #finalPrescriptionSpectecleFormOsAdd{
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  text-align: center;
-}
-
-#finalPrescriptionFormDateAndId, #finalPrescriptionSpectecleFormDateAndId, #finalPrescriptionSpectecleFormOd, #finalPrescriptionSpectecleFormOs, #finalPrescriptionSpectecleFormNotes{
+.prescription-format-division{
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  margin-top: 10px;
 }
 
-#finalPrescriptionSpectecleFormNotes{
+.prescription-format-label{
+  display: flex;
+  flex-direction: row;
+  margin-left: 25px;
+  gap: 50px;
+}
+
+.prescription-format-near{
+  margin-left: 26px;
+  gap: 5px;
+}
+
+.prescription-format-add{
+  margin-left: 32px;
+  gap: 5px;
+}
+
+.prescription-format-side-label{
   margin-top: 5px;
-  margin-bottom: 15px;
 }
 
-#finalPrescriptionSpectecleFormNotes label{
+.prescription-format-notes{
+  display: flex;
+  flex-direction: column;
+}
+
+.prescription-format-notes-label{
+  text-align: center;
+  margin-top: 10px;
   margin-bottom: 5px;
 }
 
-#finalPrescriptionSpectecleFormNotes input{
+.prescription-format-notes textarea{
+  padding: 8px;
   width: 450px;
   height: 100px;
+  outline: none;
+  vertical-align: top;
+  resize: none;
 }
 
-#finalPrescriptionSpectecleForm{
-  gap: 35px;
+/* -------- Contact Lens Form Format -------- */
+.contact-lens-form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
 }
 
-#finalPrescriptionSpectecleFormOdHeader, #finalPrescriptionSpectecleFormOsHeader{
-  margin-left: 0px;
+.contact-lens-label{
+  margin-left: 55px;
   gap: 45px;
 }
 
-#finalPrescriptionSpectecleFormOdNear, #finalPrescriptionSpectecleFormOsNear{
-  margin-left: 28px;
+.contact-lens-side-label{
+  margin-top: 7px;
 }
 
-#finalPrescriptionSpectecleFormOdAdd, #finalPrescriptionSpectecleFormOsAdd{
- margin-right: 270px;
+.contact-lens-form input{
+  width: 70px;
+  padding: 4px;
+  margin: 3px;
 }
-
-/* -- Final Prescription Contact Lens  -- */
-#finalPrescriptionContactLensForm, #finalPrescriptionContactLensFormNotes{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-#finalPrescriptionContactLensFormOd, #finalPrescriptionContactLensFormOs{
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  text-align: center;
-}
-
-#finalPrescriptionContactLensFormHeader{
-  flex-direction: row;
-  align-items: center;
-  text-align: center;
-  gap: 45px;
-  margin-left: 20px;
-}
-
-.frx-cl-axis-label{
-  margin-left: 0px;
-}
-
-#finalPrescriptionContactLensFormNotes{
-  margin-top: 15px;
-  margin-bottom: 15px;
-}
-
-#finalPrescriptionContactLensFormNotes label{
-  margin-bottom: 5px;
-}
-
-#finalPrescriptionContactLensFormNotes input{
-  width: 450px;
-  height: 100px;
-}
-
-#newPrescriptionBackBtn{
-  margin-top: 50px;
-}
-
-/* -------- nav3 Sales Menu -------- */
-.sales-menu-buttons{
-  margin-top: 25px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-/* -------- nav4 Settings Menu -------- */
-.settings-menu-buttons{
-  margin-top: 25px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
 
 /* -------- Footer -------- */
 .footer {
@@ -847,66 +796,34 @@ tbody tr:hover {
   margin-top: auto;
 }
 
-/* -------- Modal Style -------- */
-.modal-copy-customer-to-patient{
-  display: none;
-}
-
-.modal-main-style {
-  position: fixed;
-  z-index: 1000;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-}
-
-.modal-content-style {
-  background: var(--ui-bg);
-  margin: 120px auto;
-  padding: 25px;
-  width: 400px;
-  border-radius: 8px;
-  text-align: left;
-}
-
-.modal-header-style {
-  font-size: 1.25rem;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-
-.modal-body-style {
-  margin-top: 25px;
-  margin-bottom: 25px;
-}
-
-.modal-actions-style {
-  text-align: right;
-}
-
-.modal-actions-style button{
-  width: auto;
-  margin-left: 10px;
-}
 
 /* -------- Dark Mode Theme -------- */
 .color-text.darkMode {
-  color: #FFD700;
+  color: #FFD700;  /* yellow */
 }
 
-/* --------- Other Priority Function Mode and Styles ----- */
+/* --------- Other Function Mode and Styles ----- */
 
 .hidden{
-display: none;
+  display: none;
 }
 
-.date-field input{
-  width: 70px
+.flex-column{
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-row{
+  display: flex;
+  flex-direction: row;
 }
 
 .uppercase{
   text-transform: uppercase;
+}
+
+.align-center{
+  align-items: center;
 }
 
 /* -------- Responsive Media -------- */
@@ -924,6 +841,21 @@ display: none;
 @media (max-width: 768px) {
   .nav-links-menu-toggle {
     display: block;
+    height: 50px;
+    width: 50px;
+    background: var(--secondary-color);
+    color: var(--white);
+    border-radius: 6px;
+    font-size: 20px;
+    text-align: center;
+    line-height: 50px;
+    cursor: pointer;
+    margin-left: 10px;
+    opacity: 0.8;
+  }
+
+  .nav-links-menu-toggle:hover{
+    opacity: 1.0;
   }
   
   .nav-links {
@@ -956,4 +888,21 @@ display: none;
     gap: 10px;
   }
   
+}
+
+/* -------------------- DEBUG STYLE ------------ TO DELETE ON FINAL PRODUCT ---------- */
+
+.page-content .under-development-nav{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+
+.page-content .under-development-nav h1{
+  font-size: 30px;
+}
+
+.page-content .under-development-nav h2{
+  font-size: 15px;
 }
