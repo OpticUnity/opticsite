@@ -242,6 +242,10 @@ textarea ,input, select{
   color: var(--text-color);
 }
 
+input{
+  height: 32px;
+}
+
 /* -------- Main Section Style -------- */
 .page-content {
   margin-top: 70px;
@@ -413,7 +417,7 @@ width: 80px;
 
 .prescription-id-block .date-field input {
   width: 70px;
-  padding: 4px;
+  padding: 3px;
 }
 
 /* -------- New Prescription Style -------- */
@@ -536,7 +540,7 @@ width: 80px;
 
 .eye-examination-form input, .eye-examination-form-preliminary input{
   width: 70px;
-  padding: 4px;
+  padding: 3px;
   margin: 3px;
 }
 
@@ -599,7 +603,7 @@ width: 80px;
 
 .ar-clp-container input{
   width: 70px;
-  padding: 4px;
+  padding: 3px;
   margin: 3px;
 }
 
@@ -713,7 +717,7 @@ width: 80px;
 
 .prescription-format-form input{
   width: 70px;
-  padding: 4px;
+  padding: 3px;
   margin: 3px;
 }
 
@@ -783,10 +787,34 @@ width: 80px;
 
 .contact-lens-form input{
   width: 70px;
-  padding: 4px;
+  padding: 3px;
   margin: 3px;
 }
 
+/* -------- Vew Records style -------- */
+.view-records-main-menu{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.view-records-menu{
+  display: flex;
+  flex-direction: column;
+  margin-top: 45px;
+  gap: 25px;
+  align-items: center;
+}
+
+.view-records-slection-menu{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.view-records-back-btn{
+  margin-top: 30px;
+}
 /* -------- Footer -------- */
 .footer {
   background: var(--primary-color);
