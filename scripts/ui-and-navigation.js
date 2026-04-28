@@ -85,9 +85,33 @@ function handleRouting() {
   }
 }
 
+// ----- View Records Mini Navigation Logic -----
+
 // Listen for the URL changing and page loading
 window.addEventListener("hashchange", handleRouting);
 window.addEventListener("load", handleRouting);
+
+// 
+
+document.getElementById('customerMenuBtn')?.addEventListener('click', () => {
+    document.getElementById('viewRecordsMainMenu').classList.add('hidden');
+    document.getElementById('viewRecordsCustomerMenu').classList.remove('hidden');
+});
+
+document.getElementById('patientMenuBtn')?.addEventListener('click', () => {
+    document.getElementById('viewRecordsMainMenu').classList.add('hidden');
+    document.getElementById('viewRecordsPatientMenu').classList.remove('hidden');
+});
+
+document.getElementById('viewRecordsCtmBackBtn')?.addEventListener('click', () => {
+    document.getElementById('viewRecordsCustomerMenu').classList.add('hidden');
+    document.getElementById('viewRecordsMainMenu').classList.remove('hidden');
+});
+
+document.getElementById('viewRecordsPtmBackBtn')?.addEventListener('click', () => {
+    document.getElementById('viewRecordsPatientMenu').classList.add('hidden');
+    document.getElementById('viewRecordsMainMenu').classList.remove('hidden');
+});
 
 //--------------- Nav Menu logic for Phones ---------------
 

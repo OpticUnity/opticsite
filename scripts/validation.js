@@ -67,6 +67,12 @@ function liveFilterDia(e) {
     input.value = val;
 }
 
+// VA / UVA / PH — auto uppercase
+function liveFilterUppercase(e) {
+    const input = e.target;
+    input.value = input.value.toUpperCase();
+}
+
 // ---- Blur Validators (on blur event) ----
 
 // SPH — ±20.00, 0.25 increments, 0.00 valid, blank valid
@@ -212,7 +218,8 @@ function attachValidator(inputId, fieldType, pairedAxisId = null) {
             input.addEventListener('input', liveFilterDia);
             break;
         case 'va':
-            break; // free text, no live filter
+            input.addEventListener('input', liveFilterUppercase);
+            break;
     }
 
     // Blur validator
@@ -220,9 +227,7 @@ function attachValidator(inputId, fieldType, pairedAxisId = null) {
         case 'sph': input.addEventListener('blur', blurSph); break;
         case 'cyl':
             input.addEventListener('blur', blurCyl);
-            if (pairedAxisId) {
-                input.addEventListener('blur', () => checkAxisRequired(inputId, pairedAxisId));
-            }
+
             break;
         case 'add': input.addEventListener('blur', blurAdd); break;
         case 'axis': input.addEventListener('blur', blurAxis); break;
@@ -237,6 +242,14 @@ function attachValidator(inputId, fieldType, pairedAxisId = null) {
 // Call this once on load to wire up all prescription input fields
 
 function initValidation() {
+
+    // -- UVA and PH  --
+    attachValidator('uvaOdDist', 'va');
+    attachValidator('uvaOdNear', 'va');
+    attachValidator('uvaOsDist', 'va');
+    attachValidator('uvaOsNear', 'va');
+    attachValidator('phOd', 'va');
+    attachValidator('phOs', 'va');
 
     // -- VT7 OD --
     attachValidator('vt7OdDistanceSph', 'sph');

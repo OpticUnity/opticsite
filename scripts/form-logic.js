@@ -452,6 +452,10 @@ function initFormLogic() {
     document.getElementById('patientSampleBtn')?.addEventListener('click', addSamplePatients);
     document.getElementById('selectDifferentPatientBtn')?.addEventListener('click', changePatient);
     document.getElementById('generateRxBtn')?.addEventListener('click', handleGenerateRx);
+    document.getElementById('generateToricBtn')?.addEventListener('click', generateToricCl);
+    document.getElementById('generateSphereBtn')?.addEventListener('click', generateSphereCl);
+
+
 
     // D. Rx Method Selection
     document.getElementById('rxSelect')?.addEventListener('change', (e) => {
@@ -461,6 +465,8 @@ function initFormLogic() {
         document.getElementById('copyPrescriptionFormCl').classList.add('hidden');
         document.getElementById('addPrescriptionContainer').classList.add('hidden');
         document.getElementById('prescriptionIdBlock').classList.add('hidden');
+        document.getElementById('mainFinalPrescription').classList.add('hidden');
+        document.getElementById('frxClForm').classList.add('hidden');  
 
         // show selected
         if (e.target.value === 'eyeExam') {
@@ -495,27 +501,38 @@ function initFormLogic() {
 
 }
 
+// Helper — checks if an eye's distance inputs meet minimum requirement
+function isEyeValid(sphId, cylId, axisId) {
+    const sph = document.getElementById(sphId).value.trim();
+    const cyl = document.getElementById(cylId).value.trim();
+    const axis = document.getElementById(axisId).value.trim();
+    const axisInput = document.getElementById(axisId);
+
+    const hasSph = sph !== '';
+    const hasCyl = cyl !== '';
+    const hasAxis = axis !== '';
+
+    // CYL without AXIS → invalid, highlight axis red
+    if (hasCyl && !hasAxis) {
+        axisInput.classList.add('input-error');
+        return false;
+    }
+
+    // AXIS without CYL → invalid
+    if (hasAxis && !hasCyl) {
+        axisInput.classList.add('input-error');
+        return false;
+    }
+
+    // Clear error if valid
+    axisInput.classList.remove('input-error');
+
+    return hasSph || (hasCyl && hasAxis);
+}
+
 //--------------- Generate Rx Logic ---------------
 
 function handleGenerateRx() {
-
-    // Helper — checks if an eye's distance inputs meet minimum requirement
-    function isEyeValid(sphId, cylId, axisId) {
-        const sph = document.getElementById(sphId).value.trim();
-        const cyl = document.getElementById(cylId).value.trim();
-        const axis = document.getElementById(axisId).value.trim();
-
-        const hasSph = sph !== '';
-        const hasCyl = cyl !== '';
-        const hasAxis = axis !== '';
-
-        // CYL without AXIS or AXIS without CYL → always invalid
-        if (hasCyl && !hasAxis) return false;
-        if (hasAxis && !hasCyl) return false;
-
-        // Must have at least SPH or (CYL + AXIS)
-        return hasSph || (hasCyl && hasAxis);
-    }
 
     const odValid = isEyeValid('vt7OdDistanceSph', 'vt7OdDistanceCyl', 'vt7OdDistanceAxis');
     const osValid = isEyeValid('vt7OsDistanceSph', 'vt7OsDistanceCyl', 'vt7OsDistanceAxis');
@@ -557,6 +574,176 @@ function handleGenerateRx() {
 
     // Scroll to Final Rx
     document.getElementById('mainFinalPrescription').scrollIntoView({ behavior: 'smooth' });
+}
+
+//--------------- Contact Lens Generation Logic ---------------
+
+const CL_VERTEX = 0.012; // 12mm default vertex distance in meters
+
+// -- Shared: Effective Power Formula --
+function effectivePower(F) {
+    return F / (1 - CL_VERTEX * F);
+}
+
+// -- Shared: Convert one eye to CL power --
+function convertEyeToCl(sphStr, cylStr, axisStr) {
+    const sph = parseFloat(sphStr) || 0;
+
+    if (cylStr === '') {
+        const clSph = Math.round(effectivePower(sph) * 4) / 4;
+        return { sph: formatSigned(clSph), cyl: '', axis: '' };
+    } else {
+        const cyl = parseFloat(cylStr);
+        const otherMeridian = sph + cyl;
+        const clSph = effectivePower(sph);
+        const clOtherMeridian = effectivePower(otherMeridian);
+        const clCyl = clOtherMeridian - clSph;
+        const clSphRounded = Math.round(clSph * 4) / 4;
+        const clCylRounded = Math.round(clCyl * 4) / 4;
+        return {
+            sph:  formatSigned(clSphRounded),
+            cyl:  clCylRounded !== 0 ? formatSigned(clCylRounded) : '',
+            axis: axisStr
+        };
+    }
+}
+
+// -- Shared: Validate FRx fields before CL generation --
+function validateClInputs(mode) {
+    const odSph  = document.getElementById('frxOdDistanceSph').value.trim();
+    const odCyl  = document.getElementById('frxOdDistanceCyl').value.trim();
+    const odAxis = document.getElementById('frxOdDistanceAxis').value.trim();
+    const osSph  = document.getElementById('frxOsDistanceSph').value.trim();
+    const osCyl  = document.getElementById('frxOsDistanceCyl').value.trim();
+    const osAxis = document.getElementById('frxOsDistanceAxis').value.trim();
+
+    if (mode === 'toric') {
+        if (odCyl === '' && osCyl === '') {
+            alert("Both eyes have no cylinder. Use Sphere for sphere-only prescriptions.");
+            return null;
+        }
+    } else {
+        if (odSph === '' && odCyl === '' && osSph === '' && osCyl === '') {
+            alert("No prescription data found. Please fill in at least SPH or CYL for one eye.");
+            return null;
+        }
+    }
+
+    if (odCyl !== '' && odAxis === '') {
+        alert("OD has cylinder but no axis. Please fill in OD Axis before generating.");
+        document.getElementById('frxOdDistanceAxis').classList.add('input-error');
+        return null;
+    }
+    if (osCyl !== '' && osAxis === '') {
+        alert("OS has cylinder but no axis. Please fill in OS Axis before generating.");
+        document.getElementById('frxOsDistanceAxis').classList.add('input-error');
+        return null;
+    }
+
+    return { odSph, odCyl, odAxis, osSph, osCyl, osAxis };
+}
+
+// -- Shared: Populate CL fields and show form --
+function populateClForm(odResult, osResult) {
+    document.getElementById('frxClOdSph').value  = odResult.sph;
+    document.getElementById('frxClOdCyl').value  = odResult.cyl;
+    document.getElementById('frxClOdAxis').value = odResult.axis;
+    document.getElementById('frxClOsSph').value  = osResult.sph;
+    document.getElementById('frxClOsCyl').value  = osResult.cyl;
+    document.getElementById('frxClOsAxis').value = osResult.axis;
+
+    document.getElementById('frxClForm').classList.remove('hidden');
+    document.getElementById('frxClForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+// -- Toric Button --
+function generateToricCl() {
+    const fields = validateClInputs('toric');
+    if (!fields) return;
+
+    const odResult = convertEyeToCl(fields.odSph, fields.odCyl, fields.odAxis);
+    const osResult = convertEyeToCl(fields.osSph, fields.osCyl, fields.osAxis);
+    populateClForm(odResult, osResult);
+}
+
+// -- Sphere Button --
+function generateSphereCl() {
+    const fields = validateClInputs('sphere');
+    if (!fields) return;
+
+    function toSE(sphStr, cylStr) {
+        const result = convertEyeToCl(sphStr, cylStr, '');
+        if (result.cyl === '') return result;
+        const clSph = parseFloat(result.sph);
+        const clCyl = parseFloat(result.cyl);
+        const se = Math.round((clSph + clCyl / 2) * 4) / 4;
+        return { sph: formatSigned(se), cyl: '', axis: '' };
+    }
+
+    const odResult = toSE(fields.odSph, fields.odCyl);
+    const osResult = toSE(fields.osSph, fields.osCyl);
+    populateClForm(odResult, osResult);
+}
+
+//--------------- Copy Rx Validation ---------------
+
+function isEyeValidCopyRx(sphId, cylId, axisId) {
+    const sph = document.getElementById(sphId).value.trim();
+    const cyl = document.getElementById(cylId).value.trim();
+    const axis = document.getElementById(axisId).value.trim();
+    const axisInput = document.getElementById(axisId);
+
+    const hasSph = sph !== '';
+    const hasCyl = cyl !== '';
+    const hasAxis = axis !== '';
+
+    if (hasCyl && !hasAxis) {
+        axisInput.classList.add('input-error');
+        return false;
+    }
+    if (hasAxis && !hasCyl) {
+        axisInput.classList.add('input-error');
+        return false;
+    }
+
+    axisInput.classList.remove('input-error');
+    return hasSph || (hasCyl && hasAxis);
+}
+
+function validateCopyRx() {
+    const odValid = isEyeValidCopyRx('copyRxOdDistanceSph', 'copyRxOdDistanceCyl', 'copyRxOdDistanceAxis');
+    const osValid = isEyeValidCopyRx('copyRxOsDistanceSph', 'copyRxOsDistanceCyl', 'copyRxOsDistanceAxis');
+    if (!odValid || !osValid) {
+        alert("Minimum required per eye: SPH alone, or CYL + AXIS together.");
+        return false;
+    }
+    return true;
+}
+
+function validateCopyRxCl() {
+    const odSph = document.getElementById('copyRxClOdSph').value.trim();
+    const odCyl = document.getElementById('copyRxClOdCyl').value.trim();
+    const odAxis = document.getElementById('copyRxClOdAxis').value.trim();
+    const osSph = document.getElementById('copyRxClOsSph').value.trim();
+    const osCyl = document.getElementById('copyRxClOsCyl').value.trim();
+    const osAxis = document.getElementById('copyRxClOsAxis').value.trim();
+
+    if (odSph === '' && odCyl === '' && osSph === '' && osCyl === '') {
+        alert("Minimum required: at least SPH or CYL for one eye.");
+        return false;
+    }
+
+    if (odCyl !== '' && odAxis === '') {
+        alert("OD has cylinder but no axis.");
+        document.getElementById('copyRxClOdAxis').classList.add('input-error');
+        return false;
+    }
+    if (osCyl !== '' && osAxis === '') {
+        alert("OS has cylinder but no axis.");
+        document.getElementById('copyRxClOsAxis').classList.add('input-error');
+        return false;
+    }
+    return true;
 }
 
 window.addEventListener('load', initFormLogic);
