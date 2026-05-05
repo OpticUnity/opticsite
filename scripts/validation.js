@@ -395,3 +395,217 @@ function initValidation() {
 }
 
 window.addEventListener('load', initValidation);
+
+// ---- Near SPH ↔ ADD Bidirectional Sync ----
+// ADD → Near SPH: distSph + add = nearSph
+// Near SPH → ADD: nearSph - distSph = add
+// CYL and AXIS are readonly on near — copied from dist when ADD is valid, cleared when ADD is blank
+
+// -- Core compute --
+
+function computeNearFromAdd(distSphId, addId, nearSphId, nearCylId, nearAxisId, distCylId, distAxisId) {
+    const distSph = parseFloat(document.getElementById(distSphId)?.value);
+    const add     = parseFloat(document.getElementById(addId)?.value);
+
+    const nearSphEl  = document.getElementById(nearSphId);
+    const nearCylEl  = document.getElementById(nearCylId);
+    const nearAxisEl = document.getElementById(nearAxisId);
+    if (!nearSphEl || !nearCylEl || !nearAxisEl) return;
+
+    if (isNaN(add) || add <= 0) {
+        // ADD cleared or invalid — wipe near fields
+        nearSphEl.value  = '';
+        nearCylEl.value  = '';
+        nearAxisEl.value = '';
+        return;
+    }
+
+    if (isNaN(distSph)) {
+        // No dist SPH yet — can't compute, leave near alone
+        return;
+    }
+
+    const nearSph = roundToQuarter(distSph + add);
+    nearSphEl.value = formatSigned(nearSph);
+
+    // Copy CYL + AXIS from dist if present
+    const distCyl  = document.getElementById(distCylId)?.value.trim()  || '';
+    const distAxis = document.getElementById(distAxisId)?.value.trim() || '';
+    nearCylEl.value  = distCyl;
+    nearAxisEl.value = distAxis;
+}
+
+function computeAddFromNear(distSphId, nearSphId, addId) {
+    const distSph = parseFloat(document.getElementById(distSphId)?.value);
+    const nearSph = parseFloat(document.getElementById(nearSphId)?.value);
+    const addEl   = document.getElementById(addId);
+    if (!addEl) return;
+
+    if (isNaN(distSph) || isNaN(nearSph)) {
+        addEl.value = '';
+        return;
+    }
+
+    const add = roundToQuarter(nearSph - distSph);
+    if (add <= 0) {
+        addEl.value = '';
+        return;
+    }
+    addEl.value = '+' + add.toFixed(2);
+}
+
+// -- Wire up one eye's near↔add sync --
+// Needs: distSph, distCyl, distAxis, nearSph, nearCyl (readonly), nearAxis (readonly), add
+
+function attachNearAddSync(ids, flag) {
+    // flag: { od: bool } or { os: bool } — passed by reference as object so mutation works
+    const {
+        distSphId, distCylId, distAxisId,
+        nearSphId, nearCylId, nearAxisId,
+        addId
+    } = ids;
+
+    const addEl     = document.getElementById(addId);
+    const nearSphEl = document.getElementById(nearSphId);
+    if (!addEl || !nearSphEl) return;
+
+    // ADD blur → recompute Near SPH + copy CYL/AXIS
+    addEl.addEventListener('blur', () => {
+        if (flag.syncing) return;
+        flag.syncing = true;
+        computeNearFromAdd(distSphId, addId, nearSphId, nearCylId, nearAxisId, distCylId, distAxisId);
+        flag.syncing = false;
+    });
+
+    // Dist SPH blur → recompute Near SPH if ADD already has a value
+    document.getElementById(distSphId)?.addEventListener('blur', () => {
+        if (flag.syncing) return;
+        const addVal = document.getElementById(addId)?.value.trim();
+        if (!addVal) return;
+        flag.syncing = true;
+        computeNearFromAdd(distSphId, addId, nearSphId, nearCylId, nearAxisId, distCylId, distAxisId);
+        flag.syncing = false;
+    });
+
+    // Dist CYL/AXIS blur → refresh near CYL/AXIS copy if ADD is present
+    [distCylId, distAxisId].forEach(srcId => {
+        document.getElementById(srcId)?.addEventListener('blur', () => {
+            if (flag.syncing) return;
+            const addVal = document.getElementById(addId)?.value.trim();
+            if (!addVal) return;
+            flag.syncing = true;
+            computeNearFromAdd(distSphId, addId, nearSphId, nearCylId, nearAxisId, distCylId, distAxisId);
+            flag.syncing = false;
+        });
+    });
+
+    // Near SPH blur → recompute ADD
+    nearSphEl.addEventListener('blur', () => {
+        if (flag.syncing) return;
+        flag.syncing = true;
+        computeAddFromNear(distSphId, nearSphId, addId);
+        flag.syncing = false;
+    });
+}
+
+// -- Init all form sections --
+
+function initNearAddSync() {
+
+    // -- VT7 OD --
+    attachNearAddSync({
+        distSphId: 'vt7OdDistanceSph', distCylId: 'vt7OdDistanceCyl', distAxisId: 'vt7OdDistanceAxis',
+        nearSphId: 'vt7OdNearSph',     nearCylId: 'vt7OdNearCyl',     nearAxisId: 'vt7OdNearAxis',
+        addId:     'vt7OdAddSph'
+    }, { syncing: false });
+
+    // -- VT7 OS --
+    attachNearAddSync({
+        distSphId: 'vt7OsDistanceSph', distCylId: 'vt7OsDistanceCyl', distAxisId: 'vt7OsDistanceAxis',
+        nearSphId: 'vt7OsNearSph',     nearCylId: 'vt7OsNearCyl',     nearAxisId: 'vt7OsNearAxis',
+        addId:     'vt7OsAddSph'
+    }, { syncing: false });
+
+    // -- Final Rx OD --
+    attachNearAddSync({
+        distSphId: 'frxOdDistanceSph', distCylId: 'frxOdDistanceCyl', distAxisId: 'frxOdDistanceAxis',
+        nearSphId: 'frxOdNearSph',     nearCylId: 'frxOdNearCyl',     nearAxisId: 'frxOdNearAxis',
+        addId:     'frxOdAddSph'
+    }, { syncing: false });
+
+    // -- Final Rx OS --
+    attachNearAddSync({
+        distSphId: 'frxOsDistanceSph', distCylId: 'frxOsDistanceCyl', distAxisId: 'frxOsDistanceAxis',
+        nearSphId: 'frxOsNearSph',     nearCylId: 'frxOsNearCyl',     nearAxisId: 'frxOsNearAxis',
+        addId:     'frxOsAddSph'
+    }, { syncing: false });
+
+    // -- HRx OD --
+    attachNearAddSync({
+        distSphId: 'hrxOdDistanceSph', distCylId: 'hrxOdDistanceCyl', distAxisId: 'hrxOdDistanceAxis',
+        nearSphId: 'hrxOdNearSph',     nearCylId: 'hrxOdNearCyl',     nearAxisId: 'hrxOdNearAxis',
+        addId:     'hrxOdAddSph'
+    }, { syncing: false });
+
+    // -- HRx OS --
+    attachNearAddSync({
+        distSphId: 'hrxOsDistanceSph', distCylId: 'hrxOsDistanceCyl', distAxisId: 'hrxOsDistanceAxis',
+        nearSphId: 'hrxOsNearSph',     nearCylId: 'hrxOsNearCyl',     nearAxisId: 'hrxOsNearAxis',
+        addId:     'hrxOsAddSph'
+    }, { syncing: false });
+
+    // -- Copy Rx OD --
+    attachNearAddSync({
+        distSphId: 'copyRxOdDistanceSph', distCylId: 'copyRxOdDistanceCyl', distAxisId: 'copyRxOdDistanceAxis',
+        nearSphId: 'copyRxOdNearSph',     nearCylId: 'copyRxOdNearCyl',     nearAxisId: 'copyRxOdNearAxis',
+        addId:     'copyRxOdAddSph'
+    }, { syncing: false });
+
+    // -- Copy Rx OS --
+    attachNearAddSync({
+        distSphId: 'copyRxOsDistanceSph', distCylId: 'copyRxOsDistanceCyl', distAxisId: 'copyRxOsDistanceAxis',
+        nearSphId: 'copyRxOsNearSph',     nearCylId: 'copyRxOsNearCyl',     nearAxisId: 'copyRxOsNearAxis',
+        addId:     'copyRxOsAddSph'
+    }, { syncing: false });
+}
+
+window.addEventListener('load', initNearAddSync);
+
+// ---- Near PD Auto-fill (distPd - 1) ----
+// On blur of dist PD, compute near PD = dist PD - 1
+
+function attachNearPdSync(distPdId, nearPdId) {
+    const distEl = document.getElementById(distPdId);
+    const nearEl = document.getElementById(nearPdId);
+    if (!distEl || !nearEl) return;
+
+    distEl.addEventListener('blur', () => {
+        const val = parseFloat(distEl.value.trim());
+        if (isNaN(val) || val < 1) {
+            nearEl.value = '';
+            return;
+        }
+        const nearVal = val - 1;
+        nearEl.value = nearVal.toString();
+    });
+}
+
+function initNearPdSync() {
+    // -- VT7 --
+    attachNearPdSync('vt7OdDistancePd', 'vt7OdNearPd');
+    attachNearPdSync('vt7OsDistancePd', 'vt7OsNearPd');
+
+    // -- Final Rx --
+    attachNearPdSync('frxOdDistancePd', 'frxOdNearPd');
+    attachNearPdSync('frxOsDistancePd', 'frxOsNearPd');
+
+    // -- HRx --
+    attachNearPdSync('hrxOdDistancePd', 'hrxOdNearPd');
+    attachNearPdSync('hrxOsDistancePd', 'hrxOsNearPd');
+
+    // -- Copy Rx --
+    attachNearPdSync('copyRxOdDistancePd', 'copyRxOdNearPd');
+    attachNearPdSync('copyRxOsDistancePd', 'copyRxOsNearPd');
+}
+
+window.addEventListener('load', initNearPdSync);

@@ -218,8 +218,26 @@ function handleAddPrescription() {
 
     alert(`Prescription ${prescriptionId} saved successfully!`);
 
-    // -- Reset form back to select patient --
+    // -- Clear all input fields across the entire New Rx form --
+    const newRxPage = document.getElementById('newPrescriptionMenu'); // adjust to your actual page/section ID
+    newRxPage.querySelectorAll('input:not([type="button"]):not([type="submit"]), textarea, select')
+        .forEach(el => {
+            if (el.tagName === 'SELECT') {
+                el.selectedIndex = 0;
+            } else {
+                el.value = '';
+            }
+            el.classList.remove('input-error');
+        });
+
+    // -- Reset CL form visibility --
+    document.getElementById('frxClForm')?.classList.add('hidden');
+
+    // -- Reset form state back to select patient --
     changePatient();
+
+    // -- Redirect to Records page --
+    window.location.hash = '#recordsPage';
 }
 
 // -- Wire up Add button --

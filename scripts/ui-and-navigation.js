@@ -11,7 +11,8 @@ const defaultLightModeColors = [
   "#000000",    // --text-color
   "#000",       // --primary-color
   "#272B2F",    // --secondary-color
-  "#fff"        // --ui-bg
+  "#fff",       // --ui-bg
+  "#F3F4F6"     // --object-bg
 ];
 
 // Function to apply theme colors
@@ -21,6 +22,7 @@ function applyThemeColors(colors) {
   root.style.setProperty("--primary-color", colors[2]);
   root.style.setProperty("--secondary-color", colors[3]);
   root.style.setProperty("--ui-bg", colors[4]);
+  root.style.setProperty("--object-bg", colors[5]);
 }
 
 // Function to toggle dark mode classes
@@ -87,9 +89,115 @@ function handleRouting() {
 
 // ----- View Records Mini Navigation Logic -----
 
+// ----- Global Navigation Dirty Guard -----
+
+// Pages that have dirty-checkable forms, and how to check + clean them
+const dirtyGuardPages = {
+    '#newCustomerMenu': {
+        isDirty: () => ['customerInputName', 'customerInputNumber', 'customerInputEmail',
+                        'customerInputSex', 'customerInputAddress',
+                        'customerBirthdayMM', 'customerBirthdayDD', 'customerBirthdayYYYY']
+                        .some(id => { const el = document.getElementById(id); return el && el.value.trim() !== ''; }),
+        cleanup: () => {
+            const form = document.getElementById('customerForm');
+            if (form) {
+                form.reset();
+                form.querySelectorAll('input, select').forEach(el => el.classList.remove('input-error'));
+                if (typeof generateID === 'function') generateID('customer');
+                if (typeof setDateCreated === 'function') setDateCreated('customer');
+            }
+        }
+    },
+    '#newPatientMenu': {
+        isDirty: () => ['patientInputName', 'patientInputNumber', 'patientInputEmail',
+                        'patientInputSex', 'patientInputAddress',
+                        'patientBirthdayMM', 'patientBirthdayDD', 'patientBirthdayYYYY']
+                        .some(id => { const el = document.getElementById(id); return el && el.value.trim() !== ''; }),
+        cleanup: () => {
+            const form = document.getElementById('patientForm');
+            if (form) {
+                form.reset();
+                form.querySelectorAll('input, select').forEach(el => el.classList.remove('input-error'));
+                if (typeof generateID === 'function') generateID('patient');
+                if (typeof setDateCreated === 'function') setDateCreated('patient');
+            }
+        }
+    },
+    '#newPrescriptionMenu': {
+        isDirty: () => {
+            const patientSelected = !document.getElementById('patientProfileForm')?.classList.contains('hidden');
+            if (!patientSelected) return false;
+            // Also check if notes were modified from their original loaded values
+            const orig = window._originalPatientNotes || {};
+            const notesDirty =
+                document.getElementById('patientProfilePatientNotes')?.value !== orig.patientNotes ||
+                document.getElementById('patientProfileGenHealthHxNotes')?.value !== orig.genHealthHx ||
+                document.getElementById('patientProfileOcuHxNotes')?.value !== orig.ocuHx;
+            const formDirty = ['mainEyeExaminationForm', 'mainFinalPrescription', 'frxClForm',
+                'copyPrescriptionForm', 'copyPrescriptionFormCl']
+                .some(sectionId => {
+                    const section = document.getElementById(sectionId);
+                    if (!section || section.classList.contains('hidden')) return false;
+                    return [...section.querySelectorAll('input, textarea')].some(el => el.value.trim() !== '');
+                });
+            return notesDirty || formDirty || patientSelected;
+        },
+        cleanup: () => {
+            if (typeof changePatient === 'function') changePatient();
+        }
+    },
+    '#viewRecordsMenu': {
+        isDirty: () => {
+            // Check if user is mid-edit on a patient profile
+            return typeof window._isViewRecordsEditDirty === 'function'
+                && window._isViewRecordsEditDirty();
+        },
+        cleanup: () => {
+            // If edit mode is active, cancel it cleanly before resetting nav
+            if (typeof exitEditMode === 'function') exitEditMode(true);
+            // Reset all sub-menus back to main menu
+            document.getElementById('viewRecordsMainMenu')?.classList.remove('hidden');
+            document.getElementById('viewRecordsCustomerMenu')?.classList.add('hidden');
+            document.getElementById('viewRecordsPatientMenu')?.classList.add('hidden');
+            // Also reset patient sub-sections in case user was deep in a profile
+            document.getElementById('viewPatientProfileMenu')?.classList.add('hidden');
+            document.getElementById('viewPatientSelectMenu')?.classList.remove('hidden');
+            // Clear the search bar
+            const searchBar = document.getElementById('viewPatientSearchBarInput');
+            if (searchBar) searchBar.value = '';
+        }
+    }
+};
+
+let previousHash = window.location.hash || '#homePage';
+
+function handleHashChange(e) {
+    const newHash = window.location.hash || '#homePage';
+    const guard = dirtyGuardPages[previousHash];
+
+    if (guard && guard.isDirty()) {
+        const leave = confirm("You have unsaved changes that will not be saved. Leave anyway?");
+        if (!leave) {
+            // Revert the hash without triggering another hashchange
+            history.replaceState(null, '', previousHash);
+            return;
+        }
+        guard.cleanup();
+    } else if (guard && !guard.isDirty()) {
+        // No prompt needed but still run cleanup (e.g. viewRecordsMenu reset)
+        guard.cleanup();
+    }
+
+    previousHash = newHash;
+    handleRouting();
+}
+
 // Listen for the URL changing and page loading
-window.addEventListener("hashchange", handleRouting);
-window.addEventListener("load", handleRouting);
+window.addEventListener("hashchange", handleHashChange);
+window.addEventListener("load", () => {
+    previousHash = window.location.hash || '#homePage';
+    handleRouting();
+});
 
 // 
 
