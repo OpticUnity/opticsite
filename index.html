@@ -57,8 +57,8 @@
         <div class="appearance-area">
           <!-- Darkmode Button -->
           <div class="dark-mode-btn" title="Dark Mode">
-            <!-- Data Color : Hex  0-White 1-text-color 2-primary-color 3-secondary-color 4-ui-bg -->
-            <i class="btn fas fa-moon" data-color="#fff #e4e6eb #272B2F #1D2124 #171A1D"></i>
+            <!-- Data Color : Hex  0-White 1-text-color 2-primary-color 3-secondary-color 4---object-bg -->
+            <i class="btn fas fa-moon" data-color="#fff #e4e6eb #272B2F #1D2124 #171A1D #222529"></i>
           </div>
 
         </div>
@@ -126,14 +126,14 @@
           <label for="customerInputName">Name : </label><input id="customerInputName" class="uppercase"
             placeholder="NAME SURNAME" maxlength="30">
           <label for="customerInputNumber">Contact Number : </label><input id="customerInputNumber" maxlength="11">
-          <label for="customerInputEmail">Email : </label><input id="customerInputEmail" maxlength="30">
+          <label for="customerInputEmail">Email : </label><input id="customerInputEmail" maxlength="40" class="lowercase">
           <label>Sex :</label>
           <select id="customerInputSex" name="sex">
             <option value="" disabled selected>- SELECT -</option>
             <option value="male">MALE</option>
             <option value="female">FEMALE</option>
           </select>
-          <label for="customerInputAddress">Address (City/Brg) : </label><input id="customerInputAddress"
+          <label for="customerInputAddress">Address : </label><input id="customerInputAddress"
             maxlength="30">
           <label for="customerInputBirthday">Birthday : </label>
           <div class="date-field">
@@ -176,7 +176,7 @@
           <input id="patientInputNumber" maxlength="11">
 
           <label for="patientInputEmail">Email : </label>
-          <input id="patientInputEmail" maxlength="30">
+          <input id="patientInputEmail" maxlength="40" maxlength="40" class="lowercase">
 
           <label>Sex :</label>
           <select id="patientInputSex" name="sex">
@@ -185,7 +185,7 @@
             <option value="female">FEMALE</option>
           </select>
 
-          <label for="patientInputAddress">Address (City/Brg) : </label>
+          <label for="patientInputAddress">Address : </label>
           <input id="patientInputAddress" maxlength="30">
 
           <label for="patientInputBirthday">Birthday : </label>
@@ -217,13 +217,13 @@
           <p>Select a patient for the new prescription.</p>
           <div class="select-patient-table-container">
             <div class="select-patient-search-area flex-column">
-              <label>Search : </label><input id="selectPatientSearchBarInput" placeholder="ID, NAME, OR NUMBER">
+              <label>Search : </label><input id="selectPatientSearchBarInput" placeholder="Search ID, Name, Number...">
             </div>
-            <div class="select-patient-main-table">
+            <div class="select-patient-main-table-new-rx">
               <table>
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th>Patient ID</th>
                     <th>Name</th>
                     <th>Number</th>
                     <th>Action</th>
@@ -236,41 +236,39 @@
                 </tbody>
               </table>
             </div>
-            <div id="selectPatientPagination" class="pagination-controls"></div>
+            <div id="selectPatientPagination" class="pagination-controls new-rx-pagination-controls"></div>
           </div>
           <button type="button" id="patientSampleBtn">Add 10 Samples</button>
           <!----- DEBUG | TO DELETE ON FINAL PRODUCT ------>
         </div>
 
-        <div id="changePatientContainer" class="change-patient-container hidden">
-          <h3>Select Patient</h3>
-          <p>Looking for different patient? Click "Select" below.</p>
-          <button id="selectDifferentPatientBtn">Select</button>
-        </div>
-
         <div id="patientProfileForm" class="patient-profile-section hidden">
-          <h3>Patient Profile</h3>
-          <label for="patientProfileIdNumber" class="patient-profile-id-number">Patient ID : </label><input
-            id="patientProfileIdNumber" readonly>
+
+          <div id="changePatientContainer" class="change-patient-container hidden">
+            <h3>Select Patient</h3>
+            <p>Looking for different patient? Click "Select" below.</p>
+           <button id="selectDifferentPatientBtn">Select</button>
+          </div>
+
+          <h3 class="new-rx-patient-profile-section-header">Patient Profile</h3>
+          <label for="patientProfileName" class="patient-profile-name">Name : </label><input id="patientProfileName" readonly>
           <div class="patient-profile-container flex-row">
             <div class="patient-profile-container-division-1 flex-column">
-              <label for="patientProfileDateCreated">Date Created : </label><input id="patientProfileDateCreated"
-                readonly>
-              <label for="patientProfileName">Name : </label><input id="patientProfileName" readonly>
+              <label for="patientProfileIdNumber">Patient ID : </label><input id="patientProfileIdNumber" readonly>
               <label for="patientProfileNumber">Number : </label><input id="patientProfileNumber" readonly>
-              <label for="patientProfileEmail">Email : </label><input id="patientProfileEmail" readonly>
+              <label for="patientProfileEmail">Email : </label><input id="patientProfileEmail" maxlength="40" class="lowercase" readonly>
+              <label for="patientProfileBirthday">Birthday : </label><input id="patientProfileBirthday" readonly>
             </div>
             <div class="patient-profile-container-division-2 flex-column">
+              <label for="patientProfileDateCreated">Date Created : </label><input id="patientProfileDateCreated" readonly>
               <label for="patientProfileSex">Sex :</label><input id="patientProfileSex" readonly>
-              <label for="patientProfileAddress">Address (City/Brg) : </label><input id="patientProfileAddress"
+              <label for="patientProfileAddress">Address : </label><input id="patientProfileAddress"
                 readonly>
-              <label for="patientProfileBirthday">Birthday : </label><input id="patientProfileBirthday" readonly>
               <label for="patientProfileAge">Age : </label><input id="patientProfileAge" readonly>
             </div>
           </div>
           <label for="patientProfileNotes">Patient Notes : </label><textarea id="patientProfilePatientNotes"
-            class="patient-profile-textarea" maxlength="1500"
-            placeholder="Occupation, Hobbies, Management"></textarea>
+            class="patient-profile-textarea" maxlength="1500" placeholder="Occupation, Hobbies, Management"></textarea>
           <label for="caseHistoryGeneralHealthHx">General Health Hx : </label><textarea
             id="patientProfileGenHealthHxNotes" class="patient-profile-textarea" maxlength="1000"
             placeholder="Hypertensive, Diabetic, Stroke patient, Medications"></textarea>
@@ -304,6 +302,7 @@
         </div>
 
         <form id="copyPrescriptionForm" class="copy-prescription-form hidden">
+
           <!-- Copy Rx Form -->
           <h4 class="eye-test-label-hrx">Prescription Details</h4>
           <div class="prescription-format-form">
@@ -319,23 +318,23 @@
               </div>
               <div>
                 <label>Distance : </label>
-                <input id="copyRxOdDistanceSph">
-                <input id="copyRxOdDistanceCyl">
-                <input id="copyRxOdDistanceAxis">
-                <input id="copyRxOdDistancePd" maxlength="3">
-                <input id="copyRxOdDistanceVa">
+                <input id="copyRxOdDistanceSph" maxlength="8">
+                <input id="copyRxOdDistanceCyl" maxlength="8">
+                <input id="copyRxOdDistanceAxis" maxlength="3">
+                <input id="copyRxOdDistancePd" maxlength="5">
+                <input id="copyRxOdDistanceVa" class="uppercase" maxlength="8">
               </div>
               <div class="prescription-format-near flex-row">
                 <label class="prescription-format-side-label">Near : </label>
-                <input id="copyRxOdNearSph">
-                <input id="copyRxOdNearCyl">
-                <input id="copyRxOdNearAxis">
-                <input id="copyRxOdNearPd" maxlength="3">
-                <input id="copyRxOdNearVa">
+                <input id="copyRxOdNearSph" maxlength="8">
+                <input id="copyRxOdNearCyl" maxlength="8">
+                <input id="copyRxOdNearAxis" maxlength="3">
+                <input id="copyRxOdNearPd" maxlength="5">
+                <input id="copyRxOdNearVa" class="uppercase" maxlength="8">
               </div>
               <div class="prescription-format-add">
                 <label class="prescription-format-side-label">Add : </label>
-                <input id="copyRxOdAddSph">
+                <input id="copyRxOdAddSph" maxlength="8">
               </div>
             </div>
 
@@ -346,27 +345,27 @@
                 <label>CYL</label>
                 <label>AXIS</label>
                 <label>PD</label>
-                <label">VA</label>
+                <label>VA</label>
               </div>
               <div>
                 <label>Distance : </label>
-                <input id="copyRxOsDistanceSph">
-                <input id="copyRxOsDistanceCyl">
-                <input id="copyRxOsDistanceAxis">
-                <input id="copyRxOsDistancePd" maxlength="3">
-                <input id="copyRxOsDistanceVa">
+                <input id="copyRxOsDistanceSph" maxlength="8">
+                <input id="copyRxOsDistanceCyl" maxlength="8">
+                <input id="copyRxOsDistanceAxis" maxlength="3">
+                <input id="copyRxOsDistancePd" maxlength="5">
+                <input id="copyRxOsDistanceVa" class="uppercase" maxlength="8">
               </div>
               <div class="prescription-format-near flex-row">
                 <label class="prescription-format-side-label">Near : </label>
-                <input id="copyRxOsNearSph">
-                <input id="copyRxOsNearCyl">
-                <input id="copyRxOsNearAxis">
-                <input id="copyRxOsNearPd" maxlength="3">
-                <input id="copyRxOsNearVa">
+                <input id="copyRxOsNearSph" maxlength="8">
+                <input id="copyRxOsNearCyl" maxlength="8">
+                <input id="copyRxOsNearAxis" maxlength="3">
+                <input id="copyRxOsNearPd" maxlength="5">
+                <input id="copyRxOsNearVa" class="uppercase" maxlength="8">
               </div>
               <div class="prescription-format-add">
                 <label class="prescription-format-side-label">Add : </label>
-                <input id="copyRxOsAddSph">
+                <input id="copyRxOsAddSph" maxlength="8">
               </div>
             </div>
 
@@ -392,21 +391,21 @@
             </div>
             <div class="flex-row">
               <label class="contact-lens-side-label">OD : </label>
-              <input id="copyRxClOdSph">
-              <input id="copyRxClOdCyl">
-              <input id="copyRxClOdAxis">
-              <input id="copyRxClOdBc">
-              <input id="copyRxClOdDia">
-              <input id="copyRxClOdVa">
+              <input id="copyRxClOdSph" maxlength="8">
+              <input id="copyRxClOdCyl" maxlength="8">
+              <input id="copyRxClOdAxis" maxlength="3">
+              <input id="copyRxClOdBc" maxlength="5">
+              <input id="copyRxClOdDia" maxlength="5">
+              <input id="copyRxClOdVa" class="uppercase" maxlength="8">
             </div>
             <div class="flex-row">
               <label class="contact-lens-side-label">OS : </label>
-              <input id="copyRxClOsSph">
-              <input id="copyRxClOsCyl">
-              <input id="copyRxClOsAxis">
-              <input id="copyRxClOsBc">
-              <input id="copyRxClOsDia">
-              <input id="copyRxClOsVa">
+              <input id="copyRxClOsSph" maxlength="8">
+              <input id="copyRxClOsCyl" maxlength="8">
+              <input id="copyRxClOsAxis" maxlength="3">
+              <input id="copyRxClOsBc" maxlength="5">
+              <input id="copyRxClOsDia" maxlength="5">
+              <input id="copyRxClOsVa" class="uppercase" maxlength="8">
             </div>
           </div>
           <div class="prescription-format-notes copy-rx-cl-notes-container flex-column">
@@ -433,12 +432,16 @@
                       class="eye-test-label-uva-near">NEAR</label>
                   </div>
                   <div class="flex-row">
-                    <label for="" class="eye-test-label-1">OD : </label><input id="uvaOdDist" maxlength="8"><input
-                      id="uvaOdNear" maxlength="8">
+                    <label for="" class="eye-test-label-0">OD : </label><input id="uvaOdDist" class="uppercase" maxlength="8"><input
+                      id="uvaOdNear" class="uppercase" maxlength="8">
                   </div>
                   <div class="flex-row">
-                    <label for="" class="eye-test-label-1">OS : </label><input id="uvaOsDist" maxlength="8"><input
-                      id="uvaOsNear" maxlength="8">
+                    <label for="" class="eye-test-label-0">OS : </label><input id="uvaOsDist" class="uppercase" maxlength="8"><input
+                      id="uvaOsNear" class="uppercase" maxlength="8">
+                  </div>
+                  <div class="flex-row">
+                    <label for="" class="eye-test-label-0">OU : </label><input id="uvaOuDist" class="uppercase" maxlength="8"><input
+                      id="uvaOuNear" class="uppercase" maxlength="8"> <!--- TODO: TELL LLM TO wire up uvaOU Dist and near in logics and storage and stuff --->
                   </div>
                 </div>
               </div>
@@ -452,10 +455,10 @@
                     <label class="eye-test-label-ph-dist">DIST</label>
                   </div>
                   <div class="flex-row">
-                    <label for="" class="eye-test-label-1">OD : </label><input id="phOd" maxlength="8">
+                    <label for="" class="eye-test-label-1">OD : </label><input id="phOd" class="uppercase" maxlength="8">
                   </div>
                   <div class="flex-row">
-                    <label for="" class="eye-test-label-1">OS : </label><input id="phOs" maxlength="8">
+                    <label for="" class="eye-test-label-1">OS : </label><input id="phOs" class="uppercase" maxlength="8">
                   </div>
                 </div>
               </div>
@@ -477,23 +480,23 @@
                 </div>
                 <div>
                   <label>Distance : </label>
-                  <input id="hrxOdDistanceSph">
-                  <input id="hrxOdDistanceCyl">
-                  <input id="hrxOdDistanceAxis">
-                  <input id="hrxOdDistancePd" maxlength="3">
-                  <input id="hrxOdDistanceVa">
+                  <input id="hrxOdDistanceSph" maxlength="8">
+                  <input id="hrxOdDistanceCyl" maxlength="8">
+                  <input id="hrxOdDistanceAxis" maxlength="3">
+                  <input id="hrxOdDistancePd" maxlength="5">
+                  <input id="hrxOdDistanceVa" class="uppercase" maxlength="8">
                 </div>
                 <div class="prescription-format-near flex-row">
                   <label class="prescription-format-side-label">Near : </label>
-                  <input id="hrxOdNearSph">
-                  <input id="hrxOdNearCyl">
-                  <input id="hrxOdNearAxis">
-                  <input id="hrxOdNearPd" maxlength="3">
-                  <input id="hrxOdNearVa">
+                  <input id="hrxOdNearSph" maxlength="8">
+                  <input id="hrxOdNearCyl" maxlength="8">
+                  <input id="hrxOdNearAxis" maxlength="3">
+                  <input id="hrxOdNearPd" maxlength="5">
+                  <input id="hrxOdNearVa" class="uppercase" maxlength="8">
                 </div>
                 <div class="prescription-format-add">
                   <label class="prescription-format-side-label">Add : </label>
-                  <input id="hrxOdAddSph">
+                  <input id="hrxOdAddSph" maxlength="8">
                 </div>
               </div>
 
@@ -508,23 +511,23 @@
                 </div>
                 <div>
                   <label>Distance : </label>
-                  <input id="hrxOsDistanceSph">
-                  <input id="hrxOsDistanceCyl">
-                  <input id="hrxOsDistanceAxis">
-                  <input id="hrxOsDistancePd" maxlength="3">
-                  <input id="hrxOsDistanceVa">
+                  <input id="hrxOsDistanceSph" maxlength="8">
+                  <input id="hrxOsDistanceCyl" maxlength="8">
+                  <input id="hrxOsDistanceAxis" maxlength="3">
+                  <input id="hrxOsDistancePd" maxlength="5">
+                  <input id="hrxOsDistanceVa" class="uppercase" maxlength="8">
                 </div>
                 <div class="prescription-format-near flex-row">
                   <label class="prescription-format-side-label">Near : </label>
-                  <input id="hrxOsNearSph">
-                  <input id="hrxOsNearCyl">
-                  <input id="hrxOsNearAxis">
-                  <input id="hrxOsNearPd" maxlength="3">
-                  <input id="hrxOsNearVa">
+                  <input id="hrxOsNearSph" maxlength="8">
+                  <input id="hrxOsNearCyl" maxlength="8">
+                  <input id="hrxOsNearAxis" maxlength="3">
+                  <input id="hrxOsNearPd" maxlength="5">
+                  <input id="hrxOsNearVa" class="uppercase" maxlength="8">
                 </div>
                 <div class="prescription-format-add">
                   <label class="prescription-format-side-label">Add : </label>
-                  <input id="hrxOsAddSph">
+                  <input id="hrxOsAddSph" maxlength="8">
                 </div>
               </div>
 
@@ -552,17 +555,17 @@
                 </div>
                 <div>
                   <label>OD : </label>
-                  <input id="arOdSph">
-                  <input id="arOdCyl">
-                  <input id="arOdAxis">
-                  <input id="arOdKr">
+                  <input id="arOdSph" maxlength="8">
+                  <input id="arOdCyl" maxlength="8">
+                  <input id="arOdAxis" maxlength="3">
+                  <input id="arOdKr" maxlength="6">
                 </div>
                 <div>
                   <label>OS : </label>
-                  <input id="arOsSph">
-                  <input id="arOsCyl">
-                  <input id="arOsAxis">
-                  <input id="arOsKr">
+                  <input id="arOsSph" maxlength="8">
+                  <input id="arOsCyl" maxlength="8">
+                  <input id="arOsAxis" maxlength="3">
+                  <input id="arOsKr" maxlength="6">
                 </div>
               </div>
 
@@ -585,15 +588,15 @@
                 </div>
                 <div>
                   <label>OD : </label>
-                  <input id="clpOdBc">
-                  <input id="clpOdHvid">
-                  <input id="clpOdDia">
+                  <input id="clpOdBc" maxlength="5">
+                  <input id="clpOdHvid" maxlength="5">
+                  <input id="clpOdDia" maxlength="5">
                 </div>
                 <div>
                   <label>OS : </label>
-                  <input id="clpOsBc">
-                  <input id="clpOsHvid">
-                  <input id="clpOsDia">
+                  <input id="clpOsBc" maxlength="5">
+                  <input id="clpOsHvid" maxlength="5">
+                  <input id="clpOsDia" maxlength="5">
                 </div>
               </div>
 
@@ -607,8 +610,9 @@
           <!-- VT7 Form-->
           <h4 class="vt7-header">VT 7</h4>
           <div class="prescription-format-form">
+            <!-- Right Eye (OD) Section -->
             <div class="prescription-format-division">
-              <div class="prescription-format-label">
+              <div class="prescription-format-label flex-row">
                 <label>OD</label>
                 <label>SPH</label>
                 <label>CYL</label>
@@ -618,28 +622,29 @@
               </div>
               <div>
                 <label>Distance : </label>
-                <input id="vt7OdDistanceSph">
-                <input id="vt7OdDistanceCyl">
-                <input id="vt7OdDistanceAxis">
-                <input id="vt7OdDistancePd" maxlength="3">
-                <input id="vt7OdDistanceVa">
+                <input id="vt7OdDistanceSph" maxlength="8">
+                <input id="vt7OdDistanceCyl" maxlength="8">
+                <input id="vt7OdDistanceAxis" maxlength="3">
+                <input id="vt7OdDistancePd" maxlength="5">
+                <input id="vt7OdDistanceVa" class="uppercase" maxlength="8">
               </div>
-              <div class="prescription-format-near">
+              <div class="prescription-format-near flex-row">
                 <label class="prescription-format-side-label">Near : </label>
-                <input id="vt7OdNearSph">
-                <input id="vt7OdNearCyl">
-                <input id="vt7OdNearAxis">
-                <input id="vt7OdNearPd" maxlength="3">
-                <input id="vt7OdNearVa">
+                <input id="vt7OdNearSph" maxlength="8">
+                <input id="vt7OdNearCyl" maxlength="8">
+                <input id="vt7OdNearAxis" maxlength="3">
+                <input id="vt7OdNearPd" maxlength="5">
+                <input id="vt7OdNearVa" class="uppercase" maxlength="8">
               </div>
               <div class="prescription-format-add">
                 <label class="prescription-format-side-label">Add : </label>
-                <input id="vt7OdAddSph">
+                <input id="vt7OdAddSph" maxlength="8">
               </div>
             </div>
 
+            <!-- Left Eye (OS) Section -->
             <div class="prescription-format-division">
-              <div class="prescription-format-label">
+              <div class="prescription-format-label flex-row">
                 <label>OS</label>
                 <label>SPH</label>
                 <label>CYL</label>
@@ -649,26 +654,25 @@
               </div>
               <div>
                 <label>Distance : </label>
-                <input id="vt7OsDistanceSph">
-                <input id="vt7OsDistanceCyl">
-                <input id="vt7OsDistanceAxis">
-                <input id="vt7OsDistancePd" maxlength="3">
-                <input id="vt7OsDistanceVa">
+                <input id="vt7OsDistanceSph" maxlength="8">
+                <input id="vt7OsDistanceCyl" maxlength="8">
+                <input id="vt7OsDistanceAxis" maxlength="3">
+                <input id="vt7OsDistancePd" maxlength="5">
+                <input id="vt7OsDistanceVa" class="uppercase" maxlength="8">
               </div>
-              <div class="prescription-format-near">
+              <div class="prescription-format-near flex-row">
                 <label class="prescription-format-side-label">Near : </label>
-                <input id="vt7OsNearSph">
-                <input id="vt7OsNearCyl">
-                <input id="vt7OsNearAxis">
-                <input id="vt7OsNearPd" maxlength="3">
-                <input id="vt7OsNearVa">
+                <input id="vt7OsNearSph" maxlength="8">
+                <input id="vt7OsNearCyl" maxlength="8">
+                <input id="vt7OsNearAxis" maxlength="3">
+                <input id="vt7OsNearPd" maxlength="5">
+                <input id="vt7OsNearVa" class="uppercase" maxlength="8">
               </div>
               <div class="prescription-format-add">
                 <label class="prescription-format-side-label">Add : </label>
-                <input id="vt7OsAddSph">
+                <input id="vt7OsAddSph" maxlength="8">
               </div>
             </div>
-
           </div>
 
           <div class="prescription-format-notes">
@@ -686,12 +690,13 @@
         <form id="mainFinalPrescription" class="main-final-prescription fill-out-form hidden">
 
           <div class="final-prescription-container">
-
-            <h3 class="frx-header">Final Prescription</h3>
+            <h3 id="frxHeader" class="frx-header">Final Prescription</h3>
             <p>Apply necessary adjustment and modifications below</p>
+            
             <div class="prescription-format-form">
+              <!-- Right Eye (OD) Section -->
               <div class="prescription-format-division">
-                <div class="prescription-format-label">
+                <div class="prescription-format-label flex-row">
                   <label>OD</label>
                   <label>SPH</label>
                   <label>CYL</label>
@@ -700,29 +705,30 @@
                   <label class="vt7-va-label">VA</label>
                 </div>
                 <div>
-                  <label>Distance : </label>
-                  <input id="frxOdDistanceSph">
-                  <input id="frxOdDistanceCyl">
-                  <input id="frxOdDistanceAxis">
-                  <input id="frxOdDistancePd" maxlength="3">
-                  <input id="frxOdDistanceVa">
+                  <label class="prescription-format-side-label">Distance : </label>
+                  <input id="frxOdDistanceSph" maxlength="8">
+                  <input id="frxOdDistanceCyl" maxlength="8">
+                  <input id="frxOdDistanceAxis" maxlength="3">
+                  <input id="frxOdDistancePd" maxlength="5">
+                  <input id="frxOdDistanceVa" class="uppercase" maxlength="8">
                 </div>
-                <div class="prescription-format-near">
-                  <label>Near : </label>
-                  <input id="frxOdNearSph">
-                  <input id="frxOdNearCyl">
-                  <input id="frxOdNearAxis">
-                  <input id="frxOdNearPd" maxlength="3">
-                  <input id="frxOdNearVa">
+                <div class="prescription-format-near flex-row">
+                  <label class="prescription-format-side-label">Near : </label>
+                  <input id="frxOdNearSph" maxlength="8">
+                  <input id="frxOdNearCyl" maxlength="8">
+                  <input id="frxOdNearAxis" maxlength="3">
+                  <input id="frxOdNearPd" maxlength="5">
+                  <input id="frxOdNearVa" class="uppercase" maxlength="8">
                 </div>
                 <div class="prescription-format-add">
-                  <label>Add : </label>
-                  <input id="frxOdAddSph">
+                  <label class="prescription-format-side-label">Add : </label>
+                  <input id="frxOdAddSph" maxlength="8">
                 </div>
               </div>
 
+              <!-- Left Eye (OS) Section -->
               <div class="prescription-format-division">
-                <div class="prescription-format-label">
+                <div class="prescription-format-label flex-row">
                   <label>OS</label>
                   <label>SPH</label>
                   <label>CYL</label>
@@ -731,24 +737,24 @@
                   <label>VA</label>
                 </div>
                 <div>
-                  <label>Distance : </label>
-                  <input id="frxOsDistanceSph">
-                  <input id="frxOsDistanceCyl">
-                  <input id="frxOsDistanceAxis">
-                  <input id="frxOsDistancePd" maxlength="3">
-                  <input id="frxOsDistanceVa">
+                  <label class="prescription-format-side-label">Distance : </label>
+                  <input id="frxOsDistanceSph" maxlength="8">
+                  <input id="frxOsDistanceCyl" maxlength="8">
+                  <input id="frxOsDistanceAxis" maxlength="3">
+                  <input id="frxOsDistancePd" maxlength="5">
+                  <input id="frxOsDistanceVa" class="uppercase" maxlength="8">
                 </div>
-                <div class="prescription-format-near">
-                  <label>Near : </label>
-                  <input id="frxOsNearSph">
-                  <input id="frxOsNearCyl">
-                  <input id="frxOsNearAxis">
-                  <input id="frxOsNearPd" maxlength="3">
-                  <input id="frxOsNearVa">
+                <div class="prescription-format-near flex-row">
+                  <label class="prescription-format-side-label">Near : </label>
+                  <input id="frxOsNearSph" maxlength="8">
+                  <input id="frxOsNearCyl" maxlength="8">
+                  <input id="frxOsNearAxis" maxlength="3">
+                  <input id="frxOsNearPd" maxlength="5">
+                  <input id="frxOsNearVa" class="uppercase" maxlength="8">
                 </div>
                 <div class="prescription-format-add">
-                  <label>Add : </label>
-                  <input id="frxOsAddSph">
+                  <label class="prescription-format-side-label">Add : </label>
+                  <input id="frxOsAddSph" maxlength="8">
                 </div>
               </div>
             </div>
@@ -757,7 +763,6 @@
               <label for="frxNotes" class="prescription-format-notes-label">Notes :</label>
               <textarea id="frxNotes"></textarea>
             </div>
-
           </div>
 
           <div class="contact-lens-frx-btn-selection">
@@ -783,26 +788,26 @@
               </div>
               <div class="flex-row">
                 <label class="contact-lens-side-label">OD : </label>
-                <input id="frxClOdSph">
-                <input id="frxClOdCyl">
-                <input id="frxClOdAxis">
-                <input id="frxClOdBc">
-                <input id="frxClOdDia">
-                <input id="frxClOdVa">
+                <input id="frxClOdSph" maxlength="8">
+                <input id="frxClOdCyl" maxlength="8">
+                <input id="frxClOdAxis" maxlength="3">
+                <input id="frxClOdBc" maxlength="5">
+                <input id="frxClOdDia" maxlength="5">
+                <input id="frxClOdVa" class="uppercase" maxlength="8">
               </div>
               <div class="flex-row">
                 <label class="contact-lens-side-label">OS : </label>
-                <input id="frxClOsSph">
-                <input id="frxClOsCyl">
-                <input id="frxClOsAxis">
-                <input id="frxClOsBc">
-                <input id="frxClOsDia">
-                <input id="frxClOsVa">
+                <input id="frxClOsSph" maxlength="8">
+                <input id="frxClOsCyl" maxlength="8">
+                <input id="frxClOsAxis" maxlength="3">
+                <input id="frxClOsBc" maxlength="5">
+                <input id="frxClOsDia" maxlength="5">
+                <input id="frxClOsVa" class="uppercase" maxlength="8">
               </div>
             </div>
             <p>(Above are converted contact lens power from the final prescription)</p>
             <div class="prescription-format-notes flex-column">
-              <label class="prescription-format-notes-label">Notes :</label>
+              <label for="frxClNotes" class="prescription-format-notes-label">Notes :</label>
               <textarea id="frxClNotes"></textarea>
             </div>
           </div>
@@ -818,7 +823,9 @@
       </section>
 
       <!--- View Records Menu --->
-      <section id="viewRecordsMenu" class="page-content" data-parent="#recordsPage">
+      <section class="page-content" id="viewRecordsMenu" data-parent="#recordsPage">
+
+        <!-- Main Menu -->
         <div id="viewRecordsMainMenu" class="view-records-main-menu">
           <h2><i class="fa-solid fa-clipboard"></i> View Records</h2>
           <div class="view-records-menu">
@@ -828,18 +835,117 @@
           </div>
         </div>
 
-        <!-- View Customer Menu -->
-        <div id="viewRecordsCustomerMenu" class="view-records-slection-menu hidden">
+        <!-- View Customer Menu (stub for now) -->
+        <div id="viewRecordsCustomerMenu" class="view-records-selection-menu hidden">
           <h2>Customer Records</h2>
-
           <button id="viewRecordsCtmBackBtn" class="view-records-back-btn">Back</button>
         </div>
 
         <!-- View Patient Menu -->
-        <div id="viewRecordsPatientMenu" class="view-records-slection-menu hidden">
+        <div id="viewRecordsPatientMenu" class="view-records-selection-menu hidden">
           <h2>Patient Records</h2>
+          <!-- Select Patient Table -->
+          <div id="viewPatientSelectMenu" class="view-patient-menu">
+            <h3>Select Patient</h3>
+            <p>Select a patient you wish to view.</p>
+            <div class="select-patient-search-area flex-column">
+              <label for="viewPatientSearchBarInput">Search : </label><input id="viewPatientSearchBarInput" placeholder="Search ID, Name, Number...">
+            </div>
+            <div class="select-patient-main-table">
+              <table id="viewPatientTable">
+                <thead>
+                  <tr>
+                    <th>Patient ID</th>
+                    <th>Name</th>
+                    <th>Number</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div id="viewPatientPagination" class="pagination-controls"></div>
+            <a id="viewRecordsPtmBackBtn" class="back-btn-link patient-records-back-btn-link">Back</a>
+          </div>
 
-          <button id="viewRecordsPtmBackBtn" class="view-records-back-btn">Back</button>
+          <!-- Viewed Patient Profile + Rx Table -->
+          <div id="viewPatientProfileMenu" class="view-patient-container hidden">
+
+            <!-- Patient Profile Display -->
+            <div class="patient-profile-section">
+              <h3 class="patient-profile-section-header">Patient Profile</h3>
+              <label class="patient-profile-name">Name : </label>
+              <input id="viewPatientName" readonly class="uppercase">
+              <div class="patient-profile-container flex-row">
+                <div class="patient-profile-container-division-1 flex-column">
+                  <label>Patient ID : </label><input id="viewPatientIdNumber" readonly>
+                  <label>Contact Number : </label><input id="viewPatientNumber" maxlength="11" readonly>
+                  <label>Email : </label><input id="viewPatientEmail" maxlength="40" class="lowercase" readonly>
+                  <label>Birthday : </label><input id="viewPatientBirthday" readonly>
+                </div>
+                <div class="patient-profile-container-division-2 flex-column">
+                  <label>Date Created : </label><input id="viewPatientDateCreated" readonly>
+                  <label>Sex : </label><input id="viewPatientSex" readonly>
+                  <label>Address : </label><input id="viewPatientAddress" readonly>
+                  
+                  <label>Age : </label><input id="viewPatientAge" readonly>
+                </div>
+              </div>
+              <label>Patient Notes : </label>
+              <textarea id="viewPatientNotes" class="patient-profile-textarea" readonly placeholder="Occupation, Hobbies, Management"></textarea>
+              <label>General Health Hx : </label>
+              <textarea id="viewPatientGenHealthHx" class="patient-profile-textarea" readonly placeholder="Hypertensive, Diabetic, Stroke patient, Medications"></textarea>
+              <label>Ocular Hx : </label>
+              <textarea id="viewPatientOcuHx" class="patient-profile-textarea" readonly placeholder="Hx of Ocular Diseases, Trauma, Surgery"></textarea>
+            </div>
+
+            <!-- Change Patient Button -->
+            <div id="viewPatientMainBtnContainer" class="view-patient-action-btn-container">
+              <div class="view-patient-action-btn-item">
+                <h4>Return to Selection</h4>
+                <button id="viewPatientToSelectionBackBtn">Back</button>
+              </div>
+              <div class="view-patient-action-btn-item">
+                <h4>Edit Patient Profile</h4>
+                <button id="editPatientProfileBtn">Edit</button>
+              </div>
+              <div class="view-patient-action-btn-item">
+                <h4>Delete Record</h4>
+                <button id="deletePatientBtn">Delete</button>
+              </div>
+            </div>
+
+            <!-- Edit Mode Actions -->
+            <div id="editPatientActionBtns" class="view-patient-action-btn-container hidden">
+              <div class="view-patient-action-btn-item">
+                <h4>Cancel Edit</h4>
+                <button id="cancelEditPatientBtn">Cancel</button>
+              </div>
+              <div class="view-patient-action-btn-item">
+                <h4>Save Changes</h4>
+                <button id="saveEditPatientBtn">Save</button>
+              </div>
+            </div>
+
+            <!-- Rx Table -->
+            <div class="view-rx-table-section">
+              <h3 class="view-rx-table-section-header">Prescription Records</h3>
+              <div class="select-patient-main-table">
+                <table id="viewRxTable">
+                  <thead>
+                    <tr>
+                      <th>Rx ID</th>
+                      <th>Date Created</th>
+                      <th>Method</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="viewRxTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
         </div>
 
       </section>
@@ -881,5 +987,6 @@
 <script src="scripts/validation.js"></script>
 <script src="scripts/prescription-logic.js"></script>
 <script src="scripts/ui-and-navigation.js"></script>
+<script src="scripts/view-records.js"></script>
 
 </html>

@@ -20,6 +20,7 @@
   --primary-color: #000;
   --secondary-color: #272B2F;
   --ui-bg: #fff;
+  --object-bg: #F3F4F6;
 }
 
 /* -------- Page Layout Setup -------- */
@@ -58,7 +59,7 @@ button:hover{
 /* ---------- Table Styling ------- */
 table {
   border-collapse: collapse;
-  background: #fff; 
+  background: var(--ui-bg); 
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px; border: 1px solid #ddd; 
   width: 900px; /* Set a specific width or use max-width for better display */ 
@@ -72,13 +73,13 @@ th, td {
 } 
 
 th { 
-  background-color: #f4f4f4; 
+  background-color: var(--object-bg); 
   font-weight: bold; 
-  color: #333; 
+  color: var(--text-color); 
 } /* Hover effect for data rows */ 
 
 tbody tr:hover { 
-  background-color: #f9f9f9; 
+  background-color: var(--object-bg); 
 } 
 
 /* -- Table Pagination Styles -- */
@@ -336,8 +337,11 @@ input{
 
 /* Style for readonly fields to show they are auto-generated */
 input[readonly] {
-  background-color: var(--ui-bg);
-  cursor: not-allowed;
+  background-color: var(--object-bg, #F3F4F6);
+}
+
+textarea[readonly] {
+  background-color: var(--object-bg, #F3F4F6);
 }
 
 .eye-examination-form .date-field input{
@@ -366,12 +370,8 @@ input[readonly] {
 }
 
 /* -------- Select Patient -------- */
-.select-patient-search-area{
-  margin-bottom: 25px;
-}
-
 .select-patient-button{
-width: 80px;
+  width: 80px;
   height: 35px;
   font-size: 14px;
   margin-bottom: 0; /* Override the global button margin */
@@ -386,6 +386,11 @@ width: 80px;
 .select-patient-search-area{
   align-items: center;
   gap: 5px;
+  margin-bottom: 25px;
+}
+
+.select-patient-search-area input{
+  width: 300px;
 }
 
 .new-prescription-select-patient-menu{
@@ -398,7 +403,13 @@ width: 80px;
 
 .select-patient-main-table {
   display: flex;
-  justify-content: center; /* Center the table within its container */
+  justify-content: center;
+}
+
+.select-patient-main-table-new-rx{
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
 }
 
 /* -- Prescription ID Block -- */
@@ -443,11 +454,24 @@ width: 80px;
   height: 45px;
 }
 
+.new-rx-pagination-controls{
+  margin-top: 25px;
+}
+
 /* -- Patient Profile --*/
 .patient-profile-section{
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 5px;
+}
+
+.new-rx-patient-profile-section-header{
+  margin-top: 45px;
+}
+
+.patient-profile-section-header{
+  margin-top: 25px;
 }
 
 .patient-profile-container{
@@ -458,7 +482,7 @@ width: 80px;
   margin-bottom: 30px;
 }
 
-.patient-profile-id-number{
+.patient-profile-name{
   margin-top: 20px;
 }
 
@@ -521,6 +545,12 @@ width: 80px;
   align-items: center;
 }
 
+.near-compute-btn{
+  height: 35px;
+  width: 80px;
+  font-size: 12px;
+}
+
 /* -- Preliminary Style -- */
 
 .eye-examination-form-preliminary{
@@ -571,6 +601,10 @@ width: 80px;
 
 .eye-test-label-uva-near{
   margin-left: 25px;
+}
+
+.eye-test-label-0{
+  margin-top: 8px;
 }
 
 .eye-test-label-1{
@@ -703,8 +737,14 @@ width: 80px;
   margin-bottom: 30px;
 }
 
-.new-rx-back-btn-link{
+.patient-records-back-btn-link{
   margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.new-rx-back-btn-link{
+  margin-top: 25px;
+  margin-bottom: 20px;
 }
 
 /* ---- Prescription Form Format ---- */
@@ -791,30 +831,112 @@ width: 80px;
   margin: 3px;
 }
 
-/* -------- Vew Records style -------- */
-.view-records-main-menu{
+/* -------- View Patient Records -------- */
+.view-records-main-menu {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.view-records-menu{
+.view-records-menu {
   display: flex;
   flex-direction: column;
-  margin-top: 45px;
+  align-items: center;
   gap: 25px;
-  align-items: center;
+  margin-top: 45px;
 }
 
-.view-records-slection-menu{
+.view-records-selection-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.view-patient-menu{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 5px;
+  gap: 5px;
+}
+
+.view-records-back-btn {
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+.view-rx-table-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 30px;
+  width: 100%;
+}
+
+.view-rx-table-section-header{
+  margin-bottom: 15px;
+}
+
+.view-patient-container{
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.view-records-back-btn{
-  margin-top: 30px;
+.view-patient-action-btn-container{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 25px;
+  gap: 25px;
 }
+
+.view-patient-action-btn-item{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.view-patient-action-btn-item button{
+  height: 40px;
+  width: 95px;
+  font-size: 16px;
+}
+
+
+/* -- Inner expandable Rx table -- */
+.inner-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.inner-table th, .inner-table td {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.inner-table th {
+  background-color: var(--object-bg);
+}
+
+.details-row td {
+  background-color: var(--ui-bg);
+  padding: 15px;
+}
+
+.toggle-btn {
+  width: 40px;
+  height: 30px;
+  font-size: 12px;
+  padding: 0;
+  margin: 0;
+}
+
 /* -------- Footer -------- */
 .footer {
   background: var(--primary-color);
@@ -848,6 +970,10 @@ width: 80px;
 
 .uppercase{
   text-transform: uppercase;
+}
+
+.lowercase{
+  text-transform: lowercase;
 }
 
 .align-center{
