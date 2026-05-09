@@ -241,3 +241,42 @@ document.addEventListener('click', (e) => {
     navLinksContainer.classList.remove('show');
   }
 });
+
+(function () {
+
+      const LOCK_PASSWORD = atob("bWVyaWRpYW4=");
+
+      const lockScreen = document.getElementById("projectLockScreen");
+      const passwordInput = document.getElementById("projectPasswordInput");
+      const unlockBtn = document.getElementById("unlockProjectBtn");
+      const errorText = document.getElementById("lockErrorText");
+
+      // auto unlock if already verified
+      if (localStorage.getItem("opticSiteUnlocked") === "true") {
+          lockScreen.style.display = "none";
+          return;
+      }
+
+      function unlockProject() {
+          const enteredPassword = passwordInput.value.trim().toLowerCase();
+
+          if (enteredPassword === LOCK_PASSWORD) {
+
+              localStorage.setItem("opticSiteUnlocked", "true");
+              lockScreen.style.display = "none";
+
+          } else {
+              errorText.textContent = "Incorrect password";
+              passwordInput.value = "";
+          }
+      }
+
+      unlockBtn.addEventListener("click", unlockProject);
+
+      passwordInput.addEventListener("keydown", function(event) {
+          if (event.key === "Enter") {
+              unlockProject();
+          }
+      });
+
+  })();
