@@ -22,7 +22,8 @@ function collectEyeExamData() {
         // Preliminary
         uva: {
             odDist: val('uvaOdDist'), odNear: val('uvaOdNear'),
-            osDist: val('uvaOsDist'), osNear: val('uvaOsNear')
+            osDist: val('uvaOsDist'), osNear: val('uvaOsNear'),
+            ouDist: val('uvaOuDist'), ouNear: val('uvaOuNear')
         },
         ph: {
             od: val('phOd'),
@@ -216,7 +217,7 @@ function handleAddPrescription() {
         localStorage.setItem('patients', JSON.stringify(patients));
     }
 
-    alert(`Prescription ${prescriptionId} saved successfully!`);
+    openAlert({ title: 'Saved', body: `Prescription ${prescriptionId} saved successfully!` });
 
     // -- Clear all input fields across the entire New Rx form --
     const newRxPage = document.getElementById('newPrescriptionMenu'); // adjust to your actual page/section ID

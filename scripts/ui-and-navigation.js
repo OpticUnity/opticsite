@@ -148,12 +148,15 @@ const dirtyGuardPages = {
     },
     '#viewRecordsMenu': {
         isDirty: () => {
-            // Check if user is mid-edit on a patient profile
-            return typeof window._isViewRecordsEditDirty === 'function'
-                && window._isViewRecordsEditDirty();
+            // Check if user is mid-edit on a patient profile or in edit Rx mode
+            return window._isEditRxActive === true
+                || (typeof window._isViewRecordsEditDirty === 'function'
+                    && window._isViewRecordsEditDirty());
         },
         cleanup: () => {
-            // If edit mode is active, cancel it cleanly before resetting nav
+            // Close edit Rx UI if active
+            if (window._isEditRxActive && typeof closeEditRxUI === 'function') closeEditRxUI();
+            // If patient edit mode is active, cancel it cleanly
             if (typeof exitEditMode === 'function') exitEditMode(true);
             // Reset all sub-menus back to main menu
             document.getElementById('viewRecordsMainMenu')?.classList.remove('hidden');

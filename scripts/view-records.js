@@ -50,9 +50,10 @@ function renderViewPatientTable(filter = "", page = 1) {
     const filtered = patients
         .filter(p => {
             const search = filter.toLowerCase();
-            return p.id.toLowerCase().includes(search) ||
-                   p.name.toLowerCase().includes(search) ||
-                   p.number.toLowerCase().includes(search);
+            const name   = (p.name   || '').toLowerCase();
+            const number = (p.number || '').toLowerCase();
+            const id     = (p.id     || '').toLowerCase();
+            return id.includes(search) || name.includes(search) || number.includes(search);
         })
         .reverse();
 
@@ -71,16 +72,23 @@ function renderViewPatientTable(filter = "", page = 1) {
     const pageItems = filtered.slice(start, start + rowsPerPage);
 
     pageItems.forEach(patient => {
+        const isDeleted = patient.deleted === true;
         const row = document.createElement('tr');
+        if (isDeleted) row.classList.add('record-deleted');
         row.innerHTML = `
             <td>${patient.id}</td>
-            <td class="uppercase">${patient.name}</td>
-            <td>${patient.number}</td>
-            <td><button class="select-patient-button view-select-btn">Select</button></td>
+            <td class="uppercase">${isDeleted ? '[DELETED]' : patient.name}</td>
+            <td>${isDeleted ? '—' : patient.number}</td>
+            <td>${isDeleted
+                ? '<span class="deleted-label">Deleted</span>'
+                : '<button class="select-patient-button view-select-btn">Select</button>'
+            }</td>
         `;
-        row.querySelector('.view-select-btn').addEventListener('click', () => {
-            viewPatient(patient);
-        });
+        if (!isDeleted) {
+            row.querySelector('.view-select-btn').addEventListener('click', () => {
+                viewPatient(patient);
+            });
+        }
         tableBody.appendChild(row);
     });
 
@@ -154,6 +162,18 @@ function renderRxTable(patient) {
 // ---- Create Rx Row ----
 function createRxMainRow(rx) {
     const row = document.createElement('tr');
+    const isDeleted = rx.deleted === true;
+
+    if (isDeleted) {
+        row.classList.add('record-deleted');
+        row.innerHTML = `
+            <td>${rx.id}</td>
+            <td>${rx.dateCreated}</td>
+            <td><span class="deleted-label">[DELETED]</span></td>
+            <td>—</td>
+        `;
+        return row;
+    }
 
     const methodLabels = {
         eyeExam: 'Eye Exam',
@@ -179,16 +199,24 @@ function createRxMainRow(rx) {
 
     if (rx.rxMethod === 'eyeExam') {
         row.querySelector('.print-rx-btn').addEventListener('click', () => {
-            // TODO: print medical certificate logic
+            const patientId = document.getElementById('viewPatientIdNumber').value.trim();
+            printRx(rx, patientId);
         });
     }
 
     row.querySelector('.edit-rx-btn').addEventListener('click', () => {
-        // TODO: edit Rx logic (future)
+        openEditRxUI(rx);
     });
 
     row.querySelector('.delete-rx-btn').addEventListener('click', () => {
-        // TODO: delete Rx logic (future)
+        const currentPatientId = document.getElementById('viewPatientIdNumber').value.trim();
+        openModal({
+            title: 'Delete Prescription',
+            body: `Delete prescription ${rx.id}?\nID and date will remain visible in the table. All clinical data will be permanently wiped.`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            onConfirm: () => deleteRx(rx.id, currentPatientId)
+        });
     });
 
     row.querySelector('.toggle-btn').addEventListener('click', (e) => {
@@ -441,6 +469,271 @@ function createRxDetailRow(rx) {
 
     detailRow.innerHTML = `<td colspan="4" style="padding:15px;">${content}</td>`;
     return detailRow;
+}
+
+// ---- Edit Rx UI ----
+
+function openEditRxUI(rx) {
+    window._isEditRxActive = true;
+
+    // Hide main btn container and Rx table
+    document.getElementById('viewPatientMainBtnContainer').classList.add('hidden');
+    document.getElementById('viewRxTableSection').classList.add('hidden');
+
+    // Build and mount the edit UI
+    const panel = document.getElementById('editRxPanel');
+    panel.innerHTML = '';
+    panel.appendChild(buildEditRxUI(rx));
+    panel.classList.remove('hidden');
+
+    // Wire CL gen buttons for Eye Exam
+    if (rx.rxMethod === 'eyeExam') {
+        document.getElementById('erx_generateToricBtn')?.addEventListener('click', () => {
+            generateClFromErx('toric');
+        });
+        document.getElementById('erx_generateSphereBtn')?.addEventListener('click', () => {
+            generateClFromErx('sphere');
+        });
+    }
+
+    // -- Snapshot for dirty detection --
+    const _editRxSnapshot = {};
+    panel.querySelectorAll('input, textarea, select').forEach(el => {
+        if (el.id) _editRxSnapshot[el.id] = el.value;
+    });
+
+    function _isEditRxDirty() {
+        return [...panel.querySelectorAll('input, textarea, select')].some(el => {
+            return el.id && _editRxSnapshot[el.id] !== el.value;
+        });
+    }
+
+    // -- Hide Save button until a change is made --
+    const saveBtn = document.getElementById('saveEditRxBtn');
+    const saveBtnItem = saveBtn?.closest('.view-patient-action-btn-item');
+    if (saveBtnItem) saveBtnItem.classList.add('hidden');
+
+    panel.addEventListener('input', () => {
+        if (_isEditRxDirty() && saveBtnItem) {
+            saveBtnItem.classList.remove('hidden');
+        }
+    });
+
+    // -- Wire near/add and near PD sync --
+    if (rx.rxMethod === 'eyeExam') {
+        ['hrxOd', 'hrxOs', 'vt7Od', 'vt7Os', 'frxOd', 'frxOs'].forEach(p => {
+            attachNearAddSync({
+                distSphId:  `erx_${p}DistanceSph`,
+                distCylId:  `erx_${p}DistanceCyl`,
+                distAxisId: `erx_${p}DistanceAxis`,
+                nearSphId:  `erx_${p}NearSph`,
+                nearCylId:  `erx_${p}NearCyl`,
+                nearAxisId: `erx_${p}NearAxis`,
+                addId:      `erx_${p}AddSph`
+            }, { syncing: false });
+            attachNearPdSync(`erx_${p}DistancePd`, `erx_${p}NearPd`);
+        });
+    }
+
+    if (rx.rxMethod === 'copyPrescription') {
+        ['copyRxOd', 'copyRxOs'].forEach(p => {
+            attachNearAddSync({
+                distSphId:  `erx_${p}DistanceSph`,
+                distCylId:  `erx_${p}DistanceCyl`,
+                distAxisId: `erx_${p}DistanceAxis`,
+                nearSphId:  `erx_${p}NearSph`,
+                nearCylId:  `erx_${p}NearCyl`,
+                nearAxisId: `erx_${p}NearAxis`,
+                addId:      `erx_${p}AddSph`
+            }, { syncing: false });
+            attachNearPdSync(`erx_${p}DistancePd`, `erx_${p}NearPd`);
+        });
+    }
+
+    // -- Back — only prompt if dirty --
+    document.getElementById('cancelEditRxBtn').addEventListener('click', () => {
+        if (_isEditRxDirty()) {
+            openModal({
+                title: 'Discard Changes',
+                body: 'You have unsaved changes. Discard and return to patient profile?',
+                confirmText: 'Yes, Discard',
+                cancelText: 'Keep Editing',
+                onConfirm: () => closeEditRxUI()
+            });
+        } else {
+            closeEditRxUI();
+        }
+    });
+
+    // Save
+    document.getElementById('saveEditRxBtn').addEventListener('click', () => {
+        const patientId = document.getElementById('viewPatientIdNumber').value.trim();
+        const newRxData = collectEditRxData(rx);
+
+        openModal({
+            title: 'Save Changes',
+            body: `Modifications will overwrite the current Rx ${rx.id}.\nContinue?`,
+            confirmText: 'Save',
+            cancelText: 'Cancel',
+            onConfirm: () => {
+                saveRxCorrection(rx, newRxData, patientId);
+                closeEditRxUI();
+            }
+        });
+    });
+}
+
+function closeEditRxUI() {
+    window._isEditRxActive = false;
+    document.getElementById('editRxPanel').classList.add('hidden');
+    document.getElementById('editRxPanel').innerHTML = '';
+    document.getElementById('viewPatientMainBtnContainer').classList.remove('hidden');
+    document.getElementById('viewRxTableSection').classList.remove('hidden');
+}
+
+function collectEditRxData(rx) {
+    function v(id) {
+        const el = document.getElementById(`erx_${id}`);
+        return el ? (el.value.trim() || null) : null;
+    }
+
+    function collectSpecs(prefix) {
+        return {
+            od: {
+                distSph:  v(`${prefix}OdDistanceSph`),  distCyl:  v(`${prefix}OdDistanceCyl`),
+                distAxis: v(`${prefix}OdDistanceAxis`),  distPd:   v(`${prefix}OdDistancePd`),
+                distVa:   v(`${prefix}OdDistanceVa`),   nearSph:  v(`${prefix}OdNearSph`),
+                nearCyl:  v(`${prefix}OdNearCyl`),      nearAxis: v(`${prefix}OdNearAxis`),
+                nearPd:   v(`${prefix}OdNearPd`),       nearVa:   v(`${prefix}OdNearVa`),
+                addSph:   v(`${prefix}OdAddSph`)
+            },
+            os: {
+                distSph:  v(`${prefix}OsDistanceSph`),  distCyl:  v(`${prefix}OsDistanceCyl`),
+                distAxis: v(`${prefix}OsDistanceAxis`),  distPd:   v(`${prefix}OsDistancePd`),
+                distVa:   v(`${prefix}OsDistanceVa`),   nearSph:  v(`${prefix}OsNearSph`),
+                nearCyl:  v(`${prefix}OsNearCyl`),      nearAxis: v(`${prefix}OsNearAxis`),
+                nearPd:   v(`${prefix}OsNearPd`),       nearVa:   v(`${prefix}OsNearVa`),
+                addSph:   v(`${prefix}OsAddSph`)
+            },
+            notes: v(`${prefix === 'frx' ? 'frx' : 'copyRx'}Notes`)
+        };
+    }
+
+    function collectCl(prefix) {
+        return {
+            od: {
+                sph: v(`${prefix}OdSph`), cyl: v(`${prefix}OdCyl`), axis: v(`${prefix}OdAxis`),
+                bc:  v(`${prefix}OdBc`),  dia: v(`${prefix}OdDia`), va:   v(`${prefix}OdVa`)
+            },
+            os: {
+                sph: v(`${prefix}OsSph`), cyl: v(`${prefix}OsCyl`), axis: v(`${prefix}OsAxis`),
+                bc:  v(`${prefix}OsBc`),  dia: v(`${prefix}OsDia`), va:   v(`${prefix}OsVa`)
+            },
+            notes: v(`${prefix === 'frxCl' ? 'frxCl' : 'copyRxCl'}Notes`)
+        };
+    }
+
+    if (rx.rxMethod === 'eyeExam') {
+        const clForm = document.getElementById('erx_frxClForm');
+        const hasCl  = clForm && !clForm.classList.contains('hidden');
+        return {
+            uva: {
+                odDist: v('uvaOdDist'), odNear: v('uvaOdNear'),
+                osDist: v('uvaOsDist'), osNear: v('uvaOsNear'),
+                ouDist: v('uvaOuDist'), ouNear: v('uvaOuNear')
+            },
+            ph: { od: v('phOd'), os: v('phOs') },
+            hrx: {
+                od: { distSph: v('hrxOdDistanceSph'), distCyl: v('hrxOdDistanceCyl'), distAxis: v('hrxOdDistanceAxis'), distPd: v('hrxOdDistancePd'), distVa: v('hrxOdDistanceVa'), nearSph: v('hrxOdNearSph'), nearCyl: v('hrxOdNearCyl'), nearAxis: v('hrxOdNearAxis'), nearPd: v('hrxOdNearPd'), nearVa: v('hrxOdNearVa'), addSph: v('hrxOdAddSph') },
+                os: { distSph: v('hrxOsDistanceSph'), distCyl: v('hrxOsDistanceCyl'), distAxis: v('hrxOsDistanceAxis'), distPd: v('hrxOsDistancePd'), distVa: v('hrxOsDistanceVa'), nearSph: v('hrxOsNearSph'), nearCyl: v('hrxOsNearCyl'), nearAxis: v('hrxOsNearAxis'), nearPd: v('hrxOsNearPd'), nearVa: v('hrxOsNearVa'), addSph: v('hrxOsAddSph') }
+            },
+            ar: {
+                od: { sph: v('arOdSph'), cyl: v('arOdCyl'), axis: v('arOdAxis') },
+                os: { sph: v('arOsSph'), cyl: v('arOsCyl'), axis: v('arOsAxis') }
+            },
+            vt7: {
+                od: { distSph: v('vt7OdDistanceSph'), distCyl: v('vt7OdDistanceCyl'), distAxis: v('vt7OdDistanceAxis'), distPd: v('vt7OdDistancePd'), distVa: v('vt7OdDistanceVa'), nearSph: v('vt7OdNearSph'), nearCyl: v('vt7OdNearCyl'), nearAxis: v('vt7OdNearAxis'), nearPd: v('vt7OdNearPd'), nearVa: v('vt7OdNearVa'), addSph: v('vt7OdAddSph') },
+                os: { distSph: v('vt7OsDistanceSph'), distCyl: v('vt7OsDistanceCyl'), distAxis: v('vt7OsDistanceAxis'), distPd: v('vt7OsDistancePd'), distVa: v('vt7OsDistanceVa'), nearSph: v('vt7OsNearSph'), nearCyl: v('vt7OsNearCyl'), nearAxis: v('vt7OsNearAxis'), nearPd: v('vt7OsNearPd'), nearVa: v('vt7OsNearVa'), addSph: v('vt7OsAddSph') }
+            },
+            frxSpecs: collectSpecs('frx'),
+            frxCl: hasCl ? collectCl('frxCl') : null
+        };
+    }
+
+    if (rx.rxMethod === 'copyPrescription') {
+        return { frxSpecs: collectSpecs('copyRx'), frxCl: null };
+    }
+
+    if (rx.rxMethod === 'copyPrescriptionCl') {
+        return { frxSpecs: null, frxCl: collectCl('copyRxCl') };
+    }
+
+    return {};
+}
+
+// -- CL Generation for Edit Rx (mirrors form-logic but reads/writes erx_ prefixed fields)
+function generateClFromErx(type) {
+    const clForm = document.getElementById('erx_frxClForm');
+    if (!clForm) return;
+
+    const odSph  = parseFloat(document.getElementById('erx_frxOdDistanceSph')?.value) || 0;
+    const odCyl  = parseFloat(document.getElementById('erx_frxOdDistanceCyl')?.value) || 0;
+    const odAxis = document.getElementById('erx_frxOdDistanceAxis')?.value || '';
+    const osSph  = parseFloat(document.getElementById('erx_frxOsDistanceSph')?.value) || 0;
+    const osCyl  = parseFloat(document.getElementById('erx_frxOsDistanceCyl')?.value) || 0;
+    const osAxis = document.getElementById('erx_frxOsDistanceAxis')?.value || '';
+
+    function fmt(num) { return (num >= 0 ? '+' : '') + num.toFixed(2); }
+    function rnd(n)   { return Math.round(n * 4) / 4; }
+
+    if (type === 'toric') {
+        document.getElementById('erx_frxClOdSph').value  = fmt(rnd(odSph));
+        document.getElementById('erx_frxClOdCyl').value  = odCyl ? fmt(rnd(odCyl)) : '';
+        document.getElementById('erx_frxClOdAxis').value = odAxis;
+        document.getElementById('erx_frxClOsSph').value  = fmt(rnd(osSph));
+        document.getElementById('erx_frxClOsCyl').value  = osCyl ? fmt(rnd(osCyl)) : '';
+        document.getElementById('erx_frxClOsAxis').value = osAxis;
+    } else {
+        // Spherical equivalent: SPH + CYL/2
+        document.getElementById('erx_frxClOdSph').value  = fmt(rnd(odSph + odCyl / 2));
+        document.getElementById('erx_frxClOdCyl').value  = '';
+        document.getElementById('erx_frxClOdAxis').value = '';
+        document.getElementById('erx_frxClOsSph').value  = fmt(rnd(osSph + osCyl / 2));
+        document.getElementById('erx_frxClOsCyl').value  = '';
+        document.getElementById('erx_frxClOsAxis').value = '';
+    }
+
+    clForm.classList.remove('hidden');
+}
+
+// ---- Save Rx Overwrite ----
+function saveRxCorrection(oldRx, newRxData, patientId) {
+    const prescriptions = JSON.parse(localStorage.getItem('prescriptions') || '[]');
+    const patients      = JSON.parse(localStorage.getItem('patients') || '[]');
+    const patientIdx    = patients.findIndex(p => p.id === patientId);
+
+    const idx = prescriptions.findIndex(rx => rx.id === oldRx.id);
+    if (idx === -1) {
+        alert('Rx record not found. Cannot save.');
+        return;
+    }
+
+    // Overwrite in place — keep id, patientId, dateCreated, rxMethod
+    prescriptions[idx] = {
+        id:          oldRx.id,
+        patientId:   patientId,
+        dateCreated: oldRx.dateCreated,
+        rxMethod:    oldRx.rxMethod,
+        ...newRxData
+    };
+
+    localStorage.setItem('prescriptions', JSON.stringify(prescriptions));
+
+    alert(`Rx ${oldRx.id} updated successfully.`);
+
+    // Re-render Rx table
+    const patient = patients[patientIdx];
+    if (patient) renderRxTable(patient);
 }
 
 // ---- Edit Patient Profile Logic ----
@@ -713,6 +1006,67 @@ function saveEditPatient() {
 
     alert(`Patient ${patientId} updated successfully.`);
     exitEditMode(false);
+}
+
+// ---- Delete Rx ----
+function deleteRx(rxId, patientId) {
+    const prescriptions = JSON.parse(localStorage.getItem('prescriptions') || '[]');
+    const idx = prescriptions.findIndex(rx => rx.id === rxId);
+    if (idx === -1) return;
+
+    // Wipe all clinical fields, keep id + dateCreated
+    prescriptions[idx] = {
+        id:          prescriptions[idx].id,
+        dateCreated: prescriptions[idx].dateCreated,
+        patientId:   prescriptions[idx].patientId,
+        deleted:     true
+    };
+
+    localStorage.setItem('prescriptions', JSON.stringify(prescriptions));
+
+    // Re-render Rx table for current patient
+    const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+    const patient  = patients.find(p => p.id === patientId);
+    if (patient) renderRxTable(patient);
+}
+
+// ---- Delete Patient ----
+function deletePatient(patientId) {
+    const patients     = JSON.parse(localStorage.getItem('patients') || '[]');
+    const prescriptions = JSON.parse(localStorage.getItem('prescriptions') || '[]');
+
+    const idx = patients.findIndex(p => p.id === patientId);
+    if (idx === -1) return;
+
+    const rxIds = patients[idx].prescriptions || [];
+
+    // Wipe all Rx records belonging to this patient
+    rxIds.forEach(rxId => {
+        const rxIdx = prescriptions.findIndex(rx => rx.id === rxId);
+        if (rxIdx === -1) return;
+        prescriptions[rxIdx] = {
+            id:          prescriptions[rxIdx].id,
+            dateCreated: prescriptions[rxIdx].dateCreated,
+            patientId:   patientId,
+            deleted:     true
+        };
+    });
+
+    // Wipe patient fields, keep id + dateCreated + prescriptions array
+    patients[idx] = {
+        id:            patients[idx].id,
+        dateCreated:   patients[idx].dateCreated,
+        prescriptions: rxIds,
+        deleted:       true
+    };
+
+    localStorage.setItem('patients',      JSON.stringify(patients));
+    localStorage.setItem('prescriptions', JSON.stringify(prescriptions));
+
+    // Go back to patient selection
+    document.getElementById('viewPatientProfileMenu').classList.add('hidden');
+    document.getElementById('viewPatientSelectMenu').classList.remove('hidden');
+    renderViewPatientTable();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -734,7 +1088,18 @@ function initEditPatientProfile() {
         saveEditPatient();
     });
 
-    // Guard: intercept Back button while in edit mode
+    document.getElementById('deletePatientBtn')?.addEventListener('click', () => {
+        const patientId = document.getElementById('viewPatientIdNumber').value.trim();
+        const patientName = document.getElementById('viewPatientName').value.trim() || patientId;
+        openModal({
+            title: 'Delete Patient Record',
+            body: `You are about to delete ${patientName}.\nAll associated prescriptions will also be permanently wiped.\nType DELETE to confirm.`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            requireTyping: 'DELETE',
+            onConfirm: () => deletePatient(patientId)
+        });
+    });
     document.getElementById('viewPatientToSelectionBackBtn')?.addEventListener('click', () => {
         // Button is disabled during edit mode, so this only fires in read mode
         document.getElementById('viewPatientProfileMenu').classList.add('hidden');

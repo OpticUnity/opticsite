@@ -248,6 +248,8 @@ function initValidation() {
     attachValidator('uvaOdNear', 'va');
     attachValidator('uvaOsDist', 'va');
     attachValidator('uvaOsNear', 'va');
+    attachValidator('uvaOuDist', 'va');
+    attachValidator('uvaOuNear', 'va');
     attachValidator('phOd', 'va');
     attachValidator('phOs', 'va');
 

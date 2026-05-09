@@ -238,9 +238,10 @@ function renderSelectPatientTable(filter = "", page = 1) {
     const filteredPatients = patients
         .filter(p => {
             const search = filter.toLowerCase();
-            return p.id.toLowerCase().includes(search) ||
-                   p.name.toLowerCase().includes(search) ||
-                   p.number.toLowerCase().includes(search);
+            const id     = (p.id     || '').toLowerCase();
+            const name   = (p.name   || '').toLowerCase();
+            const number = (p.number || '').toLowerCase();
+            return id.includes(search) || name.includes(search) || number.includes(search);
         })
         .reverse();
 
@@ -263,18 +264,24 @@ function renderSelectPatientTable(filter = "", page = 1) {
     const pageItems = filteredPatients.slice(start, start + rowsPerPage);
 
     pageItems.forEach(patient => {
+        const isDeleted = patient.deleted === true;
         const row = document.createElement("tr");
+        if (isDeleted) row.classList.add('record-deleted');
         row.innerHTML = `
             <td>${patient.id}</td>
-            <td class="uppercase">${patient.name}</td>
-            <td>${patient.number}</td>
-            <td><button class="select-patient-button">Select</button></td>
+            <td class="uppercase">${isDeleted ? '[DELETED]' : patient.name}</td>
+            <td>${isDeleted ? '—' : patient.number}</td>
+            <td>${isDeleted
+                ? '<span class="deleted-label">Deleted</span>'
+                : '<button class="select-patient-button">Select</button>'
+            }</td>
         `;
 
-        // Select button logic
-        row.querySelector(".select-patient-button").addEventListener("click", () => {
-            selectPatient(patient);
-        });
+        if (!isDeleted) {
+            row.querySelector(".select-patient-button").addEventListener("click", () => {
+                selectPatient(patient);
+            });
+        }
 
         tableBody.appendChild(row);
     });
@@ -352,17 +359,32 @@ function handleFormSubmit(event) {
     const prefix = isPatient ? 'patient' : 'customer';
     const idInput = isPatient ? 'patientIdInput' : 'customerIdInput';
 
+    const emailId = `${prefix}InputEmail`;
     const inputsToValidate = form.querySelectorAll('input:not([readonly]), select');
     let isValid = true;
     inputsToValidate.forEach(input => {
+        if (input.id === emailId) return; // email is optional — skip required check
         if (!input.value.trim() || input.value.includes("Invalid")) {
-            input.classList.add('input-error'); 
+            input.classList.add('input-error');
             isValid = false;
         } else {
             input.classList.remove('input-error');
         }
     });
-    if (!isValid) return alert("Please fill in all fields correctly.");
+
+    // Email: optional, but if filled must be a valid format
+    const emailEl = document.getElementById(emailId);
+    if (emailEl) {
+        const emailVal = emailEl.value.trim();
+        if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+            emailEl.classList.add('input-error');
+            isValid = false;
+        } else {
+            emailEl.classList.remove('input-error');
+        }
+    }
+
+    if (!isValid) return alert("Please check the highlighted fields.");
 
     const name = document.getElementById(`${prefix}InputName`).value.toUpperCase().trim();
     const number = document.getElementById(`${prefix}InputNumber`).value.trim();
@@ -376,8 +398,8 @@ function handleFormSubmit(event) {
     );
 
     if (isDuplicate) {
-        alert(`ACCESS DENIED: A matching record for "${name}" already exists.`);
-        return; 
+        openAlert({ title: 'Access Denied', body: `A matching record for "${name}" already exists.` });
+        return;
     }
 
     const newData = {
@@ -394,34 +416,52 @@ function handleFormSubmit(event) {
 
     currentRecords.push(newData);
     localStorage.setItem(storageKey, JSON.stringify(currentRecords));
-    // One-Way Sync
+
+    const savedId = newData.id;
+
+    // -- Post-save cleanup (shared) --
+    function afterSave() {
+        form.reset();
+        form.querySelectorAll('input, select').forEach(el => el.classList.remove('input-error'));
+        generateID(isPatient ? 'patient' : 'customer');
+        setDateCreated(isPatient ? 'patient' : 'customer');
+        if (document.querySelector("#newPrescriptionSelectPatientMenu tbody")) {
+            renderSelectPatientTable();
+        }
+        window.location.hash = '#recordsPage';
+    }
+
+    // One-Way Sync — customer only
     if (!isPatient) {
         const patientRecords = JSON.parse(localStorage.getItem('patients') || '[]');
         const existsInPatients = patientRecords.some(p => p.name === name && p.birthday === birthday);
 
-        if (!existsInPatients && confirm("Create a Patient record for this customer?")) {
-            const newPatientID = generateID('patient');
-            patientRecords.push({ ...newData, id: newPatientID });
-            localStorage.setItem('patients', JSON.stringify(patientRecords));
+        if (!existsInPatients) {
+            openModal({
+                title: 'Also Create Patient?',
+                body: `Create a Patient record for this customer?`,
+                confirmText: 'Yes, Create',
+                cancelText: 'No Thanks',
+                onConfirm: () => {
+                    const newPatientID = generateID('patient');
+                    patientRecords.push({ ...newData, id: newPatientID });
+                    localStorage.setItem('patients', JSON.stringify(patientRecords));
+                    openAlert({ title: 'Saved', body: `Customer ${savedId} and Patient ${newPatientID} successfully created.`, onOk: afterSave });
+                },
+                onCancel: () => {
+                    openAlert({ title: 'Saved', body: `Customer ${savedId} saved successfully.`, onOk: afterSave });
+                }
+            });
+            return;
         }
     }
 
-    alert(`${isPatient ? 'Patient' : 'Customer'} saved successfully.`);
-
-    // Clear form and return to Records page
-    form.reset();
-    form.querySelectorAll('input, select').forEach(el => el.classList.remove('input-error'));
-
-    // Re-seed readonly auto-fields so they're ready for next entry
-    generateID(isPatient ? 'patient' : 'customer');
-    setDateCreated(isPatient ? 'patient' : 'customer');
-
-    // Only refresh the table if the prescription page is currently visible
-    if (document.querySelector("#newPrescriptionSelectPatientMenu tbody")) {
-        renderSelectPatientTable();
-    }
-
-    window.location.hash = '#recordsPage';
+    // Patient save, or customer with existing patient record
+    openAlert({
+        title: 'Saved',
+        body: `${isPatient ? 'Patient' : 'Customer'} ${savedId} saved successfully.`,
+        onOk: afterSave
+    });
 }
 
 // 7. Clear Data Logic
