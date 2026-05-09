@@ -27,6 +27,11 @@
 
 </head>
 
+<!-- TODO : Adjust medical certificate formatting -->
+<!-- TODO : Refine rx form input saves... some are still lowercase saved prolly the uppercase class doesn't change the input itself when saved... -->
+<!-- TODO : Make near inputs invalid if the input will make the add Invalid too (negative and such), where invalid inputs will clear near input field on leave -->
+<!-- TODO : on draft... a graph for AR, VT7, FRX progression display  -->
+
 <body>
 
   <!-- Body Wrapper-->
@@ -86,14 +91,46 @@
           <a href="#recordsPage"><i class="fa-solid fa-clipboard"></i> Records</a>
           <a href="#salesPage"><i class="fa-solid fa-coins"></i> Sales</a>
           <a href="#settingsPage"><i class="fa-solid fa-gears"></i> Settings</a>
-          <a href="#guideMenu"><i class="fa-solid fa-book"></i> Guide</a>
+          <a href="#guideMenu" id="debug-class-btn"><i class="fa-solid fa-book"></i> Project Updates</a>
         </div>
       </section>
 
       <!--- Guide Menu --->
       <section class="page-content" id="guideMenu" data-parent="#homePage">
-        <h2>Guide</h2>
-        <p>Sample Here</p>
+        <h2>Project Updates</h2>
+        <p>This is an Optical EMR and CRM Program</p>
+        <p>Currently in prototype stage, Program is not yet finished</p>
+        <p>Expect bugs and inconsistent flow on program use</p>
+        <p>Estimated Date of Completion : July or August 2026</p>
+        <p>-</p>
+        <h3>Features that are already working:</h3>
+        <p>Creating Customer Record</p>
+        <p>Creating Patient Record</p>
+        <p>Creating Prescription Via: Eye exam, Copy Rx (spectacle & contact lens)</p>
+        <p>Viewing, Editing and Deleting of Patient Records</p>
+        <p>Viewing, Editing and Deleting of Prescriptions</p>
+        <p>Generation of draft Certificate</p>
+        <p>Darkmode UI</p>
+        <p>-</p>
+        <h3>Features still on development:</h3>
+        <p>Print Customize Feature for Certificates</p>
+        <p>Entire CRM system (new orders, pull out of rx for the order, job order, sales stuff)</p>
+        <p>-</p>
+        <h3>Final Product Limitations</h3>
+        <p>Planned final product is a stand alone offline program</p>
+        <p>Meaning, it will be a downloadable windows and macOS program</p>
+        <p>Browser version of this program is gonna be its demo</p>
+        <p>Storage is limited for a browser based product and not completely secured</p>
+        <p>Why not make online version with cloud and stuff?</p>
+        <p>I can't gurantee security of the user, customer and patient's information online</p>
+        <p>My xp bar is low when it comes to projects with online feature (backend)</p>
+        <p>Any saved data and information will be saved within your devices...</p>
+        <p>You can try asking LLMs to confirm that all data saved stays within you and your device</p>
+        <p>Just say : </p>
+        <p class="selectable-text">"Check this project if this is safe and doesn't collect data : https://opticunity.github.io/opticsite/"</p>
+        <p>Secure your device propely, All data you saved (legally speaking) is in your care and responsibility.</p>
+        <p>Treat this as an advanced notepad and calculator app</p>
+        <p>-</p>
         <a href="#homePage">Back</a>
       </section>
 
@@ -110,102 +147,12 @@
 
       <!--- New Customer Menu --->
       <section class="page-content" id="newCustomerMenu" data-parent="#recordsPage">
-
-        <h2>New Customer</h2>
-        <form id="customerForm" class="fill-out-form">
-          <label for="customerIdInput">Customer ID :</label>
-          <input id="customerIdInput" readonly>
-          <label>Date Created:</label>
-          <div class="date-field">
-            <input id="customerDateCreatedMM" type="text" maxlength="2" placeholder="MM" class="date-part">
-            <span> / </span>
-            <input id="customerDateCreatedDD" type="text" maxlength="2" placeholder="DD" class="date-part">
-            <span> / </span>
-            <input id="customerDateCreatedYYYY" type="text" maxlength="4" placeholder="YYYY" class="date-part">
-          </div>
-          <label for="customerInputName">Name : </label><input id="customerInputName" class="uppercase"
-            placeholder="NAME SURNAME" maxlength="30">
-          <label for="customerInputNumber">Contact Number : </label><input id="customerInputNumber" maxlength="11">
-          <label for="customerInputEmail">Email : </label><input id="customerInputEmail" maxlength="40" class="lowercase">
-          <label>Sex :</label>
-          <select id="customerInputSex" name="sex">
-            <option value="" disabled selected>- SELECT -</option>
-            <option value="male">MALE</option>
-            <option value="female">FEMALE</option>
-          </select>
-          <label for="customerInputAddress">Address : </label><input id="customerInputAddress"
-            maxlength="30">
-          <label for="customerInputBirthday">Birthday : </label>
-          <div class="date-field">
-            <input id="customerBirthdayMM" type="text" maxlength="2" placeholder="MM" class="date-part">
-            <span> / </span>
-            <input id="customerBirthdayDD" type="text" maxlength="2" placeholder="DD" class="date-part">
-            <span> / </span>
-            <input id="customerBirthdayYYYY" type="text" maxlength="4" placeholder="YYYY" class="date-part">
-          </div>
-          <label for="customerInputAge">Age : </label><input id="customerInputAge" readonly>
-          <div class="form-action-buttons flex-column">
-            <button type="submit" id="customerAddBtn">Add</button>
-            <a href="#recordsPage" class="back-btn-link">Back</a>
-          </div>
-        </form>
-
+        <div id="customerFormMount"></div>
       </section>
 
       <!--- New Patient Menu --->
       <section class="page-content" id="newPatientMenu" data-parent="#recordsPage">
-
-        <h2>New Patient</h2>
-        <form id="patientForm" class="fill-out-form">
-          <label for="patientIdInput">Patient ID :</label>
-          <input id="patientIdInput" readonly>
-
-          <label>Date Created :</label>
-          <div class="date-field">
-            <input id="patientDateCreatedMM" type="text" maxlength="2" placeholder="MM" class="date-part">
-            <span> / </span>
-            <input id="patientDateCreatedDD" type="text" maxlength="2" placeholder="DD" class="date-part">
-            <span> / </span>
-            <input id="patientDateCreatedYYYY" type="text" maxlength="4" placeholder="YYYY" class="date-part">
-          </div>
-
-          <label for="patientInputName">Name : </label>
-          <input id="patientInputName" class="uppercase" placeholder="NAME SURNAME" maxlength="30">
-
-          <label for="patientInputNumber">Contact Number : </label>
-          <input id="patientInputNumber" maxlength="11">
-
-          <label for="patientInputEmail">Email : </label>
-          <input id="patientInputEmail" maxlength="40" maxlength="40" class="lowercase">
-
-          <label>Sex :</label>
-          <select id="patientInputSex" name="sex">
-            <option value="" disabled selected>- SELECT -</option>
-            <option value="male">MALE</option>
-            <option value="female">FEMALE</option>
-          </select>
-
-          <label for="patientInputAddress">Address : </label>
-          <input id="patientInputAddress" maxlength="30">
-
-          <label for="patientInputBirthday">Birthday : </label>
-          <div class="date-field">
-            <input id="patientBirthdayMM" type="text" maxlength="2" placeholder="MM" class="date-part">
-            <span> / </span>
-            <input id="patientBirthdayDD" type="text" maxlength="2" placeholder="DD" class="date-part">
-            <span> / </span>
-            <input id="patientBirthdayYYYY" type="text" maxlength="4" placeholder="YYYY" class="date-part">
-          </div>
-
-          <label for="patientInputAge">Age : </label>
-          <input id="patientInputAge" readonly>
-
-          <div class="form-action-buttons flex-column">
-            <button type="submit" id="patientAddBtn">Add Patient</button>
-            <a href="#recordsPage" class="back-btn-link">Back</a>
-          </div>
-        </form>
-
+        <div id="patientFormMount"></div>
       </section>
 
       <!--- New Prescription Menu --->
@@ -301,518 +248,42 @@
           </div>
         </div>
 
-        <form id="copyPrescriptionForm" class="copy-prescription-form hidden">
+        <!-- Copy Rx Specs Form — built and mounted by forms.js -->
+        <div id="copyRxSpecsMount"></div>
 
-          <!-- Copy Rx Form -->
-          <h4 class="eye-test-label-hrx">Prescription Details</h4>
-          <div class="prescription-format-form">
-
-            <div class="prescription-format-division">
-              <div class="prescription-format-label flex-row">
-                <label>OD</label>
-                <label>SPH</label>
-                <label>CYL</label>
-                <label>AXIS</label>
-                <label>PD</label>
-                <label>VA</label>
-              </div>
-              <div>
-                <label>Distance : </label>
-                <input id="copyRxOdDistanceSph" maxlength="8">
-                <input id="copyRxOdDistanceCyl" maxlength="8">
-                <input id="copyRxOdDistanceAxis" maxlength="3">
-                <input id="copyRxOdDistancePd" maxlength="5">
-                <input id="copyRxOdDistanceVa" class="uppercase" maxlength="8">
-              </div>
-              <div class="prescription-format-near flex-row">
-                <label class="prescription-format-side-label">Near : </label>
-                <input id="copyRxOdNearSph" maxlength="8">
-                <input id="copyRxOdNearCyl" maxlength="8">
-                <input id="copyRxOdNearAxis" maxlength="3">
-                <input id="copyRxOdNearPd" maxlength="5">
-                <input id="copyRxOdNearVa" class="uppercase" maxlength="8">
-              </div>
-              <div class="prescription-format-add">
-                <label class="prescription-format-side-label">Add : </label>
-                <input id="copyRxOdAddSph" maxlength="8">
-              </div>
-            </div>
-
-            <div class="prescription-format-division">
-              <div class="prescription-format-label flex-row">
-                <label>OS</label>
-                <label>SPH</label>
-                <label>CYL</label>
-                <label>AXIS</label>
-                <label>PD</label>
-                <label>VA</label>
-              </div>
-              <div>
-                <label>Distance : </label>
-                <input id="copyRxOsDistanceSph" maxlength="8">
-                <input id="copyRxOsDistanceCyl" maxlength="8">
-                <input id="copyRxOsDistanceAxis" maxlength="3">
-                <input id="copyRxOsDistancePd" maxlength="5">
-                <input id="copyRxOsDistanceVa" class="uppercase" maxlength="8">
-              </div>
-              <div class="prescription-format-near flex-row">
-                <label class="prescription-format-side-label">Near : </label>
-                <input id="copyRxOsNearSph" maxlength="8">
-                <input id="copyRxOsNearCyl" maxlength="8">
-                <input id="copyRxOsNearAxis" maxlength="3">
-                <input id="copyRxOsNearPd" maxlength="5">
-                <input id="copyRxOsNearVa" class="uppercase" maxlength="8">
-              </div>
-              <div class="prescription-format-add">
-                <label class="prescription-format-side-label">Add : </label>
-                <input id="copyRxOsAddSph" maxlength="8">
-              </div>
-            </div>
-
-          </div>
-
-          <div class="prescription-format-notes">
-            <label for="copyRxNotes" class="prescription-format-notes-label">Notes : </label><textarea
-              id="copyRxNotes"></textarea>
-          </div>
-
-        </form>
-
-        <form id="copyPrescriptionFormCl" class="copy-prescription-form-cl hidden">
-          <div class="contact-lens-form">
-            <h4 class="copy-prescription-form-cl-header">Contact Lens Prescription Details</h4>
-            <div class="copy-prescription-contact-lens-label flex-row">
-              <label>SPH</label>
-              <label>CYL</label>
-              <label>AXIS</label>
-              <label>BC</label>
-              <label>DIA</label>
-              <label>VA</label>
-            </div>
-            <div class="flex-row">
-              <label class="contact-lens-side-label">OD : </label>
-              <input id="copyRxClOdSph" maxlength="8">
-              <input id="copyRxClOdCyl" maxlength="8">
-              <input id="copyRxClOdAxis" maxlength="3">
-              <input id="copyRxClOdBc" maxlength="5">
-              <input id="copyRxClOdDia" maxlength="5">
-              <input id="copyRxClOdVa" class="uppercase" maxlength="8">
-            </div>
-            <div class="flex-row">
-              <label class="contact-lens-side-label">OS : </label>
-              <input id="copyRxClOsSph" maxlength="8">
-              <input id="copyRxClOsCyl" maxlength="8">
-              <input id="copyRxClOsAxis" maxlength="3">
-              <input id="copyRxClOsBc" maxlength="5">
-              <input id="copyRxClOsDia" maxlength="5">
-              <input id="copyRxClOsVa" class="uppercase" maxlength="8">
-            </div>
-          </div>
-          <div class="prescription-format-notes copy-rx-cl-notes-container flex-column">
-            <label for="copyRxClNotes" class="prescription-format-notes-label">Notes :</label><textarea
-              id="copyRxClNotes"></textarea>
-          </div>
-        </form>
+        <!-- Copy Rx CL Form — built and mounted by forms.js -->
+        <div id="copyRxClMount"></div>
 
         <form id="mainEyeExaminationForm" class="main-eye-examination-form fill-out-form hidden">
 
           <h3 class="eye-examination-header">Eye Examination</h3>
 
           <!-- Preliminary Examination Form HRx VA , UVA , PHA -->
-          <h4 class="preliminary-header">Preliminary</h4>
-
           <div class="eye-examination-form flex-column">
-            <div class="eye-examination-form-preliminary flex-row">
+            <h4 class="preliminary-header">Preliminary</h4>
 
-              <div class="preliminary-uva flex-column">
-                <label class="eye-test-label-uva">UVA</label>
-                <div>
-                  <div class="flex-row">
-                    <label class="eye-test-label-uva-dist">DIST</label><label
-                      class="eye-test-label-uva-near">NEAR</label>
-                  </div>
-                  <div class="flex-row">
-                    <label for="" class="eye-test-label-0">OD : </label><input id="uvaOdDist" class="uppercase" maxlength="8"><input
-                      id="uvaOdNear" class="uppercase" maxlength="8">
-                  </div>
-                  <div class="flex-row">
-                    <label for="" class="eye-test-label-0">OS : </label><input id="uvaOsDist" class="uppercase" maxlength="8"><input
-                      id="uvaOsNear" class="uppercase" maxlength="8">
-                  </div>
-                  <div class="flex-row">
-                    <label for="" class="eye-test-label-0">OU : </label><input id="uvaOuDist" class="uppercase" maxlength="8"><input
-                      id="uvaOuNear" class="uppercase" maxlength="8"> <!--- TODO: TELL LLM TO wire up uvaOU Dist and near in logics and storage and stuff --->
-                  </div>
-                </div>
-              </div>
+            <!-- Preliminary Block (UVA + PH) — built and mounted by forms.js -->
+            <div id="preliminaryMount"></div>
 
-              <div class="v-line-uva-pa"></div>
-
-              <div class="preliminary-ph flex-column">
-                <label class="eye-test-label-ph">PINHOLE</label>
-                <div>
-                  <div class="flex-row">
-                    <label class="eye-test-label-ph-dist">DIST</label>
-                  </div>
-                  <div class="flex-row">
-                    <label for="" class="eye-test-label-1">OD : </label><input id="phOd" class="uppercase" maxlength="8">
-                  </div>
-                  <div class="flex-row">
-                    <label for="" class="eye-test-label-1">OS : </label><input id="phOs" class="uppercase" maxlength="8">
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- HRx Form -->
-            <label class="eye-test-label-hrx">HRX</label>
-            <div class="prescription-format-form">
-
-              <div class="prescription-format-division">
-                <div class="prescription-format-label flex-row">
-                  <label>OD</label>
-                  <label>SPH</label>
-                  <label>CYL</label>
-                  <label>AXIS</label>
-                  <label>PD</label>
-                  <label>VA</label>
-                </div>
-                <div>
-                  <label>Distance : </label>
-                  <input id="hrxOdDistanceSph" maxlength="8">
-                  <input id="hrxOdDistanceCyl" maxlength="8">
-                  <input id="hrxOdDistanceAxis" maxlength="3">
-                  <input id="hrxOdDistancePd" maxlength="5">
-                  <input id="hrxOdDistanceVa" class="uppercase" maxlength="8">
-                </div>
-                <div class="prescription-format-near flex-row">
-                  <label class="prescription-format-side-label">Near : </label>
-                  <input id="hrxOdNearSph" maxlength="8">
-                  <input id="hrxOdNearCyl" maxlength="8">
-                  <input id="hrxOdNearAxis" maxlength="3">
-                  <input id="hrxOdNearPd" maxlength="5">
-                  <input id="hrxOdNearVa" class="uppercase" maxlength="8">
-                </div>
-                <div class="prescription-format-add">
-                  <label class="prescription-format-side-label">Add : </label>
-                  <input id="hrxOdAddSph" maxlength="8">
-                </div>
-              </div>
-
-              <div class="prescription-format-division">
-                <div class="prescription-format-label flex-row">
-                  <label>OS</label>
-                  <label>SPH</label>
-                  <label>CYL</label>
-                  <label>AXIS</label>
-                  <label>PD</label>
-                  <label>VA</label>
-                </div>
-                <div>
-                  <label>Distance : </label>
-                  <input id="hrxOsDistanceSph" maxlength="8">
-                  <input id="hrxOsDistanceCyl" maxlength="8">
-                  <input id="hrxOsDistanceAxis" maxlength="3">
-                  <input id="hrxOsDistancePd" maxlength="5">
-                  <input id="hrxOsDistanceVa" class="uppercase" maxlength="8">
-                </div>
-                <div class="prescription-format-near flex-row">
-                  <label class="prescription-format-side-label">Near : </label>
-                  <input id="hrxOsNearSph" maxlength="8">
-                  <input id="hrxOsNearCyl" maxlength="8">
-                  <input id="hrxOsNearAxis" maxlength="3">
-                  <input id="hrxOsNearPd" maxlength="5">
-                  <input id="hrxOsNearVa" class="uppercase" maxlength="8">
-                </div>
-                <div class="prescription-format-add">
-                  <label class="prescription-format-side-label">Add : </label>
-                  <input id="hrxOsAddSph" maxlength="8">
-                </div>
-              </div>
-
-            </div>
-            <div class="prescription-format-notes">
-              <label for="hrxNotes" class="prescription-format-notes-label">Notes : </label><textarea
-                id="hrxNotes"></textarea>
-            </div>
+            <!-- HRx Block — built and mounted by forms.js -->
+            <div id="hrxMount"></div>
 
           </div>
 
-          <!-- AR and CLP Container -->
-          <div class="ar-clp-container flex-row">
+          <!-- AR + CL Parameters — built and mounted by forms.js -->
+          <div id="arClpMount"></div>
 
-            <!-- AR form Ar readings , RETRO , K-readings -->
-            <div class="ar-form-container flex-column">
-
-              <h4>AR</h4>
-              <div>
-                <div class="ar-label-container">
-                  <label class="ar-sph-label">SPH</label>
-                  <label class="ar-cyl-label">CYL</label>
-                  <label class="ar-axis-label">AXIS</label>
-                  <label class="ar-kr-label">KR</label>
-                </div>
-                <div>
-                  <label>OD : </label>
-                  <input id="arOdSph" maxlength="8">
-                  <input id="arOdCyl" maxlength="8">
-                  <input id="arOdAxis" maxlength="3">
-                  <input id="arOdKr" maxlength="6">
-                </div>
-                <div>
-                  <label>OS : </label>
-                  <input id="arOsSph" maxlength="8">
-                  <input id="arOsCyl" maxlength="8">
-                  <input id="arOsAxis" maxlength="3">
-                  <input id="arOsKr" maxlength="6">
-                </div>
-              </div>
-
-              <div class="ar-form-notes">
-                <label for="arNotes">Notes : </label><textarea id="arNotes"></textarea>
-              </div>
-            </div>
-
-            <div class="v-line-ar-clp"></div>
-
-            <!-- HVID , BC -->
-            <div>
-              <h4>CL Parameters</h4>
-
-              <div>
-                <div class="clp-label-container">
-                  <label>BC</label>
-                  <label>HVID</label>
-                  <label>DIA</label>
-                </div>
-                <div>
-                  <label>OD : </label>
-                  <input id="clpOdBc" maxlength="5">
-                  <input id="clpOdHvid" maxlength="5">
-                  <input id="clpOdDia" maxlength="5">
-                </div>
-                <div>
-                  <label>OS : </label>
-                  <input id="clpOsBc" maxlength="5">
-                  <input id="clpOsHvid" maxlength="5">
-                  <input id="clpOsDia" maxlength="5">
-                </div>
-              </div>
-
-              <div class="clp-form-notes">
-                <label for="clParametersNotes">Notes : </label><textarea id="clParametersNotes"></textarea>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- VT7 Form-->
-          <h4 class="vt7-header">VT 7</h4>
-          <div class="prescription-format-form">
-            <!-- Right Eye (OD) Section -->
-            <div class="prescription-format-division">
-              <div class="prescription-format-label flex-row">
-                <label>OD</label>
-                <label>SPH</label>
-                <label>CYL</label>
-                <label>AXIS</label>
-                <label>PD</label>
-                <label>VA</label>
-              </div>
-              <div>
-                <label>Distance : </label>
-                <input id="vt7OdDistanceSph" maxlength="8">
-                <input id="vt7OdDistanceCyl" maxlength="8">
-                <input id="vt7OdDistanceAxis" maxlength="3">
-                <input id="vt7OdDistancePd" maxlength="5">
-                <input id="vt7OdDistanceVa" class="uppercase" maxlength="8">
-              </div>
-              <div class="prescription-format-near flex-row">
-                <label class="prescription-format-side-label">Near : </label>
-                <input id="vt7OdNearSph" maxlength="8">
-                <input id="vt7OdNearCyl" maxlength="8">
-                <input id="vt7OdNearAxis" maxlength="3">
-                <input id="vt7OdNearPd" maxlength="5">
-                <input id="vt7OdNearVa" class="uppercase" maxlength="8">
-              </div>
-              <div class="prescription-format-add">
-                <label class="prescription-format-side-label">Add : </label>
-                <input id="vt7OdAddSph" maxlength="8">
-              </div>
-            </div>
-
-            <!-- Left Eye (OS) Section -->
-            <div class="prescription-format-division">
-              <div class="prescription-format-label flex-row">
-                <label>OS</label>
-                <label>SPH</label>
-                <label>CYL</label>
-                <label>AXIS</label>
-                <label>PD</label>
-                <label>VA</label>
-              </div>
-              <div>
-                <label>Distance : </label>
-                <input id="vt7OsDistanceSph" maxlength="8">
-                <input id="vt7OsDistanceCyl" maxlength="8">
-                <input id="vt7OsDistanceAxis" maxlength="3">
-                <input id="vt7OsDistancePd" maxlength="5">
-                <input id="vt7OsDistanceVa" class="uppercase" maxlength="8">
-              </div>
-              <div class="prescription-format-near flex-row">
-                <label class="prescription-format-side-label">Near : </label>
-                <input id="vt7OsNearSph" maxlength="8">
-                <input id="vt7OsNearCyl" maxlength="8">
-                <input id="vt7OsNearAxis" maxlength="3">
-                <input id="vt7OsNearPd" maxlength="5">
-                <input id="vt7OsNearVa" class="uppercase" maxlength="8">
-              </div>
-              <div class="prescription-format-add">
-                <label class="prescription-format-side-label">Add : </label>
-                <input id="vt7OsAddSph" maxlength="8">
-              </div>
-            </div>
-          </div>
-
-          <div class="prescription-format-notes">
-            <label for="vt7Notes" class="prescription-format-notes-label">Notes : </label><textarea
-              id="vt7Notes"></textarea>
-          </div>
+          <!-- VT7 Block — built and mounted by forms.js -->
+          <div id="vt7Mount"></div>
 
           <div id="generateRxContainer" class="generate-btn-container flex-column">
-            <!-- Generate Prescription -->
             <h3>Generate Prescription</h3>
             <button type="button" id="generateRxBtn">Generate</button>
           </div>
         </form>
 
-        <form id="mainFinalPrescription" class="main-final-prescription fill-out-form hidden">
-
-          <div class="final-prescription-container">
-            <h3 id="frxHeader" class="frx-header">Final Prescription</h3>
-            <p>Apply necessary adjustment and modifications below</p>
-            
-            <div class="prescription-format-form">
-              <!-- Right Eye (OD) Section -->
-              <div class="prescription-format-division">
-                <div class="prescription-format-label flex-row">
-                  <label>OD</label>
-                  <label>SPH</label>
-                  <label>CYL</label>
-                  <label>AXIS</label>
-                  <label>PD</label>
-                  <label class="vt7-va-label">VA</label>
-                </div>
-                <div>
-                  <label class="prescription-format-side-label">Distance : </label>
-                  <input id="frxOdDistanceSph" maxlength="8">
-                  <input id="frxOdDistanceCyl" maxlength="8">
-                  <input id="frxOdDistanceAxis" maxlength="3">
-                  <input id="frxOdDistancePd" maxlength="5">
-                  <input id="frxOdDistanceVa" class="uppercase" maxlength="8">
-                </div>
-                <div class="prescription-format-near flex-row">
-                  <label class="prescription-format-side-label">Near : </label>
-                  <input id="frxOdNearSph" maxlength="8">
-                  <input id="frxOdNearCyl" maxlength="8">
-                  <input id="frxOdNearAxis" maxlength="3">
-                  <input id="frxOdNearPd" maxlength="5">
-                  <input id="frxOdNearVa" class="uppercase" maxlength="8">
-                </div>
-                <div class="prescription-format-add">
-                  <label class="prescription-format-side-label">Add : </label>
-                  <input id="frxOdAddSph" maxlength="8">
-                </div>
-              </div>
-
-              <!-- Left Eye (OS) Section -->
-              <div class="prescription-format-division">
-                <div class="prescription-format-label flex-row">
-                  <label>OS</label>
-                  <label>SPH</label>
-                  <label>CYL</label>
-                  <label>AXIS</label>
-                  <label>PD</label>
-                  <label>VA</label>
-                </div>
-                <div>
-                  <label class="prescription-format-side-label">Distance : </label>
-                  <input id="frxOsDistanceSph" maxlength="8">
-                  <input id="frxOsDistanceCyl" maxlength="8">
-                  <input id="frxOsDistanceAxis" maxlength="3">
-                  <input id="frxOsDistancePd" maxlength="5">
-                  <input id="frxOsDistanceVa" class="uppercase" maxlength="8">
-                </div>
-                <div class="prescription-format-near flex-row">
-                  <label class="prescription-format-side-label">Near : </label>
-                  <input id="frxOsNearSph" maxlength="8">
-                  <input id="frxOsNearCyl" maxlength="8">
-                  <input id="frxOsNearAxis" maxlength="3">
-                  <input id="frxOsNearPd" maxlength="5">
-                  <input id="frxOsNearVa" class="uppercase" maxlength="8">
-                </div>
-                <div class="prescription-format-add">
-                  <label class="prescription-format-side-label">Add : </label>
-                  <input id="frxOsAddSph" maxlength="8">
-                </div>
-              </div>
-            </div>
-
-            <div class="prescription-format-notes flex-column">
-              <label for="frxNotes" class="prescription-format-notes-label">Notes :</label>
-              <textarea id="frxNotes"></textarea>
-            </div>
-          </div>
-
-          <div class="contact-lens-frx-btn-selection">
-            <h3>Generate Contact Lens Rx</h3>
-            <p>Choose wether to generate toric or spherical equivalent contact lens prescription (Optional)</p>
-            <div class="contact-lens-frx-btn-container flex-row">
-              <button type="button" id="generateToricBtn">Toric</button>
-              <button type="button" id="generateSphereBtn">Spehre</button>
-            </div>
-          </div>
-
-          <div id="frxClForm" class="contact-lens-form hidden">
-            <h3>Contact Lens Prescription</h3>
-            <p>Apply necessary adjustment and modifications below</p>
-            <div class="flex-column">
-              <div class="contact-lens-label flex-row">
-                <label>SPH</label>
-                <label>CYL</label>
-                <label>AXIS</label>
-                <label>BC</label>
-                <label>DIA</label>
-                <label>VA</label>
-              </div>
-              <div class="flex-row">
-                <label class="contact-lens-side-label">OD : </label>
-                <input id="frxClOdSph" maxlength="8">
-                <input id="frxClOdCyl" maxlength="8">
-                <input id="frxClOdAxis" maxlength="3">
-                <input id="frxClOdBc" maxlength="5">
-                <input id="frxClOdDia" maxlength="5">
-                <input id="frxClOdVa" class="uppercase" maxlength="8">
-              </div>
-              <div class="flex-row">
-                <label class="contact-lens-side-label">OS : </label>
-                <input id="frxClOsSph" maxlength="8">
-                <input id="frxClOsCyl" maxlength="8">
-                <input id="frxClOsAxis" maxlength="3">
-                <input id="frxClOsBc" maxlength="5">
-                <input id="frxClOsDia" maxlength="5">
-                <input id="frxClOsVa" class="uppercase" maxlength="8">
-              </div>
-            </div>
-            <p>(Above are converted contact lens power from the final prescription)</p>
-            <div class="prescription-format-notes flex-column">
-              <label for="frxClNotes" class="prescription-format-notes-label">Notes :</label>
-              <textarea id="frxClNotes"></textarea>
-            </div>
-          </div>
-
-        </form>
+        <!-- Final Rx Form — built and mounted by forms.js -->
+        <div id="frxMount"></div>
 
         <div id="addPrescriptionContainer" class="add-rx-btn-container hidden">
           <h3>Add Prescription</h3>
@@ -899,10 +370,10 @@
               <textarea id="viewPatientOcuHx" class="patient-profile-textarea" readonly placeholder="Hx of Ocular Diseases, Trauma, Surgery"></textarea>
             </div>
 
-            <!-- Change Patient Button -->
+            <!-- View Patient Action Buttons -->
             <div id="viewPatientMainBtnContainer" class="view-patient-action-btn-container">
               <div class="view-patient-action-btn-item">
-                <h4>Return to Selection</h4>
+                <h4>Patient Selection</h4>
                 <button id="viewPatientToSelectionBackBtn">Back</button>
               </div>
               <div class="view-patient-action-btn-item">
@@ -914,6 +385,7 @@
                 <button id="deletePatientBtn">Delete</button>
               </div>
             </div>
+
 
             <!-- Edit Mode Actions -->
             <div id="editPatientActionBtns" class="view-patient-action-btn-container hidden">
@@ -928,7 +400,7 @@
             </div>
 
             <!-- Rx Table -->
-            <div class="view-rx-table-section">
+            <div class="view-rx-table-section" id="viewRxTableSection">
               <h3 class="view-rx-table-section-header">Prescription Records</h3>
               <div class="select-patient-main-table">
                 <table id="viewRxTable">
@@ -944,6 +416,9 @@
                 </table>
               </div>
             </div>
+
+            <!-- Edit Rx Panel — injected by view-records.js -->
+            <div id="editRxPanel" class="hidden"></div>
 
           </div>
         </div>
@@ -983,10 +458,13 @@
 </body>
 
 <!-- scripts -->
+<script src="scripts/forms.js"></script>
 <script src="scripts/form-logic.js"></script>
 <script src="scripts/validation.js"></script>
 <script src="scripts/prescription-logic.js"></script>
 <script src="scripts/ui-and-navigation.js"></script>
 <script src="scripts/view-records.js"></script>
+<script src="scripts/modal.js"></script>
+<script src="scripts/print.js"></script>
 
 </html>
