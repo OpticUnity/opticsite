@@ -56,6 +56,64 @@ button:hover{
   flex-direction: column;
 }
 
+/* ---------------- LOCK SCREEN ---------------- */
+
+#projectLockScreen {
+    position: fixed;
+    inset: 0;
+    background: #ffffff;
+    z-index: 999999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.lock-modal {
+    width: 90%;
+    max-width: 400px;
+    background: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.lock-modal h2 {
+    margin-bottom: 15px;
+}
+
+.lock-modal p {
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+#projectPasswordInput {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    margin-bottom: 15px;
+    border: 1px solid #cfcfcf;
+    border-radius: 8px;
+    text-transform: lowercase;
+}
+
+#unlockProjectBtn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#lockErrorText {
+    color: red;
+    margin-top: 10px;
+    min-height: 18px;
+}
+
+
 /* ---------- Table Styling ------- */
 table {
   border-collapse: collapse;
