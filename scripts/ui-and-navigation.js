@@ -43,16 +43,30 @@ darkToggle.addEventListener("click", () => {
     toggleDarkMode(true);
     applyThemeColors(colorData); // Apply the color theme when dark mode is activated
     darkToggle.parentElement.title = "Light Mode";
-    
+    if (window.Storage) Storage.setItem('themePreference', 'darkMode');
+
   } else {
     // Switch to light mode
     darkToggle.classList.replace("fa-sun", "fa-moon");
     toggleDarkMode(false);
     applyThemeColors(defaultLightModeColors); // Apply the default light mode colors
     darkToggle.parentElement.title = "Dark Mode";
+    if (window.Storage) Storage.setItem('themePreference', 'lightMode');
 
   }
 });
+
+// applyTheme — called from main.js after Storage is ready
+function applyTheme(preference) {
+  if (preference === 'darkMode') {
+    const colorData = darkToggle.getAttribute("data-color").split(" ");
+    darkToggle.classList.replace("fa-moon", "fa-sun");
+    toggleDarkMode(true);
+    applyThemeColors(colorData);
+    darkToggle.parentElement.title = "Light Mode";
+  }
+  // lightMode / null — default state, nothing to apply
+}
 
 //--------------- Tab Navigation logic ---------------
 
@@ -61,6 +75,11 @@ const sections = document.querySelectorAll(".page-content");
 
 function handleRouting() {
   const currentHash = window.location.hash || "#homePage";
+  const navbar = document.querySelector('nav');
+  const footer = document.querySelector('.footer');
+  const isIntro = currentHash === '#introPage';
+  if (navbar) navbar.style.display = isIntro ? 'none' : '';
+  if (footer) footer.style.display = isIntro ? 'none' : '';
   const activeSection = document.querySelector(currentHash);
   const parentID = activeSection ? activeSection.getAttribute("data-parent") : null;
 
@@ -170,7 +189,58 @@ const dirtyGuardPages = {
             if (searchBar) searchBar.value = '';
         }
     }
+
+    ,
+    '#clinicSetupPage': {
+        isDirty: () => {
+            const saved = JSON.parse(Storage.getItem('clinicSettings') || '{}');
+            return (
+                (document.getElementById('setupClinicName')?.value.trim()    || '') !== (saved.clinicName    || '') ||
+                (document.getElementById('setupClinicAddress')?.value.trim() || '') !== (saved.clinicAddress || '') ||
+                (document.getElementById('setupClinicContact')?.value.trim() || '') !== (saved.clinicContact || '') ||
+                (document.getElementById('setupDoctorName')?.value.trim()    || '') !== (saved.doctorName    || '') ||
+                (document.getElementById('setupPrcNumber')?.value.trim()     || '') !== (saved.prcNumber     || '')
+            );
+        },
+        cleanup: () => {
+            const saved = JSON.parse(Storage.getItem('clinicSettings') || '{}');
+            if (document.getElementById('setupClinicName'))    document.getElementById('setupClinicName').value    = saved.clinicName    || '';
+            if (document.getElementById('setupClinicAddress')) document.getElementById('setupClinicAddress').value = saved.clinicAddress || '';
+            if (document.getElementById('setupClinicContact')) document.getElementById('setupClinicContact').value = saved.clinicContact || '';
+            if (document.getElementById('setupDoctorName'))    document.getElementById('setupDoctorName').value    = saved.doctorName    || '';
+            if (document.getElementById('setupPrcNumber'))     document.getElementById('setupPrcNumber').value     = saved.prcNumber     || '';
+            ['setupClinicName','setupClinicAddress','setupClinicContact','setupDoctorName','setupPrcNumber']
+                .forEach(id => document.getElementById(id)?.classList.remove('input-error'));
+        }
+    }
+
 };
+
+// ── On-entry refresh — DOM-driven ────────────────────────────────
+// When arriving at a page, checks if its <section> has a
+// data-on-entry="fnName" attribute and calls that function.
+//
+// To add refresh behaviour to any new page in the future:
+//   1. Open index.html
+//   2. Find the <section> for that page
+//   3. Add:  data-on-entry="yourRenderFunction"
+//   Done. No changes to this file ever needed.
+
+function _runOnEntry(hash) {
+    const id = hash.replace('#', '');
+    const section = document.getElementById(id);
+    if (!section) return;
+
+    const fnName = section.getAttribute('data-on-entry');
+    if (!fnName) return;
+
+    const fn = window[fnName];
+    if (typeof fn === 'function') {
+        fn();
+    } else {
+        console.warn(`[onEntry] "${fnName}" is not a function (page: ${hash})`);
+    }
+}
 
 let previousHash = window.location.hash || '#homePage';
 
@@ -179,26 +249,39 @@ function handleHashChange(e) {
     const guard = dirtyGuardPages[previousHash];
 
     if (guard && guard.isDirty()) {
-        const leave = confirm("You have unsaved changes that will not be saved. Leave anyway?");
-        if (!leave) {
-            // Revert the hash without triggering another hashchange
-            history.replaceState(null, '', previousHash);
-            return;
-        }
-        guard.cleanup();
+        // Revert hash immediately while we wait for user response
+        history.replaceState(null, '', previousHash);
+
+        openModal({
+            title: 'Unsaved Changes',
+            body: 'You have unsaved changes that will not be saved. Leave anyway?',
+            confirmText: 'Leave',
+            cancelText: 'Stay',
+            onConfirm: () => {
+                guard.cleanup();
+                previousHash = newHash;
+                window.location.hash = newHash;
+                _runOnEntry(newHash);
+            },
+            onCancel: () => {
+                // Already reverted, do nothing
+            }
+        });
+        return;
     } else if (guard && !guard.isDirty()) {
-        // No prompt needed but still run cleanup (e.g. viewRecordsMenu reset)
         guard.cleanup();
     }
+
+    _runOnEntry(newHash);
 
     previousHash = newHash;
     handleRouting();
 }
-
 // Listen for the URL changing and page loading
 window.addEventListener("hashchange", handleHashChange);
 window.addEventListener("load", () => {
     previousHash = window.location.hash || '#homePage';
+    _runOnEntry(previousHash);
     handleRouting();
 });
 
@@ -224,6 +307,16 @@ document.getElementById('viewRecordsPtmBackBtn')?.addEventListener('click', () =
     document.getElementById('viewRecordsMainMenu').classList.remove('hidden');
 });
 
+//------------ Backup Page Display Platform Adaptor -----------
+
+function _initBackupPage() {
+    const isTauri = !!window.__TAURI__;
+    document.getElementById('backupPanelTauri')?.classList.toggle('hidden', !isTauri);
+    document.getElementById('backupPanelBrowser')?.classList.toggle('hidden', isTauri);
+}
+
+
+
 //--------------- Nav Menu logic for Phones ---------------
 
 const toggle = document.querySelector('.nav-links-menu-toggle');
@@ -241,42 +334,3 @@ document.addEventListener('click', (e) => {
     navLinksContainer.classList.remove('show');
   }
 });
-
-(function () {
-
-      const LOCK_PASSWORD = atob("bWVyaWRpYW4=");
-
-      const lockScreen = document.getElementById("projectLockScreen");
-      const passwordInput = document.getElementById("projectPasswordInput");
-      const unlockBtn = document.getElementById("unlockProjectBtn");
-      const errorText = document.getElementById("lockErrorText");
-
-      // auto unlock if already verified
-      if (localStorage.getItem("opticSiteUnlocked") === "true") {
-          lockScreen.style.display = "none";
-          return;
-      }
-
-      function unlockProject() {
-          const enteredPassword = passwordInput.value.trim().toLowerCase();
-
-          if (enteredPassword === LOCK_PASSWORD) {
-
-              localStorage.setItem("opticSiteUnlocked", "true");
-              lockScreen.style.display = "none";
-
-          } else {
-              errorText.textContent = "Incorrect password";
-              passwordInput.value = "";
-          }
-      }
-
-      unlockBtn.addEventListener("click", unlockProject);
-
-      passwordInput.addEventListener("keydown", function(event) {
-          if (event.key === "Enter") {
-              unlockProject();
-          }
-      });
-
-  })();

@@ -31,7 +31,7 @@ function generateID(type) {
     const prefix = isPatient ? 'OP' : 'OC';
     const inputId = isPatient ? 'patientIdInput' : 'customerIdInput';
 
-    const records = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const records = JSON.parse(Storage.getItem(storageKey) || '[]');
     const currentYearShort = new Date().getFullYear().toString().slice(-2); 
     
     let nextNumber = 1;
@@ -220,7 +220,7 @@ function renderSelectPatientTable(filter = "", page = 1) {
     if (!tableBody) return;
 
     const rowsPerPage = 10;
-    const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+    const patients = JSON.parse(Storage.getItem('patients') || '[]');
 
     // --- 1. HANDLE TOTALLY EMPTY STORAGE ---
     if (patients.length === 0) {
@@ -306,7 +306,7 @@ function addSamplePatients() {
     const cities = ["Quezon City", "Manila", "Makati", "Pasig", "Caloocan"];
 
     for (let i = 0; i < 10; i++) {
-        const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patients = JSON.parse(Storage.getItem('patients') || '[]');
 
         // Random details
         const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
@@ -339,7 +339,7 @@ function addSamplePatients() {
         patients.push(newPatient);
 
         // Save after each push so generateID reads the latest list next iteration
-        localStorage.setItem('patients', JSON.stringify(patients));
+        Storage.setItem('patients', JSON.stringify(patients));
     }
 
     alert("10 sample patients added!");
@@ -390,7 +390,7 @@ function handleFormSubmit(event) {
     const number = document.getElementById(`${prefix}InputNumber`).value.trim();
     const birthday = `${document.getElementById(`${prefix}BirthdayYYYY`).value}-${document.getElementById(`${prefix}BirthdayMM`).value}-${document.getElementById(`${prefix}BirthdayDD`).value}`;
 
-    const currentRecords = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const currentRecords = JSON.parse(Storage.getItem(storageKey) || '[]');
     const isDuplicate = currentRecords.some(r => 
         r.name === name && 
         r.number === number && 
@@ -415,7 +415,7 @@ function handleFormSubmit(event) {
     };
 
     currentRecords.push(newData);
-    localStorage.setItem(storageKey, JSON.stringify(currentRecords));
+    Storage.setItem(storageKey, JSON.stringify(currentRecords));
 
     const savedId = newData.id;
 
@@ -433,7 +433,7 @@ function handleFormSubmit(event) {
 
     // One-Way Sync — customer only
     if (!isPatient) {
-        const patientRecords = JSON.parse(localStorage.getItem('patients') || '[]');
+        const patientRecords = JSON.parse(Storage.getItem('patients') || '[]');
         const existsInPatients = patientRecords.some(p => p.name === name && p.birthday === birthday);
 
         if (!existsInPatients) {
@@ -445,7 +445,7 @@ function handleFormSubmit(event) {
                 onConfirm: () => {
                     const newPatientID = generateID('patient');
                     patientRecords.push({ ...newData, id: newPatientID });
-                    localStorage.setItem('patients', JSON.stringify(patientRecords));
+                    Storage.setItem('patients', JSON.stringify(patientRecords));
                     openAlert({ title: 'Saved', body: `Customer ${savedId} and Patient ${newPatientID} successfully created.`, onOk: afterSave });
                 },
                 onCancel: () => {
@@ -466,11 +466,21 @@ function handleFormSubmit(event) {
 
 // 7. Clear Data Logic
 function clearAllData() {
-    if (confirm("Are you sure? This will delete all records.")) {
-        localStorage.clear();
-        alert("Database cleared.");
-        window.location.reload(); 
-    }
+    openModal({
+        title: 'Clear All Data',
+        body: 'This will permanently delete all patients, customers, and prescriptions.\nThis cannot be undone.',
+        confirmText: 'Clear All Data',
+        cancelText: 'Cancel',
+        requireTyping: 'CLEAR',
+        onConfirm: async () => {
+            Storage.clear();
+            openAlert({
+                title: 'Done',
+                body: 'All data has been cleared.',
+                onOk: () => window.location.reload()
+            });
+        }
+    });
 }
 
 // 8. Auto-set "Date Created"
@@ -487,7 +497,7 @@ function setDateCreated(prefix) {
 
 // 9. Generate Prescription ID
 function generatePrescriptionID() {
-    const records = JSON.parse(localStorage.getItem('prescriptions') || '[]');
+    const records = JSON.parse(Storage.getItem('prescriptions') || '[]');
     const currentYearShort = new Date().getFullYear().toString().slice(-2);
 
     let nextNumber = 1;
@@ -591,19 +601,50 @@ function initFormLogic() {
     setupBackBtn('customerForm', 'customer');
     setupBackBtn('patientForm', 'patient');
 
-    // C3. New Prescription back button — prompt only after a patient has been selected
+    // C3. New Prescription back button
+    // - No patient selected yet → navigate freely to #recordsPage (anchor href handles it)
+    // - Patient selected        → stay on page, return to select patient table via changePatient()
+    //                             prompt with openModal if there is unsaved data
     const newRxBackBtn = document.querySelector('#newPrescriptionMenu .new-rx-back-btn-link');
     if (newRxBackBtn) {
         newRxBackBtn.addEventListener('click', (e) => {
             const patientSelected = !document.getElementById('patientProfileForm').classList.contains('hidden');
-            if (!patientSelected) return; // nothing loaded yet, let it navigate freely
+            if (!patientSelected) return; // nothing loaded, let the href navigate to #recordsPage
 
-            e.preventDefault();
-            const leave = confirm("Going back will clear the current prescription. Leave anyway?");
-            if (!leave) return;
+            e.preventDefault(); // stop href from firing
 
-            changePatient(); // clears all rx form state
-            window.location.hash = '#recordsPage';
+            const orig = window._originalPatientNotes || {};
+            const notesDirty =
+                document.getElementById('patientProfilePatientNotes')?.value !== orig.patientNotes ||
+                document.getElementById('patientProfileGenHealthHxNotes')?.value !== orig.genHealthHx ||
+                document.getElementById('patientProfileOcuHxNotes')?.value !== orig.ocuHx;
+
+            const formDirty = [
+                'mainEyeExaminationForm', 'mainFinalPrescription', 'frxClForm',
+                'copyPrescriptionForm', 'copyPrescriptionFormCl'
+            ].some(sectionId => {
+                const section = document.getElementById(sectionId);
+                if (!section || section.classList.contains('hidden')) return false;
+                return [...section.querySelectorAll('input, textarea')].some(el => el.value.trim() !== '');
+            });
+
+            const isDirty = notesDirty || formDirty;
+
+            if (isDirty) {
+                openModal({
+                    title: 'Unsaved Changes',
+                    body: 'Going back will discard unsaved prescription data. Continue?',
+                    confirmText: 'Go Back',
+                    cancelText: 'Stay',
+                    onConfirm: () => {
+                        changePatient();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                });
+            } else {
+                changePatient(); // nothing to lose, go back to select patient immediately
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         });
     }
     document.getElementById('clearDataBtn')?.addEventListener('click', clearAllData);
@@ -842,6 +883,12 @@ function populateClForm(odResult, osResult) {
     document.getElementById('frxClOsCyl').value  = osResult.cyl;
     document.getElementById('frxClOsAxis').value = osResult.axis;
 
+    // -- Copy BC and DIA from CL Parameters per eye --
+    document.getElementById('frxClOdBc').value  = document.getElementById('clpOdBc')?.value  || '';
+    document.getElementById('frxClOdDia').value = document.getElementById('clpOdDia')?.value || '';
+    document.getElementById('frxClOsBc').value  = document.getElementById('clpOsBc')?.value  || '';
+    document.getElementById('frxClOsDia').value = document.getElementById('clpOsDia')?.value || '';
+
     document.getElementById('frxClForm').classList.remove('hidden');
     document.getElementById('frxClForm').scrollIntoView({ behavior: 'smooth' });
 }
@@ -935,5 +982,3 @@ function validateCopyRxCl() {
     }
     return true;
 }
-
-window.addEventListener('load', initFormLogic);

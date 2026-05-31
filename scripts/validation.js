@@ -337,6 +337,24 @@ function initValidation() {
     attachValidator('arOsCyl', 'cyl', 'arOsAxis');
     attachValidator('arOsAxis', 'axis');
 
+    // -- AR KR (decimal only) --
+    ['arOdKr', 'arOsKr'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', liveFilterBc);
+    });
+
+    // -- CL Parameters (BC, HVID, DIA — decimal only) --
+    ['clpOdBc', 'clpOdHvid', 'clpOdDia', 'clpOsBc', 'clpOsHvid', 'clpOsDia'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', liveFilterBc);
+    });
+
+    // -- Edit Rx CL Parameters --
+    ['erx_clpOdBc', 'erx_clpOdHvid', 'erx_clpOdDia', 'erx_clpOsBc', 'erx_clpOsHvid', 'erx_clpOsDia'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', liveFilterBc);
+    });
+
     // -- Copy Rx OD --
     attachValidator('copyRxOdDistanceSph', 'sph');
     attachValidator('copyRxOdDistanceCyl', 'cyl', 'copyRxOdDistanceAxis');
@@ -611,3 +629,19 @@ function initNearPdSync() {
 }
 
 window.addEventListener('load', initNearPdSync);
+
+// Force uppercase value on all .uppercase inputs
+document.addEventListener('input', (e) => {
+    if (e.target.classList.contains('uppercase')) {
+        const pos = e.target.selectionStart;
+        e.target.value = e.target.value.toUpperCase();
+        e.target.setSelectionRange(pos, pos);
+    }
+});
+
+// Force digits only on .digits-only inputs
+document.addEventListener('input', (e) => {
+    if (e.target.classList.contains('digits-only')) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+    }
+});

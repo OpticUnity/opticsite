@@ -7,7 +7,7 @@ function val(id) {
     return el ? (el.value.trim() || null) : null;
 }
 
-// -- Collect Patient Notes (always saved back to patient record) --
+// -- Collect Patient Notes --
 function collectPatientNotes() {
     return {
         patientNotes: val('patientProfilePatientNotes'),
@@ -16,10 +16,9 @@ function collectPatientNotes() {
     };
 }
 
-// -- Collect Eye Exam Data --
+// -- Collect Eye Exam Data (FIXED) --
 function collectEyeExamData() {
     return {
-        // Preliminary
         uva: {
             odDist: val('uvaOdDist'), odNear: val('uvaOdNear'),
             osDist: val('uvaOsDist'), osNear: val('uvaOsNear'),
@@ -29,7 +28,6 @@ function collectEyeExamData() {
             od: val('phOd'),
             os: val('phOs')
         },
-        // HRx
         hrx: {
             od: {
                 distSph: val('hrxOdDistanceSph'), distCyl: val('hrxOdDistanceCyl'),
@@ -48,12 +46,23 @@ function collectEyeExamData() {
                 addSph: val('hrxOsAddSph')
             }
         },
-        // AR
+        // AR - FIXED
         ar: {
-            od: { sph: val('arOdSph'), cyl: val('arOdCyl'), axis: val('arOdAxis') },
-            os: { sph: val('arOsSph'), cyl: val('arOsCyl'), axis: val('arOsAxis') }
+            od: { 
+                sph: val('arOdSph'), 
+                cyl: val('arOdCyl'), 
+                axis: val('arOdAxis'),
+                kr: val('arOdKr')
+            },
+            os: { 
+                sph: val('arOsSph'), 
+                cyl: val('arOsCyl'), 
+                axis: val('arOsAxis'),
+                kr: val('arOsKr')
+            },
+            notes: val('arNotes')
         },
-        // VT7
+        // VT7 - FIXED
         vt7: {
             od: {
                 distSph: val('vt7OdDistanceSph'), distCyl: val('vt7OdDistanceCyl'),
@@ -70,7 +79,8 @@ function collectEyeExamData() {
                 nearCyl: val('vt7OsNearCyl'), nearAxis: val('vt7OsNearAxis'),
                 nearPd: val('vt7OsNearPd'), nearVa: val('vt7OsNearVa'),
                 addSph: val('vt7OsAddSph')
-            }
+            },
+            notes: val('vt7Notes')
         },
         // Final Rx Specs
         frxSpecs: {
@@ -92,7 +102,7 @@ function collectEyeExamData() {
             },
             notes: val('frxNotes')
         },
-        // Final Rx CL — only if form is visible
+        // Final Rx CL
         frxCl: document.getElementById('frxClForm').classList.contains('hidden') ? null : {
             od: {
                 sph: val('frxClOdSph'), cyl: val('frxClOdCyl'),
@@ -105,6 +115,20 @@ function collectEyeExamData() {
                 dia: val('frxClOsDia'), va: val('frxClOsVa')
             },
             notes: val('frxClNotes')
+        },
+        // CL Parameters - FIXED
+        clParameters: {
+            od: {
+                bc: val('clpOdBc'),
+                hvid: val('clpOdHvid'),
+                dia: val('clpOdDia')
+            },
+            os: {
+                bc: val('clpOsBc'),
+                hvid: val('clpOsHvid'),
+                dia: val('clpOsDia')
+            },
+            notes: val('clParametersNotes')
         }
     };
 }
@@ -161,7 +185,6 @@ function handleAddPrescription() {
     const patientId = document.getElementById('patientProfileIdNumber').value.trim();
     const prescriptionId = document.getElementById('prescriptionID').value.trim();
 
-    // -- Validate based on active method --
     if (rxMethod === 'eyeExam') {
         const odValid = isEyeValid('frxOdDistanceSph', 'frxOdDistanceCyl', 'frxOdDistanceAxis');
         const osValid = isEyeValid('frxOsDistanceSph', 'frxOsDistanceCyl', 'frxOsDistanceAxis');
@@ -175,7 +198,6 @@ function handleAddPrescription() {
         if (!validateCopyRxCl()) return;
     }
 
-    // -- Collect prescription data based on method --
     let rxData = {};
     if (rxMethod === 'eyeExam') {
         rxData = collectEyeExamData();
@@ -185,7 +207,6 @@ function handleAddPrescription() {
         rxData = collectCopyRxClData();
     }
 
-    // -- Build prescription record --
     const prescription = {
         id: prescriptionId,
         patientId: patientId,
@@ -194,54 +215,43 @@ function handleAddPrescription() {
         ...rxData
     };
 
-    // -- Save prescription to localStorage --
-    const prescriptions = JSON.parse(localStorage.getItem('prescriptions') || '[]');
+    const prescriptions = JSON.parse(Storage.getItem('prescriptions') || '[]');
     prescriptions.push(prescription);
-    localStorage.setItem('prescriptions', JSON.stringify(prescriptions));
+    Storage.setItem('prescriptions', JSON.stringify(prescriptions));
 
-    // -- Update patient record: push Rx ID into patient.prescriptions array --
-    const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+    // Update patient record
+    const patients = JSON.parse(Storage.getItem('patients') || '[]');
     const patientIndex = patients.findIndex(p => p.id === patientId);
     if (patientIndex !== -1) {
-        if (!patients[patientIndex].prescriptions) {
-            patients[patientIndex].prescriptions = [];
+        if (!patients[patientIndex].prescriptions) patients[patientIndex].prescriptions = [];
+        if (!patients[patientIndex].prescriptions.includes(prescriptionId)) {
+            patients[patientIndex].prescriptions.push(prescriptionId);
         }
-        patients[patientIndex].prescriptions.push(prescriptionId);
 
-        // -- Also save patient notes back to patient record --
         const notes = collectPatientNotes();
         patients[patientIndex].patientNotes = notes.patientNotes;
         patients[patientIndex].genHealthHx  = notes.genHealthHx;
         patients[patientIndex].ocuHx        = notes.ocuHx;
 
-        localStorage.setItem('patients', JSON.stringify(patients));
+        Storage.setItem('patients', JSON.stringify(patients));
     }
 
     openAlert({ title: 'Saved', body: `Prescription ${prescriptionId} saved successfully!` });
 
-    // -- Clear all input fields across the entire New Rx form --
-    const newRxPage = document.getElementById('newPrescriptionMenu'); // adjust to your actual page/section ID
+    // Clear form
+    const newRxPage = document.getElementById('newPrescriptionMenu');
     newRxPage.querySelectorAll('input:not([type="button"]):not([type="submit"]), textarea, select')
         .forEach(el => {
-            if (el.tagName === 'SELECT') {
-                el.selectedIndex = 0;
-            } else {
-                el.value = '';
-            }
+            if (el.tagName === 'SELECT') el.selectedIndex = 0;
+            else el.value = '';
             el.classList.remove('input-error');
         });
 
-    // -- Reset CL form visibility --
     document.getElementById('frxClForm')?.classList.add('hidden');
-
-    // -- Reset form state back to select patient --
     changePatient();
-
-    // -- Redirect to Records page --
     window.location.hash = '#recordsPage';
 }
 
-// -- Wire up Add button --
 window.addEventListener('load', () => {
     document.getElementById('addPrescriptionBtn')?.addEventListener('click', handleAddPrescription);
 });

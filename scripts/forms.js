@@ -1,11 +1,6 @@
 //--------------- JS-Generated Form Components ---------------
 // Replaces static HTML form structures with dynamically injected equivalents.
-// Keeps index.html lean — forms are built on demand and mounted to their containers.
 
-// ---- Shared Builders ----
-
-// Build one eye division (OD or OS) for any specs-format form
-// eyeLabel: 'OD' / 'OS', prefix: e.g. 'hrxOd', 'vt7Od', 'frxOd', 'copyRxOd'
 function _buildSpecsEyeDivision(eyeLabel, prefix) {
     return `
         <div class="prescription-format-division">
@@ -40,7 +35,6 @@ function _buildSpecsEyeDivision(eyeLabel, prefix) {
         </div>`;
 }
 
-// Build one eye row for a CL form
 function _buildClEyeRow(eyeLabel, prefix) {
     return `
         <div class="flex-row">
@@ -54,26 +48,17 @@ function _buildClEyeRow(eyeLabel, prefix) {
         </div>`;
 }
 
-// ---- Shared Customer/Patient Form Builder ----
-
+// ---- Person Form ----
 function buildPersonForm(type) {
     const isPatient = type === 'patient';
-
-    const capitalized = isPatient
-        ? 'Patient'
-        : 'Customer';
-
-    const lower = isPatient
-        ? 'patient'
-        : 'customer';
+    const capitalized = isPatient ? 'Patient' : 'Customer';
+    const lower = isPatient ? 'patient' : 'customer';
 
     const section = document.createElement('div');
     section.classList.add('new-person-form');
     section.innerHTML = `
         <h2>New ${capitalized}</h2>
-
         <form id="${lower}Form" class="fill-out-form">
-
           <label for="${lower}IdInput">${capitalized} ID :</label>
           <input id="${lower}IdInput" readonly>
 
@@ -87,25 +72,16 @@ function buildPersonForm(type) {
           </div>
 
           <label for="${lower}InputName">Name :</label>
-          <input
-            id="${lower}InputName"
-            class="uppercase"
-            placeholder="NAME SURNAME"
-            maxlength="30"
-          >
+          <input id="${lower}InputName" class="uppercase" placeholder="NAME SURNAME" maxlength="30">
 
           <label for="${lower}InputNumber">Contact Number :</label>
           <input id="${lower}InputNumber" maxlength="11">
 
           <label for="${lower}InputEmail">Email :</label>
-          <input
-            id="${lower}InputEmail"
-            maxlength="40"
-            class="lowercase"
-          >
+          <input id="${lower}InputEmail" maxlength="40" class="lowercase">
 
           <label>Sex :</label>
-          <select id="${lower}InputSex" name="sex">
+          <select id="${lower}InputSex">
             <option value="" disabled selected>- SELECT -</option>
             <option value="male">MALE</option>
             <option value="female">FEMALE</option>
@@ -130,15 +106,11 @@ function buildPersonForm(type) {
             <button type="submit" id="${lower}AddBtn">Add</button>
             <a href="#recordsPage" class="back-btn-link">Back</a>
           </div>
-
-        </form>
-    `;
-
+        </form>`;
     return section;
 }
 
-// ---- HRx Block (injected inside mainEyeExaminationForm) ----
-
+// ---- HRx Block ----
 function buildHrxBlock() {
     const wrapper = document.createElement('div');
     wrapper.style.cssText = 'display:flex; flex-direction:column; align-items:center; width:100%;';
@@ -155,8 +127,7 @@ function buildHrxBlock() {
     return wrapper;
 }
 
-// ---- VT7 Block (injected inside mainEyeExaminationForm) ----
-
+// ---- VT7 Block ----
 function buildVt7Block() {
     const wrapper = document.createElement('div');
     wrapper.style.cssText = 'display:flex; flex-direction:column; align-items:center; width:100%;';
@@ -174,7 +145,6 @@ function buildVt7Block() {
 }
 
 // ---- Final Rx Form ----
-
 function buildFrxForm() {
     const form = document.createElement('form');
     form.id = 'mainFinalPrescription';
@@ -229,14 +199,13 @@ function buildFrxForm() {
 }
 
 // ---- Copy Rx Specs Form ----
-
 function buildCopyRxSpecsForm() {
     const form = document.createElement('form');
     form.id = 'copyPrescriptionForm';
     form.className = 'copy-prescription-form hidden';
 
     form.innerHTML = `
-        <h4 class="eye-test-label-hrx">Prescription Details</h4>
+        <h4 class="eye-test-label-header">Prescription Details</h4>
         <div class="prescription-format-form">
             ${_buildSpecsEyeDivision('OD', 'copyRxOd')}
             ${_buildSpecsEyeDivision('OS', 'copyRxOs')}
@@ -250,7 +219,6 @@ function buildCopyRxSpecsForm() {
 }
 
 // ---- Copy Rx CL Form ----
-
 function buildCopyRxClForm() {
     const form = document.createElement('form');
     form.id = 'copyPrescriptionFormCl';
@@ -279,12 +247,10 @@ function buildCopyRxClForm() {
 }
 
 // ---- AR + CL Parameters Block ----
-
 function buildArClpBlock() {
     const wrapper = document.createElement('div');
     wrapper.className = 'ar-clp-container flex-row';
     wrapper.innerHTML = `
-
         <!-- AR -->
         <div class="ar-form-container flex-column">
             <h4>AR</h4>
@@ -349,9 +315,7 @@ function buildArClpBlock() {
     return wrapper;
 }
 
-// ---- Edit Rx Full UI ----
-// Builds a full edit UI matching the original form layout, pre-filled with rx data
-
+// ---- FIXED: Edit Rx UI ----
 function buildEditRxUI(rx) {
     const wrapper = document.createElement('div');
     wrapper.className = 'edit-rx-ui';
@@ -360,10 +324,8 @@ function buildEditRxUI(rx) {
     const isCopyRx   = rx.rxMethod === 'copyPrescription';
     const isCopyRxCl = rx.rxMethod === 'copyPrescriptionCl';
 
-    // -- Pre-fill helper --
     function pf(val) { return val || ''; }
 
-    // -- Build pre-filled specs eye division --
     function prefilledSpecsEye(eyeLabel, prefix, data) {
         const d = data || {};
         return `
@@ -375,19 +337,19 @@ function buildEditRxUI(rx) {
                 </div>
                 <div>
                     <label>Distance : </label>
-                    <input id="erx_${prefix}DistanceSph"  maxlength="8" value="${pf(d.distSph)}">
-                    <input id="erx_${prefix}DistanceCyl"  maxlength="8" value="${pf(d.distCyl)}">
+                    <input id="erx_${prefix}DistanceSph" maxlength="8" value="${pf(d.distSph)}">
+                    <input id="erx_${prefix}DistanceCyl" maxlength="8" value="${pf(d.distCyl)}">
                     <input id="erx_${prefix}DistanceAxis" maxlength="3" value="${pf(d.distAxis)}">
-                    <input id="erx_${prefix}DistancePd"   maxlength="5" value="${pf(d.distPd)}">
-                    <input id="erx_${prefix}DistanceVa"   maxlength="8" value="${pf(d.distVa)}" class="uppercase">
+                    <input id="erx_${prefix}DistancePd" maxlength="5" value="${pf(d.distPd)}">
+                    <input id="erx_${prefix}DistanceVa" maxlength="8" value="${pf(d.distVa)}" class="uppercase">
                 </div>
                 <div class="prescription-format-near flex-row">
                     <label class="prescription-format-side-label">Near : </label>
-                    <input id="erx_${prefix}NearSph"  maxlength="8" value="${pf(d.nearSph)}">
-                    <input id="erx_${prefix}NearCyl"  maxlength="8" value="${pf(d.nearCyl)}">
+                    <input id="erx_${prefix}NearSph" maxlength="8" value="${pf(d.nearSph)}">
+                    <input id="erx_${prefix}NearCyl" maxlength="8" value="${pf(d.nearCyl)}">
                     <input id="erx_${prefix}NearAxis" maxlength="3" value="${pf(d.nearAxis)}">
-                    <input id="erx_${prefix}NearPd"   maxlength="5" value="${pf(d.nearPd)}">
-                    <input id="erx_${prefix}NearVa"   maxlength="8" value="${pf(d.nearVa)}" class="uppercase">
+                    <input id="erx_${prefix}NearPd" maxlength="5" value="${pf(d.nearPd)}">
+                    <input id="erx_${prefix}NearVa" maxlength="8" value="${pf(d.nearVa)}" class="uppercase">
                 </div>
                 <div class="prescription-format-add">
                     <label class="prescription-format-side-label">Add : </label>
@@ -396,22 +358,20 @@ function buildEditRxUI(rx) {
             </div>`;
     }
 
-    // -- Build pre-filled CL eye row --
     function prefilledClEye(eyeLabel, prefix, data) {
         const d = data || {};
         return `
             <div class="flex-row">
                 <label class="contact-lens-side-label">${eyeLabel} : </label>
-                <input id="erx_${prefix}Sph"  maxlength="8" value="${pf(d.sph)}">
-                <input id="erx_${prefix}Cyl"  maxlength="8" value="${pf(d.cyl)}">
+                <input id="erx_${prefix}Sph" maxlength="8" value="${pf(d.sph)}">
+                <input id="erx_${prefix}Cyl" maxlength="8" value="${pf(d.cyl)}">
                 <input id="erx_${prefix}Axis" maxlength="3" value="${pf(d.axis)}">
-                <input id="erx_${prefix}Bc"   maxlength="5" value="${pf(d.bc)}">
-                <input id="erx_${prefix}Dia"  maxlength="5" value="${pf(d.dia)}">
-                <input id="erx_${prefix}Va"   maxlength="8" value="${pf(d.va)}" class="uppercase">
+                <input id="erx_${prefix}Bc" maxlength="5" value="${pf(d.bc)}">
+                <input id="erx_${prefix}Dia" maxlength="5" value="${pf(d.dia)}">
+                <input id="erx_${prefix}Va" maxlength="8" value="${pf(d.va)}" class="uppercase">
             </div>`;
     }
 
-    // -- Build form content per method --
     let formContent = '';
 
     if (isEyeExam) {
@@ -495,22 +455,22 @@ function buildEditRxUI(rx) {
                             </div>
                             <div>
                                 <label>OD : </label>
-                                <input id="erx_arOdSph"  maxlength="8" value="${pf(ar.od?.sph)}">
-                                <input id="erx_arOdCyl"  maxlength="8" value="${pf(ar.od?.cyl)}">
+                                <input id="erx_arOdSph" maxlength="8" value="${pf(ar.od?.sph)}">
+                                <input id="erx_arOdCyl" maxlength="8" value="${pf(ar.od?.cyl)}">
                                 <input id="erx_arOdAxis" maxlength="3" value="${pf(ar.od?.axis)}">
-                                <input id="erx_arOdKr"   maxlength="6" value="">
+                                <input id="erx_arOdKr" maxlength="6" value="${pf(ar.od?.kr)}">
                             </div>
                             <div>
                                 <label>OS : </label>
-                                <input id="erx_arOsSph"  maxlength="8" value="${pf(ar.os?.sph)}">
-                                <input id="erx_arOsCyl"  maxlength="8" value="${pf(ar.os?.cyl)}">
+                                <input id="erx_arOsSph" maxlength="8" value="${pf(ar.os?.sph)}">
+                                <input id="erx_arOsCyl" maxlength="8" value="${pf(ar.os?.cyl)}">
                                 <input id="erx_arOsAxis" maxlength="3" value="${pf(ar.os?.axis)}">
-                                <input id="erx_arOsKr"   maxlength="6" value="">
+                                <input id="erx_arOsKr" maxlength="6" value="${pf(ar.os?.kr)}">
                             </div>
                         </div>
                         <div class="ar-form-notes">
                             <label>Notes : </label>
-                            <textarea id="erx_arNotes">${pf(rx.arNotes)}</textarea>
+                            <textarea id="erx_arNotes">${pf(ar.notes)}</textarea>
                         </div>
                     </div>
                     <div class="v-line-ar-clp"></div>
@@ -522,20 +482,20 @@ function buildEditRxUI(rx) {
                             </div>
                             <div>
                                 <label>OD : </label>
-                                <input id="erx_clpOdBc"   maxlength="5" value="">
-                                <input id="erx_clpOdHvid" maxlength="5" value="">
-                                <input id="erx_clpOdDia"  maxlength="5" value="">
+                                <input id="erx_clpOdBc" maxlength="5" value="${pf(rx.clParameters?.od?.bc)}">
+                                <input id="erx_clpOdHvid" maxlength="5" value="${pf(rx.clParameters?.od?.hvid)}">
+                                <input id="erx_clpOdDia" maxlength="5" value="${pf(rx.clParameters?.od?.dia)}">
                             </div>
                             <div>
                                 <label>OS : </label>
-                                <input id="erx_clpOsBc"   maxlength="5" value="">
-                                <input id="erx_clpOsHvid" maxlength="5" value="">
-                                <input id="erx_clpOsDia"  maxlength="5" value="">
+                                <input id="erx_clpOsBc" maxlength="5" value="${pf(rx.clParameters?.os?.bc)}">
+                                <input id="erx_clpOsHvid" maxlength="5" value="${pf(rx.clParameters?.os?.hvid)}">
+                                <input id="erx_clpOsDia" maxlength="5" value="${pf(rx.clParameters?.os?.dia)}">
                             </div>
                         </div>
                         <div class="clp-form-notes">
                             <label>Notes : </label>
-                            <textarea id="erx_clParametersNotes">${pf(rx.clParametersNotes)}</textarea>
+                            <textarea id="erx_clParametersNotes">${pf(rx.clParameters?.notes)}</textarea>
                         </div>
                     </div>
                 </div>
@@ -550,7 +510,7 @@ function buildEditRxUI(rx) {
                 </div>
                 <div class="prescription-format-notes">
                     <label class="prescription-format-notes-label">Notes : </label>
-                    <textarea id="erx_vt7Notes">${pf(rx.vt7Notes)}</textarea>
+                    <textarea id="erx_vt7Notes">${pf(vt7.notes)}</textarea>
                 </div>
             </div>
 
@@ -600,7 +560,7 @@ function buildEditRxUI(rx) {
     if (isCopyRx) {
         const frx = rx.frxSpecs || {};
         formContent = `
-            <h4 class="eye-test-label-hrx">Prescription Details</h4>
+            <h4 class="eye-test-label-header">Prescription Details</h4>
             <div class="prescription-format-form">
                 ${prefilledSpecsEye('OD', 'copyRxOd', frx.od)}
                 ${prefilledSpecsEye('OS', 'copyRxOs', frx.os)}
@@ -637,7 +597,6 @@ function buildEditRxUI(rx) {
                 <strong>Date Created:</strong> 
                 <span>${rx.dateCreated || 'N/A'}</span>
             </div>
-
             <p class="edit-rx-note">Any modification below will overwrite the prescription save permanently.</p>
         </div>
         <div class="edit-rx-form-body">
@@ -657,8 +616,7 @@ function buildEditRxUI(rx) {
     return wrapper;
 }
 
-// ---- Preliminary Block (UVA + PH) ----
-
+// ---- Preliminary Block ----
 function buildPreliminaryBlock() {
     const wrapper = document.createElement('div');
     wrapper.className = 'eye-examination-form-preliminary flex-row';
@@ -710,51 +668,19 @@ function buildPreliminaryBlock() {
 }
 
 // ---- Mount All Forms ----
-
 function mountForms() {
-
-    // ---- Customer / Patient Forms ----
-
-    document
-        .getElementById('customerFormMount')
-        ?.replaceWith(buildPersonForm('customer'));
-
-    document
-        .getElementById('patientFormMount')
-        ?.replaceWith(buildPersonForm('patient'));
-
-
-    // ---- Copy Rx ----
-
-    document
-        .getElementById('copyRxSpecsMount')
-        ?.replaceWith(buildCopyRxSpecsForm());
-
-    document
-        .getElementById('copyRxClMount')
-        ?.replaceWith(buildCopyRxClForm());
-
-
-    // ---- Final Rx ----
-
-    document
-        .getElementById('frxMount')
-        ?.replaceWith(buildFrxForm());
-
-
-    // ---- AR + CL Parameters ----
+    document.getElementById('customerFormMount')?.replaceWith(buildPersonForm('customer'));
+    document.getElementById('patientFormMount')?.replaceWith(buildPersonForm('patient'));
+    document.getElementById('copyRxSpecsMount')?.replaceWith(buildCopyRxSpecsForm());
+    document.getElementById('copyRxClMount')?.replaceWith(buildCopyRxClForm());
+    document.getElementById('frxMount')?.replaceWith(buildFrxForm());
     document.getElementById('arClpMount')?.replaceWith(buildArClpBlock());
-
-    // ---- Preliminary (UVA + PH) ----
     document.getElementById('preliminaryMount')?.replaceWith(buildPreliminaryBlock());
-
-    // ---- HRx + VT7 ----
 
     const hrxMount = document.getElementById('hrxMount');
     const vt7Mount = document.getElementById('vt7Mount');
-
-    hrxMount?.replaceWith(buildHrxBlock());
-    vt7Mount?.replaceWith(buildVt7Block());
+    if (hrxMount) hrxMount.replaceWith(buildHrxBlock());
+    if (vt7Mount) vt7Mount.replaceWith(buildVt7Block());
 }
 
 window.addEventListener('load', mountForms);

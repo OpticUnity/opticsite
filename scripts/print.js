@@ -1,4 +1,14 @@
-//--------------- Print Prescription (Medical Certificate) ---------------
+// ================================================================
+//  print.js — OpticSite / OpticUnity
+//  Handles prescription printing and document export.
+//
+//  PLATFORM DETECTION — automatic, no manual switching needed.
+//  storage.js detects window.__TAURI__ at boot; this file reads
+//  the same _IS_TAURI flag for downloadAsWord().
+//  Everything else (Storage.getItem, printRx, _triggerPrint)
+//  is fully platform-agnostic.
+// ================================================================
+
 
 // ---- Helpers ----
 function _v(val) {
@@ -9,6 +19,12 @@ function _hasAny(...vals) {
     return vals.some(v => v !== null && v !== undefined && v !== '');
 }
 
+
+// ================================================================
+//  Table Builders
+//  Platform-agnostic — no changes needed when switching.
+// ================================================================
+
 // ---- Build Specs Table ----
 function _buildSpecsTable(od, os) {
     const hasCyl  = _hasAny(od.distCyl, os.distCyl);
@@ -18,8 +34,8 @@ function _buildSpecsTable(od, os) {
     const hasVa   = _hasAny(od.distVa,  os.distVa);
 
     const cols = ['', 'SPH', 'CYL', 'AXIS'];
-    if (hasPd)  cols.push('PD');
-    if (hasVa)  cols.push('VA');
+    if (hasPd) cols.push('PD');
+    if (hasVa) cols.push('VA');
 
     const headerRow = cols.map(c => `<th>${c}</th>`).join('');
 
@@ -124,12 +140,21 @@ function _buildClTable(od, os) {
         </table>`;
 }
 
-// ---- Build Full Print Document HTML ----
+
+// ================================================================
+//  _buildPrintDocument
+//  Builds the full HTML of the medical certificate.
+//  Platform-agnostic — Storage.getItem works on both platforms.
+// ================================================================
+
 function _buildPrintDocument(rx, patient, paperSize) {
-    const settings = JSON.parse(localStorage.getItem('clinicSettings') || '{}');
+    const settings = JSON.parse(Storage.getItem('clinicSettings') || '{}');
+
     const clinicName    = settings.clinicName    || 'Optical Clinic';
-    const clinicAddress = settings.clinicAddress || 'Address';
-    const clinicContact = settings.clinicContact || 'Contact';
+    const clinicAddress = settings.clinicAddress || '';
+    const clinicContact = settings.clinicContact || '';
+    const doctorName    = settings.doctorName    || '[Name]';
+    const prcNumber     = settings.prcNumber     || '___________________';
 
     const specs = rx.frxSpecs;
     const cl    = rx.frxCl;
@@ -156,7 +181,6 @@ function _buildPrintDocument(rx, patient, paperSize) {
         let str = sph;
         if (cyl && axis) str += `  ${cyl} x ${axis}`;
         else if (cyl)    str += `  ${cyl}`;
-        
         str = str.replace(/([+-]?\d+\.?\d*)/g, '$1 Dsph');
         if (cyl) str = str.replace(/Dsph\s+([+-]?\d+\.?\d*)/, 'Dsph $1 Dcyl');
         return str;
@@ -207,20 +231,25 @@ function _buildPrintDocument(rx, patient, paperSize) {
         @page { size: ${paperSize}; margin: 20mm 20mm 15mm 20mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
         body { font-size: 12px; color: #000; background: #fff; line-height: 1.6; }
-
         .cert-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
         .cert-clinic-name { font-size: 22px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
         .cert-clinic-sub { font-size: 11px; color: #333; margin-top: 2px; }
         .cert-title { text-align: center; font-size: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; text-decoration: underline; }
         .cert-date { text-align: right; font-size: 12px; margin-bottom: 16px; }
         .cert-body { margin-bottom: 16px; font-size: 12px; line-height: 1.8; }
-
-        .cert-findings {
-            width: 100%; border-collapse: collapse; margin: 12px 0 16px 0;
-            font-size: 12px; table-layout: fixed;
-        }
+        .cert-findings { width: 100%; border-collapse: collapse; margin: 12px 0 16px 0; font-size: 12px; table-layout: fixed; }
         .cert-findings td { padding: 3px 8px; vertical-align: top; }
         .cert-label { font-weight: bold; white-space: nowrap; width: 160px; }
+        .cert-blank-line { margin: 8px 0; display: flex; align-items: baseline; gap: 6px; }
+        .cert-field-label { font-weight: bold; white-space: nowrap; }
+        .cert-underline { border-bottom: 1px solid #000; flex: 1; min-width: 200px; display: inline-block; }
+        .cert-footer { margin-top: 40px; text-align: left; }
+        .cert-signature-block { display: inline-block; text-align: left; width: 220px; }
+        .cert-signature-line { border-top: 1px solid #000; margin-bottom: 4px; }
+        .cert-signature-name { font-weight: bold; }
+        .cert-signature-title { font-size: 11px; }
+        .cert-signature-lic { font-size: 11px; }
+        .cert-disclaimer { margin-top: 20px; font-size: 9px; color: #777; text-align: center; border-top: 1px dashed #ccc; padding-top: 6px; }
     </style>
 </head>
 <body>
@@ -301,9 +330,9 @@ function _buildPrintDocument(rx, patient, paperSize) {
     <div class="cert-footer">
         <div class="cert-signature-block">
             <div class="cert-signature-line"></div>
-            <div class="cert-signature-name">[Name]</div>
+            <div class="cert-signature-name">${doctorName}</div>
             <div class="cert-signature-title">Optometrist</div>
-            <div class="cert-signature-lic">PRC Lic. No.: ___________________</div>
+            <div class="cert-signature-lic">PRC Lic. No.: ${prcNumber}</div>
         </div>
     </div>
 
@@ -314,11 +343,17 @@ function _buildPrintDocument(rx, patient, paperSize) {
 </html>`;
 }
 
-// ==================== DOWNLOAD AS WORD (Tighter Spacing) ====================
-function downloadAsWord(rx, patient) {
-    const htmlContent = _buildPrintDocument(rx, patient, 'A4');
 
+// ================================================================
+//  _buildWordHTML
+//  Shared helper — builds the tighter-spaced Word document HTML.
+//  Platform-agnostic, used by both downloadAsWord() adapters.
+// ================================================================
+
+function _buildWordHTML(rx, patient) {
+    const htmlContent = _buildPrintDocument(rx, patient, 'A4');
     const bodyContent = htmlContent.split('<body>')[1].split('</body>')[0];
+    const fileName    = `Medical_Certificate_${(patient.name || 'Patient').replace(/[^a-zA-Z0-9]/g, '_')}_${rx.dateCreated || 'Date'}.doc`;
 
     const fullHTML = `<!DOCTYPE html>
 <html>
@@ -327,89 +362,21 @@ function downloadAsWord(rx, patient) {
     <title>Medical Certificate</title>
     <style>
         @page { size: A4; margin: 15mm 18mm 12mm 18mm; }
-        body { 
-            font-family: Arial, sans-serif; 
-            font-size: 11.5px; 
-            line-height: 1.4; 
-            margin: 0; 
-            padding: 0;
-        }
-        .cert-header { 
-            text-align: center !important; 
-            border-bottom: 2px solid #000; 
-            padding-bottom: 8px; 
-            margin-bottom: 15px; 
-        }
-        .cert-clinic-name { 
-            font-size: 21px; 
-            font-weight: bold; 
-            letter-spacing: 1px; 
-            text-transform: uppercase; 
-        }
-        .cert-clinic-sub { 
-            font-size: 10.5px; 
-            color: #333; 
-            margin-top: 1px; 
-        }
-        .cert-title { 
-            text-align: center !important; 
-            font-size: 14.5px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            letter-spacing: 2px; 
-            margin-bottom: 12px; 
-            text-decoration: underline; 
-        }
-        .cert-date { 
-            text-align: right !important; 
-            font-size: 11.5px; 
-            margin-bottom: 12px; 
-        }
-        .cert-body { 
-            margin-bottom: 12px; 
-            font-size: 11.5px; 
-            line-height: 1.5; 
-        }
-        .cert-findings { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 10px 0 12px 0; 
-            font-size: 11.5px; 
-        }
-        .cert-findings td { 
-            padding: 2px 6px; 
-            vertical-align: top; 
-        }
-        .cert-label { 
-            font-weight: bold; 
-            white-space: nowrap; 
-            width: 155px; 
-        }
-        .cert-blank-line { 
-            margin: 6px 0; 
-        }
-        .cert-underline { 
-            border-bottom: 1px solid #000; 
-            min-width: 280px; 
-            display: inline-block; 
-        }
-        .cert-footer { 
-            margin-top: 30px; 
-            text-align: right; 
-        }
-        .cert-signature-block { 
-            display: inline-block; 
-            text-align: center; 
-            width: 220px; 
-        }
-        .cert-disclaimer { 
-            margin-top: 15px; 
-            font-size: 9px; 
-            color: #777; 
-            text-align: center; 
-            border-top: 1px dashed #ccc; 
-            padding-top: 5px; 
-        }
+        body { font-family: Arial, sans-serif; font-size: 11.5px; line-height: 1.4; margin: 0; padding: 0; }
+        .cert-header { text-align: center !important; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; }
+        .cert-clinic-name { font-size: 21px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        .cert-clinic-sub { font-size: 10.5px; color: #333; margin-top: 1px; }
+        .cert-title { text-align: center !important; font-size: 14.5px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; text-decoration: underline; }
+        .cert-date { text-align: right !important; font-size: 11.5px; margin-bottom: 12px; }
+        .cert-body { margin-bottom: 12px; font-size: 11.5px; line-height: 1.5; }
+        .cert-findings { width: 100%; border-collapse: collapse; margin: 10px 0 12px 0; font-size: 11.5px; }
+        .cert-findings td { padding: 2px 6px; vertical-align: top; }
+        .cert-label { font-weight: bold; white-space: nowrap; width: 155px; }
+        .cert-blank-line { margin: 6px 0; }
+        .cert-underline { border-bottom: 1px solid #000; min-width: 280px; display: inline-block; }
+        .cert-footer { margin-top: 30px; text-align: left; }
+        .cert-signature-block { display: inline-block; text-align: left; width: 220px; }
+        .cert-disclaimer { margin-top: 15px; font-size: 9px; color: #777; text-align: center; border-top: 1px dashed #ccc; padding-top: 5px; }
     </style>
 </head>
 <body>
@@ -417,18 +384,49 @@ function downloadAsWord(rx, patient) {
 </body>
 </html>`;
 
-    const blob = new Blob([fullHTML], { type: 'application/msword' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `Medical_Certificate_${(patient.name || 'Patient').replace(/[^a-zA-Z0-9]/g, '_')}_${rx.dateCreated || 'Date'}.doc`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    return { fullHTML, fileName };
 }
 
-// ---- Main Print Function (with Word Option) ----
+
+// ================================================================
+//  downloadAsWord — auto-detects platform
+// ================================================================
+
+function downloadAsWord(rx, patient) {
+    const { fullHTML, fileName } = _buildWordHTML(rx, patient);
+
+    if (_IS_TAURI) {
+        // Native save dialog
+        window.__TAURI__.dialog.save({
+            defaultPath: fileName,
+            filters: [{ name: 'Word Document', extensions: ['doc'] }]
+        }).then(savePath => {
+            if (!savePath) return;
+            window.__TAURI__.fs.writeTextFile(savePath, fullHTML)
+                .then(() => openAlert({ title: 'Saved', body: 'File saved successfully!' }))
+                .catch(err => openAlert({ title: 'Error', body: `Failed to save:\n${err}` }));
+        });
+    } else {
+        // Browser file download
+        const blob = new Blob([fullHTML], { type: 'application/msword' });
+        const link = document.createElement('a');
+        link.href     = URL.createObjectURL(blob);
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+}
+
+
+// ================================================================
+//  printRx + _triggerPrint
+//  Platform-agnostic — iframe + window.print() works everywhere.
+// ================================================================
+
 function printRx(rx, patientId) {
-    const patients = JSON.parse(localStorage.getItem('patients') || '[]');
-    const patient  = patients.find(p => p.id === patientId);
+    const patients = JSON.parse(Storage.getItem('patients') || '[]');
+
+    const patient = patients.find(p => p.id === patientId);
     if (!patient) {
         alert('Patient record not found.');
         return;
@@ -439,8 +437,8 @@ function printRx(rx, patientId) {
         body: `
             <p><strong>Select Output:</strong></p>
             <select id="outputTypeSelect" style="width:100%; padding:8px; margin:10px 0;">
+                <option value="word">📄 Word Document (.doc)</option>
                 <option value="print">🖨️ Print / Save as PDF</option>
-                <option value="word">📄 Download as Word Document (.doc)</option>
             </select>
             <select id="printPaperSizeSelect" style="width:100%; padding:8px; margin-top:8px;">
                 <option value="A4">A4 Paper</option>
@@ -448,10 +446,9 @@ function printRx(rx, patientId) {
             </select>
         `,
         confirmText: 'Continue',
-        cancelText: 'Cancel',
+        cancelText:  'Cancel',
         onConfirm: () => {
             const outputType = document.getElementById('outputTypeSelect').value;
-            
             if (outputType === 'word') {
                 downloadAsWord(rx, patient);
             } else {
