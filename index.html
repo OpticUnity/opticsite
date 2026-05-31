@@ -18,41 +18,18 @@
   <link rel="stylesheet" href="style.css" />
 
   <!-- Font Awsome local link -->
-  <!-- <link rel="stylesheet" href="all.css" /> -->
+  <link rel="stylesheet" href="all.css" />
 
   <!-- Font Awsome main link -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
     integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
+    crossorigin="anonymous" referrerpolicy="no-referrer" />-->
 
 </head>
 
-<!-- TODO : Adjust medical certificate formatting -->
-<!-- TODO : Refine rx form input saves... some are still lowercase saved prolly the uppercase class doesn't change the input itself when saved... -->
-<!-- TODO : Make near inputs invalid if the input will make the add Invalid too (negative and such), where invalid inputs will clear near input field on leave -->
 <!-- TODO : on draft... a graph for AR, VT7, FRX progression display  -->
 
 <body>
-
-  <!-- Lock Screen Modal -->
-  <div id="projectLockScreen">
-    <div class="lock-modal">
-      <h2>Access Required</h2>
-      <p>Kung anong galaw ko, siya ang <strong>__________</strong> na ni-neutralize ko</p>
-
-      <input 
-        type="password" 
-        id="projectPasswordInput" 
-        placeholder="enter password"
-        autocomplete="off"
-        spellcheck="false"
-      >
-
-      <button id="unlockProjectBtn">Unlock</button>
-
-      <p id="lockErrorText"></p>
-    </div>
-  </div>
 
   <!-- Body Wrapper-->
   <div class="wrapper">
@@ -69,7 +46,7 @@
         <ul class="nav-links">
           <li><a href="#homePage" class="active-nav">Home</a></li>
           <li><a href="#recordsPage">Records</a></li>
-          <li><a href="#salesPage">Sales</a></li>
+          <li><a href="#underDevelopmentPage">Sales</a></li>
           <li><a href="#settingsPage">Settings</a></li>
         </ul>
 
@@ -92,6 +69,96 @@
 
     <!-- Main Content Section -->
     <main class="content">
+
+      <!-------- Intro Page ---------->
+      <section id="introPage" class="page-content intro-page">
+
+          <!-- Step 1: Welcome -->
+          <div class="intro-step" id="introStep1">
+              <div class="intro-content">
+                  <img src="assets/favicon.png" class="intro-logo" alt="OpticSite Logo" />
+                  <h1>Welcome to OpticSite</h1>
+                  <p class="intro-tagline">Your clinic assistant by OpticUnity</p>
+                  <hr class="intro-divider"/>
+                  <p>Program Made Possible by Claude (Sonnet 4.6) & Grock</p>
+                  <p>OpticSite is a standalone offline Electronic Medical Records system</p>
+                  <p>Program designed for small optometry clinics.</p>
+                  <br>
+                  <p>All data is stored locally on this device. No internet connection is required.</p>
+                  <br>
+                  <p>This is a <strong>beta release</strong>. Features are still being developed and improved.</p>
+              </div>
+              <div class="intro-actions">
+                  <button id="introNext1Btn">Get Started</button>
+              </div>
+              <div class="intro-steps-indicator">
+                  <span class="intro-dot active"></span>
+                  <span class="intro-dot"></span>
+                  <span class="intro-dot"></span>
+              </div>
+          </div>
+
+          <!-- Step 2: Disclaimer -->
+          <div class="intro-step hidden" id="introStep2">
+              <div class="intro-content">
+                  <h2>Disclaimer</h2>
+                  <hr class="intro-divider"/>
+                  <p>By continuing, you acknowledge the following:</p>
+                  <br>
+                  <p>• This program is intended for use by a <strong>licensed optometrist</strong> or under the supervision of one, in accordance with <strong>Republic Act 8050</strong> (Revised Optometry Law of the Philippines).</p>
+                  <br>
+                  <p>• OpticSite is currently in <strong>beta</strong>. While core functions are stable, you may encounter occasional bugs. Please report any issues to the developer.</p>
+                  <br>
+                  <p>• All patient data is stored <strong>locally on this device only</strong>. The developer is not responsible for any data loss. Regular backups are strongly recommended.</p>
+                  <br>
+                  <p>• Generated certificates are <strong>draft documents</strong> and must be reviewed and signed by the examining practitioner before official use.</p>
+              </div>
+              <div class="intro-actions">
+                  <button id="introNext2Btn">I Understand, Continue</button>
+              </div>
+              <div class="intro-steps-indicator">
+                  <span class="intro-dot"></span>
+                  <span class="intro-dot active"></span>
+                  <span class="intro-dot"></span>
+              </div>
+          </div>
+
+          <!-- Step 3: Clinic Setup -->
+          <div class="intro-step hidden" id="introStep3">
+              <div class="intro-content">
+                  <h2>Clinic Setup</h2>
+                  <hr class="intro-divider"/>
+                  <p>Set up your clinic information. This will appear on generated certificates.</p>
+                  <br>
+                  <div class="clinic-setup-form">
+                      <label>Clinic Name <span class="required-star">*</span></label>
+                      <input type="text" id="introClinicName" maxlength="60" placeholder="e.g. Santos Optical Clinic" />
+
+                      <label>Clinic Address</label>
+                      <input type="text" id="introClinicAddress" maxlength="100" placeholder="e.g. 123 Main St, Quezon City" />
+
+                      <label>Clinic Contact</label>
+                      <input type="text" id="introClinicContact" class="digits-only" maxlength="11" placeholder="e.g. 09XX-XXX-XXXX" />
+
+                      <label>Doctor Name <span class="required-star">*</span></label>
+                      <input type="text" id="introDoctorName" maxlength="60" placeholder="e.g. Dr. Juan dela Cruz" />
+
+                      <label>PRC License Number <span class="required-star">*</span></label>
+                      <input type="text" id="introPrcNumber" maxlength="7" class="digits-only" placeholder="e.g. 0012345" />
+                  </div>
+              </div>
+              <div class="intro-actions">
+                  <button id="introCompleteBtn">Complete Setup</button>
+              </div>
+              <div class="intro-steps-indicator">
+                  <span class="intro-dot"></span>
+                  <span class="intro-dot"></span>
+                  <span class="intro-dot active"></span>
+              </div>
+          </div>
+
+      </section>
+
       <!----------------------------------- Under Development Page TO DELETE ON FINAL PRODUCT ------------------------------------------>
       <section id="underDevelopmentPage" class="page-content">
         <div class="under-development-nav">
@@ -109,48 +176,67 @@
 
         <div class="home-page-menu-links">
           <a href="#recordsPage"><i class="fa-solid fa-clipboard"></i> Records</a>
-          <a href="#salesPage"><i class="fa-solid fa-coins"></i> Sales</a>
+          <a href="#underDevelopmentPage"><i class="fa-solid fa-coins"></i> Sales</a>
           <a href="#settingsPage"><i class="fa-solid fa-gears"></i> Settings</a>
-          <a href="#guideMenu" id="debug-class-btn"><i class="fa-solid fa-book"></i> Project Updates</a>
+          <a href="#guideMenu"><i class="fa-solid fa-book"></i> Guide</a>
         </div>
       </section>
 
       <!--- Guide Menu --->
-      <section class="page-content" id="guideMenu" data-parent="#homePage">
-        <h2>Project Updates</h2>
-        <p>This is an Optical EMR and CRM Program</p>
-        <p>Currently in prototype stage, Program is not yet finished</p>
-        <p>Expect bugs and inconsistent flow on program use</p>
-        <p>Desktop Version only</p>
-        <p>Estimated Date of Completion : July or August 2026</p>
+      <section class="page-content guide-section" id="guideMenu" data-parent="#homePage">
+        <h2>Guide</h2>
+        <p>This program offers EMR & CRM system for Small Opticals</p>
+        <p>EMR - Electronic Medical Record</p>
+        <p>CRM - Customer Relationship Management</p>
+        <p>Currently on its prototype stage</p>
+        <p>Final Product will be a standalone offline version</p>
+        <p>Meaning, Expect some limitations such as:</p>
+        <p>-Not being online (cloud system backups)</p>
+        <p>-Inability to be used in multiple devices at once</p>
+        <p>-This makes the use of EMR and CRM a bit hassle, for high volume patients use</p>
+        <p>-Such scenario where a receptionist cannot record the next patient/customer,</p>
+        <p>'Cause the program is currently being used for eye checkup</p>
         <p>-</p>
-        <h3>Features that are already working:</h3>
+        <p>Then again, the target users of this program are small clinics that cater small volume of patients</p>
+        <p>Which does not need the use of multiple devices and online functions.</p>
+        <p>-</p>
+        <p>The core function of EMR is now complete</p>
+        <p>-</p>
+        <h3>EMR Features includes:</h3>
         <p>Creating Customer Record</p>
         <p>Creating Patient Record</p>
         <p>Creating Prescription Via: Eye exam, Copy Rx (spectacle & contact lens)</p>
         <p>Viewing, Editing and Deleting of Patient Records</p>
         <p>Viewing, Editing and Deleting of Prescriptions</p>
         <p>Generation of draft Certificate</p>
-        <p>Darkmode UI</p>
+        <p>Cross-platform backup system (backup available for browser and windows interchangeably)</p>
         <p>-</p>
         <h3>Features still on development:</h3>
-        <p>Print Customize Feature for Certificates</p>
-        <p>Entire CRM system (new orders, pull out of rx for the order, job order, sales stuff)</p>
+        <p>Entire CRM system (new orders, pull out of rx for the order, job order, and sales)</p>
+        <p>Additional EMR features (Graph for AR and VT7, for progression reference; UI polishing)</p>
         <p>-</p>
-        <h3>Final Product Limitations</h3>
-        <p>Planned final product is a stand alone offline program</p>
-        <p>Meaning, it will be a downloadable windows and macOS program</p>
-        <p>Browser version of this program is gonna be its demo</p>
-        <p>Storage is limited for a browser based product and not completely secured</p>
-        <p>Why not make online version with cloud and stuff?</p>
-        <p>I can't gurantee security of the user, customer and patient's information online</p>
-        <p>My xp bar is low when it comes to projects with online feature (backend)</p>
-        <p>Any saved data and information will be saved within your devices...</p>
-        <p>You can try asking LLMs to confirm that all data saved stays within you and your device</p>
-        <p>Just say : </p>
-        <p class="selectable-text">"Check this project if this is safe and doesn't collect data : https://opticunity.github.io/opticsite/"</p>
-        <p>Secure your device propely, All data you saved (legally speaking) is in your care and responsibility.</p>
-        <p>Treat this as an advanced notepad and calculator app</p>
+        <h3>System Flow</h3>
+        <p>Creating patient record</p>
+        <p>Creating prescription for the patient</p>
+        <p>View, Edit, Delete of records</p>
+        <p>Generation of Certificates</p>
+        <p>-</p>
+        <!-- FOR BROWSER BLOCK ONLY -->
+        <div id="windowsDownloadSection" style="display: none; flex-direction: column; align-items: center;">
+            <h3>Windows Version:</h3>
+            <p>For a more reliable experience, download the Windows version.</p>
+            <p>No internet connection required after installation.</p>
+            <a href="YOUR_DOWNLOAD_LINK_HERE" target="_blank" style="margin-bottom: 10px;">
+                Download <i class="fa-brands fa-windows"></i>
+            </a>
+            <p>After the download, run the installer to install the main program (.exe)</p>
+          <p>-</p>
+        </div>   
+        <h3>Where are the data stored?</h3>
+        <p>For Web Browser - It's locally saved in your web browser</p>
+        <p>Be careful on clearing your web browser's cache as it will permanently delete all records.</p>
+        <p>For Windows (Downloaded Version) - It's stored by default in this path:</p>
+        <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticunity.opticsite\</p>
         <p>-</p>
         <a href="#homePage">Back</a>
       </section>
@@ -177,7 +263,7 @@
       </section>
 
       <!--- New Prescription Menu --->
-      <section class="page-content" id="newPrescriptionMenu" data-parent="#recordsPage">
+      <section class="page-content" id="newPrescriptionMenu" data-parent="#recordsPage" data-on-entry="renderSelectPatientTable">
         <h2>New Prescription</h2>
 
         <div id="newPrescriptionSelectPatientMenu" class="new-prescription-select-patient-menu">
@@ -461,11 +547,86 @@
       <section id="settingsPage" class="page-content">
         <h2><i class="fa-solid fa-gears"></i> Settings</h2>
         <div class="nav-menu-links">
-          <a href="#underDevelopmentPage">Clinic Setup</a>
-          <a href="#underDevelopmentPage">Print Format</a>
-          <a href="#underDevelopmentPage">Backup Data</a>
+          <a href="#clinicSetupPage">Clinic Setup</a>
+          <a href="#backupPage">Backup Data</a>
           <button id="clearDataBtn" class="clear-btn">Clear Data</button>
         </div>
+      </section>
+
+      <!-------- Clinic Setup Page ---------->
+      <section class="page-content" id="clinicSetupPage" data-parent="#settingsPage" data-on-entry="_loadClinicSettingsIntoForm">
+        <h2><i class="fa-solid fa-hospital"></i> Clinic Setup</h2>
+        <p>This information will appear on generated certificates.</p>
+
+        <div class="clinic-setup-form">
+          <label>Clinic Name</label>
+          <input type="text" id="setupClinicName"    maxlength="60"  placeholder="e.g. Santos Optical Clinic" />
+
+          <label>Clinic Address</label>
+          <input type="text" id="setupClinicAddress" maxlength="100" placeholder="e.g. 123 Main St, Quezon City" />
+
+          <label>Clinic Contact</label>
+          <input type="text" id="setupClinicContact" maxlength="11" class="digits-only" placeholder="e.g. 09XX-XXX-XXXX" />
+
+          <label>Doctor Name</label>
+          <input type="text" id="setupDoctorName"    maxlength="60"  placeholder="e.g. Dr. Juan dela Cruz" />
+
+          <label>PRC License Number</label>
+          <input type="text" id="setupPrcNumber"  class="digits-only"   maxlength="7"   placeholder="e.g. 0012345" />
+        </div>
+        <div class="clinic-setup-action-btn-container">
+          <button id="saveClinicSetupBtn" class="save-btn">Save</button>
+          <a href="#settingsPage">Back</a>
+        </div>
+      </section>
+
+      <!-------- Backup Page ---------->
+      <section class="page-content backup-page" id="backupPage" data-parent="#settingsPage" data-on-entry="_initBackupPage">
+        <h2><i class="fa-solid fa-database"></i> Backup Data</h2>
+
+        <!-- Tauri / Windows App Panel -->
+        <div id="backupPanelTauri" class="hidden">
+          <h3 class="backup-panel-header">About Your Data</h3>
+          <p>All your records are stored locally in a single JSON file on this computer.</p>
+          <p>Default save location:</p>
+          <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticunity.opticsite\</p>
+          <p>-</p>
+
+          <h3>How to Backup</h3>
+          <p>Click <strong>Generate Backup</strong> below. A Save dialog will open, choose where to save your backup file (USB drive, external hard drive, cloud folder, etc.).</p>
+          <p>Rename the file if needed, the contents are what matter, not the filename.</p>
+          <p>-</p>
+
+          <h3>How to Restore a Backup</h3>
+          <p>Click <strong>Import Backup</strong> below and select your backup <code>.json</code> file using the file dialog.</p>
+          <p>The app will validate the file and ask you to confirm before overwriting current data.</p>
+          <p><strong>This will replace all current records.</strong> Export your current data first if needed.</p>
+        </div>
+
+        <!-- Browser Panel -->
+        <div id="backupPanelBrowser" class="hidden">
+          <h3 class="backup-panel-header">About Your Data</h3>
+          <p>All your records are stored in your <strong>browser's local storage</strong> on this device.</p>
+          <p>Browser storage can be cleared by the browser itself (clearing site data, cache wipes, etc.), making backups regularly  <strong>strongly advised.</strong></p>
+          <p>-</p>
+
+          <h3>How to Backup</h3>
+          <p>Click <strong>Generate Backup</strong> below and your browser will download a <code>.json</code> file  save it somewhere safe (USB drive, Google Drive, OneDrive, etc.).</p>
+          <p>Rename the file if needed, the contents are what matter, not the filename.</p>
+          <p>-</p>
+
+          <h3>How to Restore a Backup</h3>
+          <p>Click <strong>Import Backup</strong> below and select your previously generated <code>.json</code> backup file.</p>
+          <p>The app will validate the file and ask you to confirm before overwriting current data.</p>
+          <p><strong>This will replace all current records.</strong> Export your current data first if needed.</p>
+        </div>
+
+        <!-- Shared buttons same function on both platforms -->
+        <p>-</p>
+        <button id="exportBackupBtn" class="backup-btn"><i class="fa-solid fa-floppy-disk"></i> Generate Backup</button>
+        <button id="importBackupBtn" class="backup-btn"><i class="fa-solid fa-file-import"></i> Import Backup</button>
+        <p>-</p>
+        <a href="#settingsPage">Back</a>
       </section>
 
     </main>
@@ -479,6 +640,8 @@
 </body>
 
 <!-- scripts -->
+<!-- <script src="scripts/lock.js"></script> -->
+<script src="scripts/storage.js"></script>
 <script src="scripts/forms.js"></script>
 <script src="scripts/form-logic.js"></script>
 <script src="scripts/validation.js"></script>
@@ -487,5 +650,6 @@
 <script src="scripts/view-records.js"></script>
 <script src="scripts/modal.js"></script>
 <script src="scripts/print.js"></script>
+<script src="main.js"></script>
 
 </html>

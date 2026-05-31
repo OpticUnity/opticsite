@@ -56,64 +56,6 @@ button:hover{
   flex-direction: column;
 }
 
-/* ---------------- LOCK SCREEN ---------------- */
-
-#projectLockScreen {
-    position: fixed;
-    inset: 0;
-    background: #ffffff;
-    z-index: 999999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.lock-modal {
-    width: 90%;
-    max-width: 400px;
-    background: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 12px;
-    padding: 30px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-}
-
-.lock-modal h2 {
-    margin-bottom: 15px;
-}
-
-.lock-modal p {
-    margin-bottom: 15px;
-    line-height: 1.5;
-}
-
-#projectPasswordInput {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    margin-bottom: 15px;
-    border: 1px solid #cfcfcf;
-    border-radius: 8px;
-    text-transform: lowercase;
-}
-
-#unlockProjectBtn {
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-#lockErrorText {
-    color: red;
-    margin-top: 10px;
-    min-height: 18px;
-}
-
-
 /* ---------- Table Styling ------- */
 table {
   border-collapse: collapse;
@@ -362,6 +304,124 @@ input{
   gap: 45px;
 }
 
+/* ---------------- Intro Page -------------------- */
+.intro-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: #fff;
+}
+
+.intro-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    max-width: 520px;
+    width: 100%;
+    padding: 40px 20px;
+    gap: 20px;
+}
+
+.intro-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+
+}
+
+.intro-logo {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 20px;
+}
+
+.intro-content h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    align-items: center;
+    text-align: center;
+}
+
+.intro-content h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    align-items: center;
+    text-align: center;
+}
+
+.intro-step .intro-content .intro-tagline {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.intro-divider {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 16px 0;
+}
+
+.intro-content p {
+    font-size: 14px;
+    line-height: 1.7;
+    text-align: left;
+    margin-bottom: 8px;
+}
+
+.intro-optional-note {
+    font-size: 12px;
+    color: #888;
+    text-align: center !important;
+    margin-top: 4px;
+}
+
+.required-star {
+    color: red;
+}
+
+.intro-actions {
+    margin-top: 30px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.intro-actions button {
+    width: 100%;
+    max-width: 320px;
+    padding: 14px;
+    font-size: 16px;
+}
+
+.intro-steps-indicator {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    justify-content: center;
+}
+
+.intro-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ccc;
+}
+
+.intro-dot.active {
+    background-color: #000;
+}
+
 /* --- Form Layouts --- */
 
 .fill-out-form{
@@ -431,6 +491,14 @@ textarea[readonly] {
   flex-direction: column;
   gap: 45px;
   align-items: center;
+}
+
+/* ---- Guide Style ----- */
+.guide-section{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 /* ---- New customer and patient form ---- */
@@ -588,6 +656,13 @@ textarea[readonly] {
   flex-direction: column;
   align-items: center;
   margin-bottom: 40px;
+}
+
+.eye-test-label-header{
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  align-items: center;
 }
 
 /* -- Copy Rx Cl Form -- */
@@ -865,6 +940,7 @@ textarea[readonly] {
 .prescription-format-notes{
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 .prescription-format-notes-label{
@@ -979,6 +1055,30 @@ textarea[readonly] {
   font-size: 16px;
 }
 
+/*-- clinic setup panel style --*/
+.clinic-setup-form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.clinic-setup-action-btn-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-top: 35px;
+}
+/* -- Backup panel style -- */
+.backup-page{
+  align-items: center;
+  text-align: center;
+}
+
+.backup-panel-header{
+  margin-top: 50px;
+}
 
 /* -- Inner expandable Rx table -- */
 .inner-table {
@@ -1066,6 +1166,8 @@ textarea[readonly] {
 
   .page-content p {
     width: 90%;
+    text-align: center;
+    align-items: center;
   }
 }
 
@@ -1282,6 +1384,3 @@ textarea[readonly] {
   font-size: 15px;
 }
 
-#debug-class-btn{
-  width: 300px;
-}
