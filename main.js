@@ -128,6 +128,16 @@ window.addEventListener('load', () => {
 // ================================================================
 
 
+function _refreshNewPatientForm() {
+    if (typeof generateID     === 'function') generateID('patient');
+    if (typeof setDateCreated === 'function') setDateCreated('patient');
+}
+
+function _refreshNewCustomerForm() {
+    if (typeof generateID     === 'function') generateID('customer');
+    if (typeof setDateCreated === 'function') setDateCreated('customer');
+}
+
 function _loadClinicSettingsIntoForm() {
     const saved = JSON.parse(Storage.getItem('clinicSettings') || '{}');
     if (saved.clinicName)    document.getElementById('setupClinicName').value    = saved.clinicName;
