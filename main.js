@@ -93,8 +93,12 @@ initStorage().then(() => {
         });
     });
 
-    // ── Init form utilities ───────────────────────────────────────
+    // ── Mount dynamic forms FIRST so DOM inputs exist ────────────
+    // forms.js no longer auto-mounts on 'load' — we mount here
+    // explicitly so patientIdInput / customerIdInput are in the DOM
+    // before initFormLogic() / generateID() try to write to them.
     console.log('[Main] Storage initialized. Bootstrapping app...');
+    if (typeof mountForms     === 'function') mountForms();
     if (typeof initFormLogic  === 'function') initFormLogic();
     if (typeof generateID     === 'function') { generateID('patient'); generateID('customer'); }
     if (typeof setDateCreated === 'function') { setDateCreated('patient'); setDateCreated('customer'); }
@@ -127,16 +131,6 @@ window.addEventListener('load', () => {
 //  previously this logic appeared twice in main.js.
 // ================================================================
 
-
-function _refreshNewPatientForm() {
-    if (typeof generateID     === 'function') generateID('patient');
-    if (typeof setDateCreated === 'function') setDateCreated('patient');
-}
-
-function _refreshNewCustomerForm() {
-    if (typeof generateID     === 'function') generateID('customer');
-    if (typeof setDateCreated === 'function') setDateCreated('customer');
-}
 
 function _loadClinicSettingsIntoForm() {
     const saved = JSON.parse(Storage.getItem('clinicSettings') || '{}');
