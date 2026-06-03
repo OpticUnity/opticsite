@@ -683,4 +683,5 @@ function mountForms() {
     if (vt7Mount) vt7Mount.replaceWith(buildVt7Block());
 }
 
-window.addEventListener('load', mountForms);
+// mountForms() is called explicitly from main.js inside initStorage().then()
+// so that form inputs exist in the DOM before initFormLogic()/generateID() run.
