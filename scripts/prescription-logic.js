@@ -48,18 +48,7 @@ function collectEyeExamData() {
         },
         // AR - FIXED
         ar: {
-            od: { 
-                sph: val('arOdSph'), 
-                cyl: val('arOdCyl'), 
-                axis: val('arOdAxis'),
-                kr: val('arOdKr')
-            },
-            os: { 
-                sph: val('arOsSph'), 
-                cyl: val('arOsCyl'), 
-                axis: val('arOsAxis'),
-                kr: val('arOsKr')
-            },
+            images: window._arImages || [],
             notes: val('arNotes')
         },
         // VT7 - FIXED
@@ -246,6 +235,10 @@ function handleAddPrescription() {
             else el.value = '';
             el.classList.remove('input-error');
         });
+
+    window._arImages = [];
+    const arGallery = document.getElementById('arImageGallery');
+    if (arGallery) arGallery.innerHTML = '';
 
     document.getElementById('frxClForm')?.classList.add('hidden');
     changePatient();

@@ -284,7 +284,75 @@ function createRxDetailRow(rx) {
             </table>
         `;
 
-        detailRow.innerHTML = `<td colspan="4" style="padding:15px;">${content}</td>`;
+        let arContent = '';
+        if (rx.ar) {
+            if (Array.isArray(rx.ar.images) && rx.ar.images.length > 0) {
+                const imgThumbs = rx.ar.images.map(imgSrc => 
+                    `<img src="${imgSrc}" class="ar-record-display-thumb" onclick="openLightbox('${imgSrc}')">`
+                ).join('');
+                
+                arContent = `
+                    <div class="ar-record-display-container">
+                        <div class="ar-record-display-title"><i class="fa-solid fa-camera"></i> Auto-Refraction (AR) Scan(s)</div>
+                        <div class="ar-record-display-gallery">${imgThumbs}</div>
+                        ${rx.ar.notes ? `<div style="font-size:0.85rem; margin-top:5px; opacity:0.85;"><strong>Notes:</strong> ${rx.ar.notes}</div>` : ''}
+                    </div>
+                `;
+            } else if (rx.ar.od && (rx.ar.od.sph || rx.ar.od.cyl || rx.ar.od.axis || rx.ar.os.sph || rx.ar.os.cyl || rx.ar.os.axis)) {
+                arContent = `
+                    <div class="ar-record-display-container" style="align-self: stretch;">
+                        <div class="ar-record-display-title"><i class="fa-solid fa-list-numeric"></i> Auto-Refraction (AR) Findings</div>
+                        <table class="inner-table" style="margin-top: 5px; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>AR</th>
+                                    <th>SPH</th>
+                                    <th>CYL</th>
+                                    <th>AXIS</th>
+                                    <th>KR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>OD</strong></td>
+                                    <td>${rx.ar.od.sph || '-'}</td>
+                                    <td>${rx.ar.od.cyl || '-'}</td>
+                                    <td>${rx.ar.od.axis || '-'}</td>
+                                    <td>${rx.ar.od.kr || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>OS</strong></td>
+                                    <td>${rx.ar.os.sph || '-'}</td>
+                                    <td>${rx.ar.os.cyl || '-'}</td>
+                                    <td>${rx.ar.os.axis || '-'}</td>
+                                    <td>${rx.ar.os.kr || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Notes</strong></td>
+                                    <td colspan="4" style="text-align:left;">${rx.ar.notes || '-'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (rx.ar.notes) {
+                arContent = `
+                    <div class="ar-record-display-container">
+                        <div class="ar-record-display-title">Auto-Refraction (AR) Notes</div>
+                        <div style="font-size:0.85rem; opacity:0.85;">${rx.ar.notes}</div>
+                    </div>
+                `;
+            }
+        }
+
+        detailRow.innerHTML = `
+            <td colspan="4" style="padding:15px;">
+                <div style="display:flex; flex-direction:column; gap:15px;">
+                    ${content}
+                    ${arContent}
+                </div>
+            </td>
+        `;
 
         if (cl) {
             const clBtn = detailRow.querySelector('.cl-toggle-btn');
@@ -717,8 +785,7 @@ function collectEditRxData(rx) {
                 os: { distSph: v('hrxOsDistanceSph'), distCyl: v('hrxOsDistanceCyl'), distAxis: v('hrxOsDistanceAxis'), distPd: v('hrxOsDistancePd'), distVa: v('hrxOsDistanceVa'), nearSph: v('hrxOsNearSph'), nearCyl: v('hrxOsNearCyl'), nearAxis: v('hrxOsNearAxis'), nearPd: v('hrxOsNearPd'), nearVa: v('hrxOsNearVa'), addSph: v('hrxOsAddSph') }
             },
             ar: {
-                od: { sph: v('arOdSph'), cyl: v('arOdCyl'), axis: v('arOdAxis'), kr: v('arOdKr') },
-                os: { sph: v('arOsSph'), cyl: v('arOsCyl'), axis: v('arOsAxis'), kr: v('arOsKr') },
+                images: window._erxArImages || [],
                 notes: v('arNotes')
             },
             vt7: {

@@ -829,6 +829,184 @@ textarea[readonly] {
   margin: 0 10px;  
 }
 
+/* AR Scan Upload Card & Previews */
+.ar-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--secondary-color, #4f4f4f);
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  background: var(--object-bg, rgba(255, 255, 255, 0.05));
+  transition: border-color 0.2s, background-color 0.2s;
+  width: 350px;
+  margin-top: 10px;
+}
+
+.ar-upload-area:hover {
+  border-color: var(--primary-color, #007bff);
+  background: var(--ui-bg, rgba(255, 255, 255, 0.08));
+}
+
+.ar-upload-area i {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  color: var(--primary-color, #007bff);
+}
+
+.ar-upload-area span {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.ar-upload-area p {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin: 4px 0 0 0;
+}
+
+.ar-image-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+  justify-content: center;
+  max-width: 350px;
+}
+
+.ar-image-thumb-container {
+  position: relative;
+  width: 70px;
+  height: 90px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background: #eee;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.ar-image-thumb-container:hover {
+  transform: scale(1.05);
+}
+
+.ar-image-thumb-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ar-image-thumb-container .remove-thumb-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Lightbox Modal for Scan Previews */
+.lightbox-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.lightbox-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lightbox-content-container {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lightbox-content-container img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  object-fit: contain;
+}
+
+.lightbox-close-btn {
+  position: absolute;
+  top: -45px;
+  right: 0;
+  background: transparent;
+  color: white;
+  border: none;
+  font-size: 2.5rem;
+  cursor: pointer;
+}
+
+/* AR display in details */
+.ar-record-display-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--object-bg, rgba(255,255,255,0.03));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ar-record-display-title {
+  font-weight: bold;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary-color, #007bff);
+}
+
+.ar-record-display-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.ar-record-display-thumb {
+  width: 60px;
+  height: 80px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  object-fit: cover;
+  transition: transform 0.2s;
+}
+
+.ar-record-display-thumb:hover {
+  transform: scale(1.08);
+}
+
+
 /* -- VT7 Form -- */
 .vt7-header{
   margin-top: 30px;

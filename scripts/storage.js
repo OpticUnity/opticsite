@@ -1,36 +1,32 @@
 // ================================================================
 //  storage.js — OpticSite / OpticUnity
-//  Centralized storage abstraction layer
+//  Centralized storage abstraction layer with SQLite / FastAPI backend
 // ================================================================
 //
-//  PLATFORM DETECTION — automatic, no manual switching needed.
+//  PLATFORM & BACKEND DETECTION — automatic fallback chain:
 //
-//  ➜ Running inside Tauri (.exe):
-//      window.__TAURI__ exists → Tauri adapter activates.
+//  1. FastAPI Backend (Local Server):
+//      Attempts to query `/api/storage`. If successful, the app upgrades
+//      to use SQLite storage via the local FastAPI server.
+//
+//  2. Tauri Desktop Mode (.exe / .app):
+//      If backend is absent and window.__TAURI__ exists → Tauri adapter activates.
 //      Uses readTextFile / writeTextFile via Tauri FS API.
 //      Atomic write (.tmp → rename) protects against corruption.
 //      Export uses native save dialog.
 //
-//  ➜ Running in a browser (web build):
-//      window.__TAURI__ is undefined → Browser adapter activates.
+//  3. Browser Mode (Local Storage fallback):
+//      If backend is absent and not in Tauri → Browser adapter activates.
 //      Uses localStorage. No atomic write needed.
 //      Export triggers a file download.
 //
-//  Both adapters expose the same interface:
+//  All adapters expose the same interface:
 //      Storage.getItem(key)
 //      Storage.setItem(key, value)
 //      Storage.removeItem(key)
 //      Storage.clear()
 //      Storage.exportBackup()
 //      Storage.importBackup()
-//
-//  importBackup() validation chain:
-//      1. File must be readable and valid JSON          → hard reject
-//      2. Must have a `version` key (OpticSite file)   → hard reject
-//      3. Version mismatch                             → warn, allow
-//      4. Missing patients / prescriptions keys        → warn, allow
-//      5. Confirm overwrite (requireTyping: 'RESTORE') → safety gate
-//      6. Overwrite _dataCache → persist → reload
 //
 //  initStorage() must be awaited before anything else runs.
 //  It is called once in main.js on load.
@@ -42,17 +38,96 @@ const DATA_VERSION = '0.1-emr';
 const DATA_KEY     = 'opticsite_data';   // browser localStorage key
 
 let _dataCache = null;
+let _useBackend = false;
 const _IS_TAURI = !!(window.__TAURI__);
 
 // ================================================================
-//  initStorage — detects platform and initializes the right adapter
+//  initStorage — detects platform/backend and initializes the right adapter
 // ================================================================
 
 async function initStorage() {
+    // 1. Try FastAPI/SQLite Backend first
+    try {
+        const response = await fetch('/api/storage');
+        if (response.ok) {
+            _dataCache = await response.json();
+            _useBackend = true;
+            console.log('[Storage] SQLite/FastAPI backend adapter initialized successfully.');
+            return;
+        }
+    } catch (e) {
+        console.warn('[Storage] Backend server not detected, falling back to local files/storage.', e);
+    }
+
+    // 2. Fallback to Tauri or Browser
     if (_IS_TAURI) {
         await _initTauri();
     } else {
         _initBrowser();
+    }
+}
+
+// ================================================================
+//  BACKEND WRITER HELPERS
+// ================================================================
+
+async function _persistKey(key, value) {
+    if (_useBackend) {
+        try {
+            await fetch('/api/storage/' + encodeURIComponent(key), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ value: value })
+            });
+        } catch (err) {
+            console.error('[Storage] Backend save failed for key:', key, err);
+        }
+    } else {
+        _persist();
+    }
+}
+
+async function _deleteKey(key) {
+    if (_useBackend) {
+        try {
+            await fetch('/api/storage/' + encodeURIComponent(key), {
+                method: 'DELETE'
+            });
+        } catch (err) {
+            console.error('[Storage] Backend delete failed for key:', key, err);
+        }
+    } else {
+        _persist();
+    }
+}
+
+async function _clearBackend() {
+    if (_useBackend) {
+        try {
+            await fetch('/api/storage-clear', {
+                method: 'POST'
+            });
+        } catch (err) {
+            console.error('[Storage] Backend clear failed:', err);
+        }
+    } else {
+        _persist();
+    }
+}
+
+async function _bulkPersistBackend() {
+    if (_useBackend) {
+        try {
+            await fetch('/api/storage-bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: _dataCache })
+            });
+        } catch (err) {
+            console.error('[Storage] Backend bulk persist failed:', err);
+        }
+    } else {
+        _persist();
     }
 }
 
@@ -113,19 +188,19 @@ function _persistBrowser() {
 }
 
 // ================================================================
-//  Unified _persist — calls the right adapter automatically
+//  Unified _persist — calls the right fallback adapter automatically
 // ================================================================
 
 function _persist() {
     if (_IS_TAURI) {
-        _persistTauri();   // async, fire-and-forget is fine —
-    } else {               // _dataCache is always the source of truth.
-        _persistBrowser(); // reads never touch the file, only _dataCache.
+        _persistTauri();   // async, fire-and-forget
+    } else {
+        _persistBrowser();
     }
 }
 
 // ================================================================
-//  Storage — public interface, same for both platforms
+//  Storage — public interface, same for both platforms + backend
 // ================================================================
 
 const Storage = {
@@ -134,15 +209,15 @@ const Storage = {
     },
     setItem(key, value) {
         _dataCache[key] = value;
-        _persist();
+        _persistKey(key, value);
     },
     removeItem(key) {
         delete _dataCache[key];
-        _persist();
+        _deleteKey(key);
     },
     clear() {
         _dataCache = { version: DATA_VERSION };
-        _persist();
+        _clearBackend();
     },
 
     // ── importBackup ─────────────────────────────────────────────
@@ -181,7 +256,7 @@ const Storage = {
             a.download = fileName;
             a.click();
             URL.revokeObjectURL(url);
-            openAlert({ title: 'Backup Download', body: 'Backup will be saved to the chosen destionation.' });
+            openAlert({ title: 'Backup Download', body: 'Backup will be saved to the chosen destination.' });
         }
     }
 };
@@ -242,10 +317,14 @@ function _processImport(rawText) {
         confirmText:  'Restore',
         cancelText:   'Cancel',
         requireTyping: 'RESTORE',
-        onConfirm: () => {
+        onConfirm: async () => {
             // ── 6. Overwrite and persist ──────────────────────────
             _dataCache = parsed;
-            _persist();
+            if (_useBackend) {
+                await _bulkPersistBackend();
+            } else {
+                _persist();
+            }
 
             openAlert({
                 title: 'Restore Complete',
