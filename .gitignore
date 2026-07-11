@@ -1,9 +1,1 @@
-.venv/
-__pycache__/
-*.pyc
-*.db
-*.db-journal
-*.tmp
-opticsite_data.json
-opticsite_data.json.tmp
-.DS_Store
+node_modules/ 
