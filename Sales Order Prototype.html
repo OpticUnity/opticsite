@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Order Table Demo — OpticUnity</title>
+<style>
+  :root {
+    --white: #fff;
+    --text-color: #000;
+    --primary-color: #000;
+    --secondary-color: #272B2F;
+    --ui-bg: #fff;
+    --object-bg: #F3F4F6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: sans-serif;
+    background: var(--ui-bg);
+    color: var(--text-color);
+    padding: 32px 20px;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  h2 { text-align: center; margin-bottom: 24px; }
+  h3 { margin-bottom: 12px; font-size: 15px; }
+
+  /* ── Order Table ── */
+  .order-table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 24px;
+  }
+
+  table.order-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  table.order-table th {
+    background: var(--primary-color);
+    color: var(--white);
+    padding: 10px 8px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  table.order-table td {
+    padding: 6px 6px;
+    border-bottom: 1px solid #e0e0e0;
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  table.order-table tr:nth-child(even) td {
+    background: var(--object-bg);
+  }
+
+  /* col widths */
+  .col-num         { width: 36px; }
+  .col-type        { width: 120px; }
+  .col-desc        { width: auto; min-width: 220px; }
+  .col-qty         { width: 60px; }
+  .col-price       { width: 90px; }
+  .col-disctype    { width: 120px; }
+  .col-discpct     { width: 72px; }
+  .col-discval     { width: 90px; }
+  .col-rowtotal    { width: 100px; }
+  .col-actions     { width: 110px; }
+
+  table.order-table select,
+  table.order-table input[type="text"],
+  table.order-table input[type="number"] {
+    width: 100%;
+    padding: 5px 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    background: var(--ui-bg);
+    color: var(--text-color);
+  }
+
+  input[readonly] {
+    background: var(--object-bg) !important;
+    cursor: default;
+  }
+
+  /* row-total computed */
+  .row-total-display {
+    font-weight: 600;
+    text-align: right;
+    padding-right: 4px;
+  }
+
+  /* ── Payment Summary ── */
+  .order-summary {
+    background: var(--object-bg);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    max-width: 400px;
+    margin-left: auto;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 14px;
+    gap: 12px;
+  }
+
+  .summary-row label { white-space: nowrap; }
+
+  .summary-row input,
+  .summary-row select {
+    width: 160px;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    background: var(--ui-bg);
+    color: var(--text-color);
+    text-align: right;
+  }
+
+  .summary-row select { text-align: left; }
+
+  .summary-divider {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 10px 0;
+  }
+
+  .summary-total-row {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  /* ── Save button ── */
+  .order-actions {
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  button.save-btn {
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    padding: 12px 40px;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  button.save-btn:hover { background: var(--secondary-color); }
+
+  /* ── Modal overlay ── */
+  .item-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+  }
+  .item-modal-overlay.active { display: flex; }
+
+  .item-modal {
+    background: var(--ui-bg);
+    color: var(--text-color);
+    border-radius: 8px;
+    width: 360px;
+    max-width: 95vw;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+
+  .item-modal-header {
+    background: var(--primary-color);
+    color: var(--white);
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .item-modal-body {
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 14px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .item-modal-body label { font-weight: 500; margin-bottom: 2px; display: block; }
+
+  .item-modal-body input,
+  .item-modal-body select,
+  .item-modal-body textarea {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    background: var(--ui-bg);
+    color: var(--text-color);
+  }
+
+  .item-modal-body textarea { resize: vertical; rows: 2; }
+
+  /* Rx mini grid inside modal */
+  .rx-grid {
+    display: grid;
+    grid-template-columns: 36px repeat(4, 1fr);
+    gap: 4px;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .rx-grid .rx-header { font-weight: 600; text-align: center; }
+  .rx-grid .rx-eye    { font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .rx-grid input      { padding: 4px; font-size: 12px; }
+
+  .item-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 20px;
+    border-top: 1px solid #ddd;
+  }
+
+  .item-modal-actions button {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .modal-ok-btn    { background: var(--primary-color); color: var(--white); }
+  .modal-cancel-btn { background: var(--object-bg); color: var(--text-color); }
+
+  .hidden { display: none !important; }
+
+  /* locked row styling */
+  tr.row-locked td {
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* ── Actions column ── */
+  .actions-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .action-btn,
+  .disc-toggle-btn {
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .action-btn svg {
+    width: 13px;
+    height: 13px;
+    fill: currentColor;
+    pointer-events: none;
+  }
+
+  .action-btn:disabled,
+  .disc-toggle-btn:disabled {
+    background: #ccc;
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  .edit-item-btn:not(:disabled):hover { background: var(--secondary-color); }
+  .delete-row-btn:not(:disabled):hover { background: #b91c1c; }
+  .disc-toggle-btn:not(:disabled):hover  { background: var(--secondary-color); }
+
+  tr.disc-detail-row td {
+    background: var(--object-bg);
+    text-align: left;
+    padding: 10px 14px;
+  }
+
+  .disc-detail-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .disc-detail-content label {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .disc-detail-content select,
+  .disc-detail-content input[type="text"] {
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    background: var(--ui-bg);
+    color: var(--text-color);
+  }
+
+  .disc-detail-content select { width: 130px; }
+  .disc-detail-content input[type="text"] { flex: 1; }
+
+  .disc-label-disabled { color: #999; }
+
+  .disc-detail-content input[type="text"]:disabled {
+    background: #ececec;
+    color: #999;
+    cursor: not-allowed;
+  }
+
+  /* note tag */
+  .future-tag {
+    font-size: 11px;
+    color: #888;
+    font-style: italic;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<h2>New Order — Order Items</h2>
+
+<!-- ── Order Table ── -->
+<div class="order-table-wrapper">
+  <table class="order-table" id="orderTable">
+    <thead>
+      <tr>
+        <th class="col-num">#</th>
+        <th class="col-type">Type</th>
+        <th class="col-desc">Description</th>
+        <th class="col-qty">Qty</th>
+        <th class="col-price">Price</th>
+        <th class="col-disctype">Discount</th>
+        <th class="col-discpct">Disc %</th>
+        <th class="col-discval">Disc ₱</th>
+        <th class="col-rowtotal">Total</th>
+        <th class="col-actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="orderTableBody">
+      <!-- rows injected by JS -->
+    </tbody>
+  </table>
+</div>
+
+<!-- ── Payment Summary ── -->
+<div class="order-summary">
+  <h3>Payment Summary</h3>
+
+  <div class="summary-row">
+    <label>Gross Total :</label>
+    <input id="summaryGrossTotal" type="text" readonly value="0.00">
+  </div>
+
+  <div class="summary-row">
+    <label>Discount :</label>
+    <input id="summaryDiscount" type="text" readonly value="0.00">
+  </div>
+
+  <div class="summary-row">
+    <label>Subtotal :</label>
+    <input id="summarySubtotal" type="text" readonly value="0.00">
+  </div>
+
+  <hr class="summary-divider">
+
+  <div class="summary-row summary-total-row">
+    <label>Total :</label>
+    <input id="summaryTotal" type="text" readonly value="0.00">
+  </div>
+
+  <div class="summary-row">
+    <label>Deposit :</label>
+    <input id="summaryDeposit" type="number" min="0" value="0" placeholder="0.00" oninput="recalcSummary()">
+  </div>
+
+  <div class="summary-row">
+    <label>Balance :</label>
+    <input id="summaryBalance" type="text" readonly value="0.00">
+  </div>
+
+  <hr class="summary-divider">
+
+  <div class="summary-row">
+    <label>Payment Method :</label>
+    <select id="paymentMethod">
+      <option value="">-- Select --</option>
+      <option value="cash">Cash</option>
+      <option value="gcash">GCash</option>
+      <option value="maya">Maya</option>
+      <option value="card">Card</option>
+      <option value="bank">Bank Transfer</option>
+    </select>
+  </div>
+</div>
+
+<div class="order-actions">
+  <button class="save-btn" onclick="alert('Save logic goes here.')">Save Order</button>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     MODALS — one per item type
+     Each is shown when its type is selected in the dropdown
+     ══════════════════════════════════════════ -->
+
+<!-- Lens Modal -->
+<div class="item-modal-overlay" id="modalLens">
+  <div class="item-modal">
+    <div class="item-modal-header">Lens Details</div>
+    <div class="item-modal-body">
+      <p class="future-tag">★ Rx auto-fill from prescription records — future implementation</p>
+
+      <label>Lens Brand</label>
+      <input type="text" id="lensBrand" placeholder="e.g. Essilor, Hoya...">
+
+      <label>Lens Type</label>
+      <select id="lensType">
+        <option value="">-- Select --</option>
+        <option>Single Vision</option>
+        <option>Bifocal</option>
+        <option>Progressive</option>
+        <option>Reading</option>
+      </select>
+
+      <label>Coating</label>
+      <input type="text" id="lensCoating" placeholder="e.g. Anti-radiation, Blue cut...">
+
+      <label>Rx (OD / OS)</label>
+      <div class="rx-grid">
+        <div></div>
+        <div class="rx-header">SPH</div>
+        <div class="rx-header">CYL</div>
+        <div class="rx-header">AXIS</div>
+        <div class="rx-header">ADD</div>
+        <div class="rx-eye">OD</div>
+        <input type="text" id="lensOdSph"  placeholder="SPH">
+        <input type="text" id="lensOdCyl"  placeholder="CYL">
+        <input type="text" id="lensOdAxis" placeholder="AXIS">
+        <input type="text" id="lensOdAdd"  placeholder="ADD">
+        <div class="rx-eye">OS</div>
+        <input type="text" id="lensOsSph"  placeholder="SPH">
+        <input type="text" id="lensOsCyl"  placeholder="CYL">
+        <input type="text" id="lensOsAxis" placeholder="AXIS">
+        <input type="text" id="lensOsAdd"  placeholder="ADD">
+      </div>
+
+      <label>Notes</label>
+      <textarea id="lensNotes" placeholder="Additional notes..."></textarea>
+    </div>
+    <div class="item-modal-actions">
+      <button class="modal-cancel-btn" onclick="cancelModal('modalLens')">Cancel</button>
+      <button class="modal-ok-btn"     onclick="confirmModal('modalLens', 'lens')">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Frame Modal -->
+<div class="item-modal-overlay" id="modalFrame">
+  <div class="item-modal">
+    <div class="item-modal-header">Frame Details</div>
+    <div class="item-modal-body">
+      <label>Brand</label>
+      <input type="text" id="frameBrand" placeholder="e.g. Ray-Ban, Oakley...">
+
+      <label>Model / Code</label>
+      <input type="text" id="frameModel" placeholder="Model or product code...">
+
+      <label>Color</label>
+      <input type="text" id="frameColor" placeholder="e.g. Black, Tortoise...">
+
+      <label>Material</label>
+      <select id="frameMaterial">
+        <option value="">-- Select --</option>
+        <option>Metal</option>
+        <option>Acetate</option>
+        <option>TR90</option>
+        <option>Titanium</option>
+        <option>Other</option>
+      </select>
+
+      <label>Notes</label>
+      <textarea id="frameNotes" placeholder="Additional notes..."></textarea>
+    </div>
+    <div class="item-modal-actions">
+      <button class="modal-cancel-btn" onclick="cancelModal('modalFrame')">Cancel</button>
+      <button class="modal-ok-btn"     onclick="confirmModal('modalFrame', 'frame')">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Lens Modal -->
+<div class="item-modal-overlay" id="modalCL">
+  <div class="item-modal">
+    <div class="item-modal-header">Contact Lens Details</div>
+    <div class="item-modal-body">
+      <label>Brand</label>
+      <input type="text" id="clBrand" placeholder="e.g. Acuvue, Bausch & Lomb...">
+
+      <label>Type</label>
+      <select id="clType">
+        <option value="">-- Select --</option>
+        <option>Daily</option>
+        <option>Monthly</option>
+        <option>Yearly</option>
+        <option>Colored</option>
+        <option>Toric</option>
+      </select>
+
+      <label>Grade (OD / OS)</label>
+      <div class="rx-grid" style="grid-template-columns: 36px repeat(3, 1fr);">
+        <div></div>
+        <div class="rx-header">SPH</div>
+        <div class="rx-header">BC</div>
+        <div class="rx-header">DIA</div>
+        <div class="rx-eye">OD</div>
+        <input type="text" id="clOdSph" placeholder="SPH">
+        <input type="text" id="clOdBc"  placeholder="BC">
+        <input type="text" id="clOdDia" placeholder="DIA">
+        <div class="rx-eye">OS</div>
+        <input type="text" id="clOsSph" placeholder="SPH">
+        <input type="text" id="clOsBc"  placeholder="BC">
+        <input type="text" id="clOsDia" placeholder="DIA">
+      </div>
+
+      <label>Notes</label>
+      <textarea id="clNotes" placeholder="Additional notes..."></textarea>
+    </div>
+    <div class="item-modal-actions">
+      <button class="modal-cancel-btn" onclick="cancelModal('modalCL')">Cancel</button>
+      <button class="modal-ok-btn"     onclick="confirmModal('modalCL', 'cl')">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Service Modal -->
+<div class="item-modal-overlay" id="modalService">
+  <div class="item-modal">
+    <div class="item-modal-header">Service Details</div>
+    <div class="item-modal-body">
+      <label>Service Type</label>
+      <select id="serviceType">
+        <option value="">-- Select --</option>
+        <option>Eye Checkup</option>
+        <option>Lens Transfer</option>
+        <option>Frame Repair</option>
+        <option>Lens Replacement</option>
+        <option>Others</option>
+      </select>
+
+      <label>Notes</label>
+      <textarea id="serviceNotes" placeholder="Details about the service..."></textarea>
+    </div>
+    <div class="item-modal-actions">
+      <button class="modal-cancel-btn" onclick="cancelModal('modalService')">Cancel</button>
+      <button class="modal-ok-btn"     onclick="confirmModal('modalService', 'service')">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Item Modal (accessories, solutions, readymades) -->
+<div class="item-modal-overlay" id="modalItem">
+  <div class="item-modal">
+    <div class="item-modal-header">Item Details</div>
+    <div class="item-modal-body">
+      <label>Category</label>
+      <select id="itemCategory">
+        <option value="">-- Select --</option>
+        <option>Readymade Glasses</option>
+        <option>Contact Lens Solution</option>
+        <option>Accessories</option>
+        <option>Others</option>
+      </select>
+
+      <label>Brand / Name</label>
+      <input type="text" id="itemName" placeholder="Product name or brand...">
+
+      <label>Notes</label>
+      <textarea id="itemNotes" placeholder="Additional notes..."></textarea>
+    </div>
+    <div class="item-modal-actions">
+      <button class="modal-cancel-btn" onclick="cancelModal('modalItem')">Cancel</button>
+      <button class="modal-ok-btn"     onclick="confirmModal('modalItem', 'item')">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     Lightweight confirm dialog (prototype version of main project's modal.js)
+     Used for destructive-action warnings, e.g. switching a row's item type.
+     ══════════════════════════════════════════ -->
+<div class="item-modal-overlay" id="protoConfirmModal">
+  <div class="item-modal">
+    <div class="item-modal-header" id="protoConfirmTitle">Confirm</div>
+    <div class="item-modal-body">
+      <p id="protoConfirmBody" style="white-space: pre-line;"></p>
+    </div>
+    <div class="item-modal-actions">
+      <button class="modal-cancel-btn" id="protoConfirmCancelBtn">Cancel</button>
+      <button class="modal-ok-btn"     id="protoConfirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ── Config ──
+const INITIAL_ROWS   = 10;
+const TABLE_COLS     = 10;
+const ICON_EDIT = `<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 79.7l-145 145c-4.5 4.5-7.6 10.1-8.9 16.2l-23.4 117.1 117.1-23.4c6.1-1.3 11.7-4.4 16.2-8.9l145-145c21.9-21.9 21.9-57.3 0-79.2L251.7 101.4c-21.9-21.8-57.3-21.8-79.2 0zM80 352c-8.8 0-16 7.2-16 16v64c0 8.8 7.2 16 16 16h64c8.8 0 16-7.2 16-16V384h32c8.8 0 16-7.2 16-16s-7.2-16-16-16H96 80z"/></svg>`;
+const ICON_TRASH = `<svg viewBox="0 0 448 512" aria-hidden="true"><path d="M135.2 17.7C140.6 6.8 151.7 0 163.8 0h120.4c12.1 0 23.2 6.8 28.6 17.7L320 32h96c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 96 0 81.7 0 64S14.3 32 32 32h96l7.2-14.3zM32 128h384v320c0 35.3-28.7 64-64 64H96c-35.3 0-64-28.7-64-64V128zm96 64c-8.8 0-16 7.2-16 16v224c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16v224c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16v224c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16z"/></svg>`;
+const TYPE_TO_MODAL  = {
+  lens:    'modalLens',
+  frame:   'modalFrame',
+  cl:      'modalCL',
+  service: 'modalService',
+  item:    'modalItem',
+};
+
+// Field IDs captured/prefilled per item type — single source of truth
+// used by captureModalFields() and prefillModalFields().
+const MODAL_FIELDS = {
+  lens:    ['lensBrand', 'lensType', 'lensCoating',
+            'lensOdSph', 'lensOdCyl', 'lensOdAxis', 'lensOdAdd',
+            'lensOsSph', 'lensOsCyl', 'lensOsAxis', 'lensOsAdd',
+            'lensNotes'],
+  frame:   ['frameBrand', 'frameModel', 'frameColor', 'frameMaterial', 'frameNotes'],
+  cl:      ['clBrand', 'clType',
+            'clOdSph', 'clOdBc', 'clOdDia',
+            'clOsSph', 'clOsBc', 'clOsDia',
+            'clNotes'],
+  service: ['serviceType', 'serviceNotes'],
+  item:    ['itemCategory', 'itemName', 'itemNotes'],
+};
+
+// tracks which row triggered the modal
+let _activeRowIndex = null;
+
+// tracks whether the open modal is in "edit existing row" mode
+// (true = re-confirm overwrites in place, no new-row auto-append)
+let _isEditingRow = false;
+
+// row data store
+let orderRows = [];
+
+function emptyRowData() {
+  return {
+    type: '', description: '', itemData: null, qty: 1, price: 0,
+    discType: 'none', discPct: 0, discVal: 0,
+    discName: '',
+    total: 0, valid: false
+  };
+}
+
+// ── Build initial rows ──
+function initTable() {
+  for (let i = 0; i < INITIAL_ROWS; i++) addRow();
+  setRowLocked(0, false);
+}
+
+function addRow() {
+  const index = orderRows.length;
+  orderRows.push(emptyRowData());
+  document.getElementById('orderTableBody').appendChild(createRowTr(index));
+  setActionsState(index);
+}
+
+function createRowTr(index) {
+  const row    = orderRows[index];
+  const locked = index > 0;
+
+  const tr = document.createElement('tr');
+  tr.dataset.index = index;
+  if (locked) tr.classList.add('row-locked');
+
+  const qtyVal   = row.type ? (row.qty || '') : '';
+  const priceVal = row.type ? (row.price || '') : '';
+  const discPct  = row.discPct  ? row.discPct  : '';
+  const discVal  = row.discVal  ? row.discVal  : '';
+  const totalVal = row.type     ? row.total.toFixed(2) : '';
+
+  tr.innerHTML = `
+    <td class="col-num">${index + 1}</td>
+    <td class="col-type">
+      <select onchange="onTypeChange(${index}, this)" id="type-${index}" ${locked ? 'disabled' : ''}>
+        <option value="">--</option>
+        <option value="lens"    ${row.type === 'lens'    ? 'selected' : ''}>Lens</option>
+        <option value="frame"   ${row.type === 'frame'   ? 'selected' : ''}>Frame</option>
+        <option value="cl"      ${row.type === 'cl'      ? 'selected' : ''}>Contact Lens</option>
+        <option value="service" ${row.type === 'service' ? 'selected' : ''}>Service</option>
+        <option value="item"    ${row.type === 'item'    ? 'selected' : ''}>Item</option>
+      </select>
+    </td>
+    <td class="col-desc">
+      <input type="text" readonly placeholder="—" id="desc-${index}" value="${escapeAttr(row.description)}">
+    </td>
+    <td class="col-qty">
+      <input type="number" min="1" value="${qtyVal}" id="qty-${index}"
+        oninput="onNumChange(${index})" placeholder="—" ${locked ? 'disabled' : ''}>
+    </td>
+    <td class="col-price">
+      <input type="number" min="0" value="${priceVal}" id="price-${index}"
+        oninput="onNumChange(${index})" placeholder="0.00" ${locked ? 'disabled' : ''}>
+    </td>
+    <td class="col-disctype">
+      <select id="disctype-${index}" onchange="onDiscTypeChange(${index})" ${locked ? 'disabled' : ''}>
+        <option value="none"   ${row.discType === 'none'   ? 'selected' : ''}>None</option>
+        <option value="senior" ${row.discType === 'senior' ? 'selected' : ''}>Senior</option>
+        <option value="pwd"    ${row.discType === 'pwd'    ? 'selected' : ''}>PWD</option>
+        <option value="promo"  ${row.discType === 'promo'  ? 'selected' : ''}>Promo</option>
+      </select>
+    </td>
+    <td class="col-discpct">
+      <input type="number" min="0" max="100" value="${discPct}" id="discpct-${index}"
+        oninput="onDiscPctChange(${index})" placeholder="0" ${locked ? 'disabled' : ''}>
+    </td>
+    <td class="col-discval">
+      <input type="number" min="0" value="${discVal}" id="discval-${index}"
+        oninput="onDiscValChange(${index})" placeholder="0.00" ${locked ? 'disabled' : ''}>
+    </td>
+    <td class="col-rowtotal">
+      <input type="text" readonly id="rowtotal-${index}" class="row-total-display" value="${totalVal}">
+    </td>
+    <td class="col-actions">
+      <div class="actions-cell">
+        <button type="button" class="action-btn edit-item-btn" id="editbtn-${index}"
+          onclick="editRowItem(${index})" disabled title="Edit Item">${ICON_EDIT}</button>
+        <button type="button" class="disc-toggle-btn" id="expandbtn-${index}"
+          onclick="toggleDiscDetail(${index})" disabled title="More Details">▼</button>
+        <button type="button" class="action-btn delete-row-btn" id="deletebtn-${index}"
+          onclick="deleteRow(${index})" disabled title="Delete">${ICON_TRASH}</button>
+      </div>
+    </td>
+  `;
+  return tr;
+}
+
+function escapeAttr(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;');
+}
+
+function rebuildTable() {
+  const tbody = document.getElementById('orderTableBody');
+  tbody.innerHTML = '';
+  orderRows.forEach((_, i) => tbody.appendChild(createRowTr(i)));
+  updateRowLocks();
+  orderRows.forEach((_, i) => setActionsState(i));
+  recalcSummary();
+}
+
+// ── Lock / unlock a row ──
+function setRowLocked(index, locked) {
+  const tr = document.querySelector(`tr[data-index="${index}"]`);
+  if (!tr) return;
+  tr.classList.toggle('row-locked', locked);
+  tr.querySelector(`#type-${index}`).disabled     = locked;
+  tr.querySelector(`#qty-${index}`).disabled      = locked;
+  tr.querySelector(`#price-${index}`).disabled    = locked;
+  tr.querySelector(`#disctype-${index}`).disabled = locked;
+  tr.querySelector(`#discpct-${index}`).disabled  = locked;
+  tr.querySelector(`#discval-${index}`).disabled  = locked;
+
+  setActionsState(index);
+}
+
+function rowHasContent(index) {
+  const row = orderRows[index];
+  if (!row) return false;
+  return !!(row.type || row.description || row.price > 0 || row.discVal > 0);
+}
+
+function setActionsState(index) {
+  const tr = document.querySelector(`tr[data-index="${index}"]`);
+  if (!tr) return;
+
+  const locked     = tr.classList.contains('row-locked');
+  const hasDetails = !!orderRows[index]?.description;
+  const canDelete  = rowHasContent(index);
+
+  const editBtn   = tr.querySelector(`#editbtn-${index}`);
+  const expandBtn = tr.querySelector(`#expandbtn-${index}`);
+  const deleteBtn = tr.querySelector(`#deletebtn-${index}`);
+
+  if (editBtn)   editBtn.disabled   = locked || !hasDetails;
+  if (expandBtn) expandBtn.disabled = locked || !hasDetails;
+  if (deleteBtn) deleteBtn.disabled = locked || !canDelete;
+}
+
+// ── A row is valid when type is set AND price > 0 ──
+function isRowValid(index) {
+  return orderRows[index].type !== '' && orderRows[index].price > 0;
+}
+
+// ── After any change, re-evaluate sequential locks ──
+function updateRowLocks() {
+  for (let i = 1; i < orderRows.length; i++) {
+    const prevValid = isRowValid(i - 1);
+    setRowLocked(i, !prevValid);
+  }
+}
+
+// ── Type dropdown changed ──
+function onTypeChange(index, selectEl) {
+  const newType    = selectEl.value;
+  const row        = orderRows[index];
+  const hadDetails = !!row.description;
+  const oldType    = row.type;
+
+  // Switching away from a row that already has confirmed item details —
+  // warn before wiping that data.
+  if (hadDetails && newType !== oldType) {
+    openProtoConfirm({
+      title: 'Change Item Type?',
+      body: 'This row already has confirmed item details.\nSwitching type will erase them.',
+      confirmText: 'Switch Type',
+      cancelText: 'Keep Current',
+      onConfirm: () => applyTypeChange(index, newType),
+      onCancel:  () => { selectEl.value = oldType; }
+    });
+    return;
+  }
+
+  applyTypeChange(index, newType);
+}
+
+// ── Actually apply the type change (after any confirmation) ──
+function applyTypeChange(index, type) {
+  orderRows[index].type = type;
+
+  if (!type) {
+    orderRows[index].description = '';
+    orderRows[index].itemData    = null;
+    orderRows[index].valid       = false;
+    document.getElementById(`desc-${index}`).value = '';
+    setActionsState(index);
+    collapseDiscDetail(index);
+    recalcRow(index);
+    recalcSummary();
+    updateRowLocks();
+    return;
+  }
+
+  // clear any stale details from a previous type before opening fresh
+  orderRows[index].description = '';
+  orderRows[index].itemData    = null;
+  document.getElementById(`desc-${index}`).value = '';
+  setActionsState(index);
+  collapseDiscDetail(index);
+
+  _activeRowIndex = index;
+  _isEditingRow   = false;
+  clearModalFields(TYPE_TO_MODAL[type]);
+  document.getElementById(TYPE_TO_MODAL[type]).classList.add('active');
+}
+
+// ── Modal: Cancel — revert dropdown (new row) or just close (editing existing row) ──
+function cancelModal(modalId) {
+  document.getElementById(modalId).classList.remove('active');
+  clearModalFields(modalId);
+
+  if (_isEditingRow) {
+    // editing an already-confirmed row — leave its data untouched
+    _activeRowIndex = null;
+    _isEditingRow   = false;
+    return;
+  }
+
+  if (_activeRowIndex !== null) {
+    const tr     = document.querySelector(`tr[data-index="${_activeRowIndex}"]`);
+    const select = tr.querySelector('select');
+    select.value = '';
+    orderRows[_activeRowIndex].type        = '';
+    orderRows[_activeRowIndex].description = '';
+    orderRows[_activeRowIndex].valid       = false;
+    document.getElementById(`desc-${_activeRowIndex}`).value = '';
+    setActionsState(_activeRowIndex);
+    updateRowLocks();
+  }
+  _activeRowIndex = null;
+}
+
+// ── Clear all input/select/textarea fields inside a modal ──
+function clearModalFields(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  modal.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
+  modal.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+}
+
+// ── Capture raw field values for a given item type (keyed by field id) ──
+function captureModalFields(type) {
+  const fields = MODAL_FIELDS[type] || [];
+  const data = {};
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    data[id] = el ? el.value : '';
+  });
+  return data;
+}
+
+// ── Prefill a modal's fields from previously captured row data ──
+function prefillModalFields(type, data) {
+  if (!data) return;
+  const fields = MODAL_FIELDS[type] || [];
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && data[id] !== undefined) el.value = data[id];
+  });
+}
+
+// ── Modal: Confirm — build description string ──
+function confirmModal(modalId, type) {
+  document.getElementById(modalId).classList.remove('active');
+  if (_activeRowIndex === null) return;
+
+  const index = _activeRowIndex;
+  const desc  = buildDescription(type);
+  orderRows[index].description = desc;
+  orderRows[index].itemData    = captureModalFields(type); // raw fields, for later editing
+  document.getElementById(`desc-${index}`).value = desc;
+
+  clearModalFields(modalId);
+
+  // row now has confirmed item details — enable the expand toggle
+  setActionsState(index);
+
+  // if last row and now valid, append a new one (skip when just editing an existing row)
+  if (!_isEditingRow && index === orderRows.length - 1 && isRowValid(index)) addRow();
+
+  updateRowLocks();
+  _activeRowIndex = null;
+  _isEditingRow   = false;
+}
+
+// ── Edit button — reopen the item modal prefilled for an existing row ──
+function editRowItem(index) {
+  const row = orderRows[index];
+  if (!row || !row.type) return;
+
+  _activeRowIndex = index;
+  _isEditingRow    = true;
+
+  const modalId = TYPE_TO_MODAL[row.type];
+  clearModalFields(modalId);
+  prefillModalFields(row.type, row.itemData);
+  document.getElementById(modalId).classList.add('active');
+}
+
+// ── Lightweight confirm dialog (mirrors main project's openModal API shape) ──
+// options: { title, body, confirmText, cancelText, onConfirm, onCancel }
+function openProtoConfirm(options = {}) {
+  const {
+    title       = 'Confirm',
+    body        = '',
+    confirmText = 'Confirm',
+    cancelText  = 'Cancel',
+    onConfirm   = () => {},
+    onCancel    = () => {}
+  } = options;
+
+  const overlay   = document.getElementById('protoConfirmModal');
+  const titleEl   = document.getElementById('protoConfirmTitle');
+  const bodyEl    = document.getElementById('protoConfirmBody');
+  const okBtn     = document.getElementById('protoConfirmOkBtn');
+  const cancelBtn = document.getElementById('protoConfirmCancelBtn');
+
+  titleEl.textContent   = title;
+  bodyEl.textContent    = body;
+  okBtn.textContent     = confirmText;
+  cancelBtn.textContent = cancelText;
+
+  // replace buttons to clear any previously bound one-time listeners
+  const newOkBtn     = okBtn.cloneNode(true);
+  const newCancelBtn = cancelBtn.cloneNode(true);
+  okBtn.replaceWith(newOkBtn);
+  cancelBtn.replaceWith(newCancelBtn);
+
+  newOkBtn.addEventListener('click', () => {
+    overlay.classList.remove('active');
+    onConfirm();
+  }, { once: true });
+
+  newCancelBtn.addEventListener('click', () => {
+    overlay.classList.remove('active');
+    onCancel();
+  }, { once: true });
+
+  overlay.classList.add('active');
+}
+
+// ── Build human-readable description from modal fields ──
+function buildDescription(type) {
+  switch(type) {
+    case 'lens': {
+      const brand   = document.getElementById('lensBrand').value.trim();
+      const lensType = document.getElementById('lensType').value;
+      const coating = document.getElementById('lensCoating').value.trim();
+      const parts   = [brand, lensType, coating].filter(Boolean);
+      return parts.length ? parts.join(' — ') : 'Lens';
+    }
+    case 'frame': {
+      const brand = document.getElementById('frameBrand').value.trim();
+      const model = document.getElementById('frameModel').value.trim();
+      const color = document.getElementById('frameColor').value.trim();
+      const parts = [brand, model, color].filter(Boolean);
+      return parts.length ? parts.join(' / ') : 'Frame';
+    }
+    case 'cl': {
+      const brand  = document.getElementById('clBrand').value.trim();
+      const clType = document.getElementById('clType').value;
+      const parts  = [brand, clType].filter(Boolean);
+      return parts.length ? parts.join(' — ') : 'Contact Lens';
+    }
+    case 'service': {
+      const sType = document.getElementById('serviceType').value;
+      const notes = document.getElementById('serviceNotes').value.trim();
+      return [sType, notes].filter(Boolean).join(': ') || 'Service';
+    }
+    case 'item': {
+      const cat  = document.getElementById('itemCategory').value;
+      const name = document.getElementById('itemName').value.trim();
+      return [cat, name].filter(Boolean).join(' — ') || 'Item';
+    }
+    default: return '';
+  }
+}
+
+// ── Numeric field changed (qty/price) ──
+function onNumChange(index) {
+  // price/qty changed — if a % discount is active, re-derive the ₱ value to match
+  const row = orderRows[index];
+  if (row && row.discType !== 'none' && row.discPct > 0) {
+    const qty   = parseFloat(document.getElementById(`qty-${index}`)?.value)   || 0;
+    const price = parseFloat(document.getElementById(`price-${index}`)?.value) || 0;
+    const base  = qty * price;
+    const newVal = +(base * (row.discPct / 100)).toFixed(2);
+    document.getElementById(`discval-${index}`).value = newVal || '';
+  }
+
+  recalcRow(index);
+  recalcSummary();
+
+  // auto-expand when last row becomes valid
+  if (index === orderRows.length - 1 && isRowValid(index)) addRow();
+
+  updateRowLocks();
+}
+
+function recalcRow(index) {
+  const qty      = parseFloat(document.getElementById(`qty-${index}`)?.value)     || 0;
+  const price    = parseFloat(document.getElementById(`price-${index}`)?.value)   || 0;
+  const discVal  = parseFloat(document.getElementById(`discval-${index}`)?.value) || 0;
+  const total    = Math.max(0, (qty * price) - discVal);
+
+  orderRows[index].qty     = qty;
+  orderRows[index].price   = price;
+  orderRows[index].discVal = discVal;
+  orderRows[index].total   = total;
+
+  const totalEl = document.getElementById(`rowtotal-${index}`);
+  if (totalEl) totalEl.value = orderRows[index].type ? total.toFixed(2) : '';
+}
+
+// ── Discount Type dropdown changed ──
+function onDiscTypeChange(index) {
+  const select   = document.getElementById(`disctype-${index}`);
+  const discType = select.value;
+  orderRows[index].discType = discType;
+
+  const pctEl = document.getElementById(`discpct-${index}`);
+  const valEl = document.getElementById(`discval-${index}`);
+
+  if (discType === 'none') {
+    pctEl.value = '';
+    valEl.value = '';
+    orderRows[index].discPct  = 0;
+    orderRows[index].discVal  = 0;
+    orderRows[index].discName = '';
+  } else if (discType === 'senior' || discType === 'pwd') {
+    // auto-fill 20%, editable
+    const qty   = parseFloat(document.getElementById(`qty-${index}`)?.value)   || 0;
+    const price = parseFloat(document.getElementById(`price-${index}`)?.value) || 0;
+    const base  = qty * price;
+    pctEl.value = 20;
+    valEl.value = +(base * 0.20).toFixed(2) || '';
+    orderRows[index].discPct  = 20;
+    orderRows[index].discName = '';
+  } else if (discType === 'promo') {
+    // leave blank for manual entry
+    pctEl.value = '';
+    valEl.value = '';
+    orderRows[index].discPct = 0;
+    orderRows[index].discVal = 0;
+  }
+
+  // the expand toggle reflects "has confirmed item", independent of Disc Type —
+  // if the detail row is currently open, re-render it so the Promo Name field's
+  // enabled/disabled state matches the new Disc Type selection
+  const tr   = document.querySelector(`tr[data-index="${index}"]`);
+  const next = tr?.nextElementSibling;
+  if (next && next.classList.contains('disc-detail-row') && next.dataset.parent === String(index)) {
+    expandDiscDetail(index);
+  }
+
+  recalcRow(index);
+  recalcSummary();
+}
+
+// ── Disc % changed → derive ₱ ──
+function onDiscPctChange(index) {
+  const pct   = parseFloat(document.getElementById(`discpct-${index}`)?.value)  || 0;
+  const qty   = parseFloat(document.getElementById(`qty-${index}`)?.value)      || 0;
+  const price = parseFloat(document.getElementById(`price-${index}`)?.value)    || 0;
+  const base  = qty * price;
+  const val   = +(base * (pct / 100)).toFixed(2);
+
+  document.getElementById(`discval-${index}`).value = val || '';
+  orderRows[index].discPct = pct;
+
+  recalcRow(index);
+  recalcSummary();
+}
+
+// ── Disc ₱ changed → derive % ──
+function onDiscValChange(index) {
+  const val   = parseFloat(document.getElementById(`discval-${index}`)?.value)  || 0;
+  const qty   = parseFloat(document.getElementById(`qty-${index}`)?.value)      || 0;
+  const price = parseFloat(document.getElementById(`price-${index}`)?.value)    || 0;
+  const base  = qty * price;
+  const pct   = base > 0 ? +((val / base) * 100).toFixed(2) : 0;
+
+  document.getElementById(`discpct-${index}`).value = pct || '';
+  orderRows[index].discPct = pct;
+
+  recalcRow(index);
+  recalcSummary();
+}
+
+// ── Delete row with confirmation ──
+function deleteRow(index) {
+  const row = orderRows[index];
+  if (!row || !rowHasContent(index)) return;
+
+  const label = row.description || row.type || `Line #${index + 1}`;
+
+  openProtoConfirm({
+    title: 'Delete Line Item?',
+    body: `Remove "${label}" from this order?\nThis cannot be undone.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    onConfirm: () => {
+      collapseDiscDetail(index);
+      orderRows.splice(index, 1);
+
+      if (orderRows.length === 0) orderRows.push(emptyRowData());
+
+      rebuildTable();
+
+      const lastIndex = orderRows.length - 1;
+      if (isRowValid(lastIndex)) addRow();
+
+      updateRowLocks();
+      recalcSummary();
+    }
+  });
+}
+
+// ── Toggle the discount detail sub-row open/closed ──
+function toggleDiscDetail(index) {
+  const tr   = document.querySelector(`tr[data-index="${index}"]`);
+  const next = tr.nextElementSibling;
+
+  if (next && next.classList.contains('disc-detail-row') && next.dataset.parent === String(index)) {
+    next.remove();
+    document.getElementById(`expandbtn-${index}`).textContent = '▼';
+  } else {
+    expandDiscDetail(index);
+  }
+}
+
+function expandDiscDetail(index) {
+  collapseDiscDetail(index); // avoid duplicates
+  const tr = document.querySelector(`tr[data-index="${index}"]`);
+  if (!tr) return;
+
+  const discType   = orderRows[index].discType;
+  const isPromo    = discType === 'promo';
+
+  const detailRow = document.createElement('tr');
+  detailRow.classList.add('disc-detail-row');
+  detailRow.dataset.parent = String(index);
+
+  const inner = `
+    <label class="${isPromo ? '' : 'disc-label-disabled'}">Promo Name:</label>
+    <input type="text" id="discname-${index}" placeholder="e.g. Father's Day Promo"
+      oninput="onDiscNameChange(${index})" ${isPromo ? '' : 'disabled'}>
+  `;
+
+  detailRow.innerHTML = `<td colspan="${TABLE_COLS}"><div class="disc-detail-content">${inner}</div></td>`;
+  tr.after(detailRow);
+  document.getElementById(`expandbtn-${index}`).textContent = '▲';
+
+  // restore any previously entered promo name (e.g. row was collapsed/re-expanded)
+  const nameEl = document.getElementById(`discname-${index}`);
+  if (nameEl && orderRows[index].discName) nameEl.value = orderRows[index].discName;
+}
+
+function collapseDiscDetail(index) {
+  const tr   = document.querySelector(`tr[data-index="${index}"]`);
+  if (!tr) return;
+  const next = tr.nextElementSibling;
+  if (next && next.classList.contains('disc-detail-row') && next.dataset.parent === String(index)) {
+    next.remove();
+  }
+  const btn = document.getElementById(`expandbtn-${index}`);
+  if (btn) btn.textContent = '▼';
+}
+
+function onDiscNameChange(index) {
+  const el = document.getElementById(`discname-${index}`);
+  orderRows[index].discName = el ? el.value.trim() : '';
+}
+
+// ── Summary recalc: Gross Total → Discount → Subtotal → Total ──
+function recalcSummary() {
+  const grossTotal = orderRows.reduce((sum, r) => sum + ((r.qty || 0) * (r.price || 0)), 0);
+  const discount   = orderRows.reduce((sum, r) => sum + (r.discVal || 0), 0);
+  const subtotal   = Math.max(0, grossTotal - discount);
+
+  document.getElementById('summaryGrossTotal').value = grossTotal.toFixed(2);
+  document.getElementById('summaryDiscount').value   = discount.toFixed(2);
+  document.getElementById('summarySubtotal').value   = subtotal.toFixed(2);
+  document.getElementById('summaryTotal').value      = subtotal.toFixed(2);
+
+  const deposit  = parseFloat(document.getElementById('summaryDeposit').value) || 0;
+  const balance  = Math.max(0, subtotal - deposit);
+  document.getElementById('summaryBalance').value = balance.toFixed(2);
+}
+
+// ── Init ──
+initTable();
+</script>
+</body>
+</html>

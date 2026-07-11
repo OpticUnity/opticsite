@@ -1,0 +1,1055 @@
+//--------------- Unified Form Logic (Customer & Patient) ---------------
+
+// 1. Restrict to Numbers Only
+function allowOnlyNumbers(event) {
+    const isControlKey = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Enter'].includes(event.key);
+    if (!/[0-9]/.test(event.key) && !isControlKey) {
+        event.preventDefault();
+    }
+}
+
+// 2. ID Series Helper (AA -> AB ... AZ -> BA)
+function incrementSeries(series) {
+    let first = series.charCodeAt(0);
+    let second = series.charCodeAt(1);
+
+    second++;
+    if (second > 90) { // If 'Z' is exceeded (ASCII 90)
+        second = 65; // Reset to 'A' (ASCII 65)
+        first++;
+        if (first > 90) {
+            return "ZZ"; // Maximum series reached
+        }
+    }
+    return String.fromCharCode(first) + String.fromCharCode(second);
+}
+
+// 3. Generate Unique ID (OC for Customer, OP for Patient)
+function generateID(type) {
+    const isPatient = type === 'patient';
+    const storageKey = isPatient ? 'patients' : 'customers';
+    const prefix = isPatient ? 'OP' : 'OC';
+    const inputId = isPatient ? 'patientIdInput' : 'customerIdInput';
+
+    const records = JSON.parse(Storage.getItem(storageKey) || '[]');
+    const currentYearShort = new Date().getFullYear().toString().slice(-2); 
+    
+    let nextNumber = 1;
+    let series = "AA";
+
+    if (records.length > 0) {
+        const lastRecord = records[records.length - 1];
+        const lastID = lastRecord.id; 
+        const lastYear = lastID.substring(2, 4); 
+        const lastSeries = lastID.substring(4, 6);
+        const lastNumPart = parseInt(lastID.substring(6));
+        
+        if (lastYear === currentYearShort) {
+            if (lastNumPart >= 9999) {
+                series = incrementSeries(lastSeries);
+                nextNumber = 1; 
+            } else {
+                series = lastSeries;
+                nextNumber = lastNumPart + 1;
+            }
+        }
+    }
+
+    const paddedNum = String(nextNumber).padStart(4, '0');
+    const newID = `${prefix}${currentYearShort}${series}${paddedNum}`;
+    
+    const inputEl = document.getElementById(inputId);
+    if (inputEl) inputEl.value = newID;
+
+    return newID; // ← ADD THIS
+}
+
+// 4. Calculate Age
+function calculateAge(prefix) {
+    const mm = document.getElementById(`${prefix}BirthdayMM`).value;
+    const dd = document.getElementById(`${prefix}BirthdayDD`).value;
+    const yyyy = document.getElementById(`${prefix}BirthdayYYYY`).value;
+    const ageInput = document.getElementById(`${prefix}InputAge`);
+
+    if (mm && dd && yyyy.length === 4) {
+        const birthDate = new Date(yyyy, mm - 1, dd);
+        const today = new Date();
+        
+        if (birthDate > today) {
+            ageInput.value = "Invalid Date";
+            return;
+        }
+
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        
+        ageInput.value = age < 1 ? "Invalid (Min 1yo)" : age;
+    } else {
+        ageInput.value = ""; 
+    }
+}
+
+//--------------- Prescription: Select Patient Table Logic ---------------
+
+//--------------- Reusable Pagination Logic ---------------
+
+function createPagination(containerId, items, currentPage, rowsPerPage, onPageChange) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const totalPages = Math.ceil(items.length / rowsPerPage);
+    container.innerHTML = "";
+
+    if (totalPages <= 1) return; // No pagination needed
+
+    const prevBtn = document.createElement("button");
+    prevBtn.textContent = "← Prev";
+    prevBtn.classList.toggle("disabled-page", currentPage === 1);
+    if (currentPage > 1) prevBtn.addEventListener("click", () => onPageChange(currentPage - 1));
+    container.appendChild(prevBtn);
+
+    const pageInfo = document.createElement("span");
+    pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    pageInfo.style.padding = "0 10px";
+    pageInfo.style.lineHeight = "35px";
+    container.appendChild(pageInfo);
+
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "Next →";
+    nextBtn.classList.toggle("disabled-page", currentPage === totalPages);
+    if (currentPage < totalPages) nextBtn.addEventListener("click", () => onPageChange(currentPage + 1));
+    container.appendChild(nextBtn);
+}
+
+//--------------- Select Patient Logic ---------------
+
+function selectPatient(patient) {
+    // Populate patient profile fields
+    document.getElementById("patientProfileIdNumber").value   = patient.id;
+    document.getElementById("patientProfileDateCreated").value = patient.dateCreated;
+    document.getElementById("patientProfileName").value       = patient.name;
+    document.getElementById("patientProfileNumber").value     = patient.number;
+    document.getElementById("patientProfileEmail").value      = patient.email;
+    document.getElementById("patientProfileSex").value        = patient.sex;
+    document.getElementById("patientProfileAddress").value    = patient.address;
+    document.getElementById("patientProfileBirthday").value   = patient.birthday;
+    document.getElementById("patientProfileAge").value        = patient.age;
+
+    // Populate notes from stored patient record
+    document.getElementById("patientProfilePatientNotes").value     = patient.patientNotes || '';
+    document.getElementById("patientProfileGenHealthHxNotes").value = patient.genHealthHx || '';
+    document.getElementById("patientProfileOcuHxNotes").value       = patient.ocuHx || '';
+
+    // Snapshot original note values for dirty comparison
+    window._originalPatientNotes = {
+        patientNotes: patient.patientNotes || '',
+        genHealthHx:  patient.genHealthHx  || '',
+        ocuHx:        patient.ocuHx        || ''
+    };
+
+    // Generate Prescription ID and date
+    generatePrescriptionID();
+    setDateCreated('prescription');
+
+    // Hide the select patient menu, show the prescription form
+    document.getElementById("newPrescriptionSelectPatientMenu").classList.add("hidden");
+    document.getElementById("changePatientContainer").classList.remove("hidden");
+    document.getElementById("patientProfileForm").classList.remove("hidden");
+    document.getElementById("prescriptionMethodSelection").classList.remove("hidden");
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function changePatient() {
+    // Clear all profile fields
+    ["patientProfileIdNumber", "patientProfileDateCreated", "patientProfileName",
+     "patientProfileNumber", "patientProfileEmail", "patientProfileSex",
+     "patientProfileAddress", "patientProfileBirthday", "patientProfileAge",
+     "patientProfilePatientNotes", "patientProfileGenHealthHxNotes", "patientProfileOcuHxNotes"]
+    .forEach(id => document.getElementById(id).value = "");
+
+    // Clear all inputs and textareas inside every prescription form section
+    const formSectionIds = [
+        'mainEyeExaminationForm',
+        'mainFinalPrescription',
+        'frxClForm',
+        'copyPrescriptionForm',
+        'copyPrescriptionFormCl',
+        'prescriptionIdBlock'
+    ];
+    formSectionIds.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (!section) return;
+        section.querySelectorAll('input, textarea').forEach(el => {
+            el.value = '';
+            el.classList.remove('input-error');
+        });
+    });
+
+    // Reset search bar
+    const searchBar = document.getElementById("selectPatientSearchBarInput");
+    if (searchBar) searchBar.value = "";
+
+    // Reset rx select dropdown
+    document.getElementById('rxSelect').selectedIndex = 0;
+
+    // Hide everything
+    document.getElementById('mainEyeExaminationForm').classList.add('hidden');
+    document.getElementById('copyPrescriptionForm').classList.add('hidden');
+    document.getElementById('copyPrescriptionFormCl').classList.add('hidden');
+    document.getElementById('addPrescriptionContainer').classList.add('hidden');
+    document.getElementById('prescriptionIdBlock').classList.add('hidden');
+    document.getElementById('mainFinalPrescription').classList.add('hidden');
+    document.getElementById('frxClForm').classList.add('hidden');
+    document.getElementById('patientProfileForm').classList.add('hidden');
+    document.getElementById('prescriptionMethodSelection').classList.add('hidden');
+    document.getElementById('changePatientContainer').classList.add('hidden');
+
+    // Show table
+    document.getElementById("newPrescriptionSelectPatientMenu").classList.remove("hidden");
+
+    renderSelectPatientTable();
+}
+
+// 5. Render/Filter the Patient Table
+function renderSelectPatientTable(filter = "", page = 1) {
+    const tableBody = document.querySelector("#newPrescriptionSelectPatientMenu tbody");
+    if (!tableBody) return;
+
+    const rowsPerPage = 10;
+    const patients = JSON.parse(Storage.getItem('patients') || '[]');
+
+    // --- 1. HANDLE TOTALLY EMPTY STORAGE ---
+    if (patients.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="4" style="color: gray; font-style: italic; padding: 20px; text-align: center;">
+                    No patients yet
+                </td>
+            </tr>`;
+        document.getElementById("selectPatientPagination").innerHTML = "";
+        return;
+    }
+
+    // --- 2. PROCEED TO FILTERING ---
+    const filteredPatients = patients
+        .filter(p => {
+            const search = filter.toLowerCase();
+            const id     = (p.id     || '').toLowerCase();
+            const name   = (p.name   || '').toLowerCase();
+            const number = (p.number || '').toLowerCase();
+            return id.includes(search) || name.includes(search) || number.includes(search);
+        })
+        .reverse();
+
+    tableBody.innerHTML = "";
+
+    // --- 3. HANDLE NO SEARCH RESULTS ---
+    if (filteredPatients.length === 0) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td colspan="4" style="color: gray; font-style: italic; padding: 20px; text-align: center;">
+                No Match Found
+            </td>`;
+        tableBody.appendChild(row);
+        document.getElementById("selectPatientPagination").innerHTML = "";
+        return;
+    }
+
+    // Slice for current page
+    const start = (page - 1) * rowsPerPage;
+    const pageItems = filteredPatients.slice(start, start + rowsPerPage);
+
+    pageItems.forEach(patient => {
+        const isDeleted = patient.deleted === true;
+        const row = document.createElement("tr");
+        if (isDeleted) row.classList.add('record-deleted');
+        row.innerHTML = `
+            <td>${patient.id}</td>
+            <td class="uppercase">${isDeleted ? '[DELETED]' : patient.name}</td>
+            <td>${isDeleted ? '—' : patient.number}</td>
+            <td>${isDeleted
+                ? '<span class="deleted-label">Deleted</span>'
+                : '<button class="select-patient-button">Select</button>'
+            }</td>
+        `;
+
+        if (!isDeleted) {
+            row.querySelector(".select-patient-button").addEventListener("click", () => {
+                selectPatient(patient);
+            });
+        }
+
+        tableBody.appendChild(row);
+    });
+
+    // Render pagination — reusable call
+    createPagination(
+        "selectPatientPagination",  // container ID
+        filteredPatients,           // full filtered list
+        page,                       // current page
+        rowsPerPage,                // rows per page
+        (newPage) => renderSelectPatientTable(filter, newPage) // on page change
+    );
+}
+
+//--------------- DEBUG: Add 10 Sample Patients --------------- DELETE BEFORE FINAL PRODUCT -------------
+
+function addSamplePatients() {
+    const firstNames = ["Maria", "Jose", "Ana", "Juan", "Rosa", "Carlo", "Lena", "Marco", "Nina", "Diego"];
+    const lastNames = ["Santos", "Reyes", "Cruz", "Bautista", "Garcia", "Mendoza", "Torres", "Flores", "Ramos", "Dela Cruz"];
+    const sexes = ["Male", "Female"];
+    const streets = ["123 Rizal St", "456 Mabini Ave", "789 Bonifacio Blvd", "321 Luna St", "654 Aguinaldo Rd"];
+    const cities = ["Quezon City", "Manila", "Makati", "Pasig", "Caloocan"];
+
+    for (let i = 0; i < 10; i++) {
+        const patients = JSON.parse(Storage.getItem('patients') || '[]');
+
+        // Random details
+        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+        const name = `${firstName} ${lastName}`.toUpperCase();
+        const sex = sexes[Math.floor(Math.random() * sexes.length)];
+        const address = `${streets[Math.floor(Math.random() * streets.length)]}, ${cities[Math.floor(Math.random() * cities.length)]}`;
+
+        // Random birthday (age 10 - 80)
+        const age = Math.floor(Math.random() * 70) + 10;
+        const birthYear = new Date().getFullYear() - age;
+        const birthMonth = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
+        const birthDay = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
+        const birthday = `${birthYear}-${birthMonth}-${birthDay}`;
+
+        // Random contact number (PH format)
+        const number = `09${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
+
+        // Random email
+        const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${Math.floor(Math.random() * 99)}@email.com`;
+
+        // Date created = today
+        const now = new Date();
+        const dateCreated = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+        // Generate ID using existing function (obeys ID rules)
+        const id = generateID('patient');
+
+        const newPatient = { id, dateCreated, name, number, email, sex, address, birthday, age: String(age) };
+        patients.push(newPatient);
+
+        // Save after each push so generateID reads the latest list next iteration
+        Storage.setItem('patients', JSON.stringify(patients));
+    }
+
+    openAlert({ title: 'Done', body: '10 sample patients added!' });
+    renderSelectPatientTable();
+    generateID('patient'); // Refresh the ID field to next available
+}
+
+//--------------- Unified Save & Clear Logic ---------------
+
+// ── ID Collision Guard ────────────────────────────────────────────
+// At save time, re-reads storage fresh to check if the displayed ID
+// was already consumed by another tab/window. If taken, regenerates
+// a safe new one and updates the input before proceeding with save.
+// Returns the safe ID to use (may be different from what was shown).
+
+function _resolveUniqueID(type) {
+    // Re-read fresh from storage right now
+    const storageKey = type === 'patient' ? 'patients' : 'customers';
+    const inputId    = type === 'patient' ? 'patientIdInput' : 'customerIdInput';
+    const inputEl    = document.getElementById(inputId);
+    const displayedID = inputEl ? inputEl.value.trim() : '';
+
+    const records = JSON.parse(Storage.getItem(storageKey) || '[]');
+    const idTaken = records.some(r => r.id === displayedID);
+
+    if (!idTaken) return displayedID; // Still safe — use as-is
+
+    // Collision detected — silently regenerate
+    console.warn(`[ID Guard] ${displayedID} already exists in ${storageKey}. Regenerating...`);
+    const freshID = generateID(type); // writes new ID into the input too
+    return freshID;
+}
+
+// Same guard for prescriptions
+function _resolveUniquePrescriptionID() {
+    const inputEl     = document.getElementById('prescriptionID');
+    const displayedID = inputEl ? inputEl.value.trim() : '';
+
+    const records = JSON.parse(Storage.getItem('prescriptions') || '[]');
+    const idTaken = records.some(r => r.id === displayedID);
+
+    if (!idTaken) return displayedID;
+
+    console.warn(`[ID Guard] ${displayedID} already exists in prescriptions. Regenerating...`);
+    const freshID = generatePrescriptionID(); // writes new ID into the input too
+    return freshID;
+}
+
+// 6. Unified Save Logic
+function handleFormSubmit(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const isPatient = form.id === 'patientForm';
+    const storageKey = isPatient ? 'patients' : 'customers';
+    const prefix = isPatient ? 'patient' : 'customer';
+    const idInput = isPatient ? 'patientIdInput' : 'customerIdInput';
+
+    const emailId = `${prefix}InputEmail`;
+    const inputsToValidate = form.querySelectorAll('input:not([readonly]), select');
+    let isValid = true;
+    inputsToValidate.forEach(input => {
+        if (input.id === emailId) return; // email is optional — skip required check
+        if (!input.value.trim() || input.value.includes("Invalid")) {
+            input.classList.add('input-error');
+            isValid = false;
+        } else {
+            input.classList.remove('input-error');
+        }
+    });
+
+    // Email: optional, but if filled must be a valid format
+    const emailEl = document.getElementById(emailId);
+    if (emailEl) {
+        const emailVal = emailEl.value.trim();
+        if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+            emailEl.classList.add('input-error');
+            isValid = false;
+        } else {
+            emailEl.classList.remove('input-error');
+        }
+    }
+
+    if (!isValid) { openAlert({ title: 'Required Fields', body: 'Please check the highlighted fields.' }); return; }
+
+    const name = document.getElementById(`${prefix}InputName`).value.toUpperCase().trim();
+    const number = document.getElementById(`${prefix}InputNumber`).value.trim();
+    const birthday = `${document.getElementById(`${prefix}BirthdayYYYY`).value}-${document.getElementById(`${prefix}BirthdayMM`).value}-${document.getElementById(`${prefix}BirthdayDD`).value}`;
+
+    const currentRecords = JSON.parse(Storage.getItem(storageKey) || '[]');
+    const isDuplicate = currentRecords.some(r => 
+        r.name === name && 
+        r.number === number && 
+        r.birthday === birthday
+    );
+
+    if (isDuplicate) {
+        openAlert({ title: 'Access Denied', body: `A matching record for "${name}" already exists.` });
+        return;
+    }
+
+    // ── Collision guard: re-check ID is still free at save time ──
+    const safeID = _resolveUniqueID(isPatient ? 'patient' : 'customer');
+
+    const newData = {
+        id: safeID,
+        dateCreated: `${document.getElementById(`${prefix}DateCreatedYYYY`).value}-${document.getElementById(`${prefix}DateCreatedMM`).value}-${document.getElementById(`${prefix}DateCreatedDD`).value}`,
+        name: name,
+        number: number,
+        email: document.getElementById(`${prefix}InputEmail`).value,
+        sex: document.getElementById(`${prefix}InputSex`).value,
+        address: document.getElementById(`${prefix}InputAddress`).value,
+        birthday: birthday,
+        age: document.getElementById(`${prefix}InputAge`).value
+    };
+
+    // Re-read fresh immediately before push — another tab may have saved
+    // between the duplicate check above and this write.
+    const freshRecords = JSON.parse(Storage.getItem(storageKey) || '[]');
+    freshRecords.push(newData);
+    Storage.setItem(storageKey, JSON.stringify(freshRecords));
+
+    const savedId = newData.id;
+
+    // -- Post-save cleanup (shared) --
+    function afterSave() {
+        form.reset();
+        form.querySelectorAll('input, select').forEach(el => el.classList.remove('input-error'));
+        generateID(isPatient ? 'patient' : 'customer');
+        setDateCreated(isPatient ? 'patient' : 'customer');
+        if (document.querySelector("#newPrescriptionSelectPatientMenu tbody")) {
+            renderSelectPatientTable();
+        }
+        window.location.hash = '#recordsPage';
+    }
+
+    // One-Way Sync — customer only
+    if (!isPatient) {
+        const patientRecords = JSON.parse(Storage.getItem('patients') || '[]');
+        const existsInPatients = patientRecords.some(p => p.name === name && p.birthday === birthday);
+
+        if (!existsInPatients) {
+            openModal({
+                title: 'Also Create Patient?',
+                body: `Create a Patient record for this customer?`,
+                confirmText: 'Yes, Create',
+                cancelText: 'No Thanks',
+                onConfirm: () => {
+                    // generateID writes to input; then guard double-checks freshness
+                    generateID('patient');
+                    const newPatientID = _resolveUniqueID('patient');
+                    // Re-read fresh — modal interaction may have let another tab save
+                    const freshPatientRecords = JSON.parse(Storage.getItem('patients') || '[]');
+                    freshPatientRecords.push({ ...newData, id: newPatientID });
+                    Storage.setItem('patients', JSON.stringify(freshPatientRecords));
+                    openAlert({ title: 'Saved', body: `Customer ${savedId} and Patient ${newPatientID} successfully created.`, onOk: afterSave });
+                },
+                onCancel: () => {
+                    openAlert({ title: 'Saved', body: `Customer ${savedId} saved successfully.`, onOk: afterSave });
+                }
+            });
+            return;
+        }
+    }
+
+    // Patient save, or customer with existing patient record
+    openAlert({
+        title: 'Saved',
+        body: `${isPatient ? 'Patient' : 'Customer'} ${savedId} saved successfully.`,
+        onOk: afterSave
+    });
+}
+
+// 7. Clear Data Logic
+function clearAllData() {
+    openModal({
+        title: 'Clear All Data',
+        body: 'This will permanently delete all patients, customers, and prescriptions.\nThis cannot be undone.',
+        confirmText: 'Clear All Data',
+        cancelText: 'Cancel',
+        requireTyping: 'CLEAR',
+        onConfirm: async () => {
+            Storage.clear();
+            openAlert({
+                title: 'Done',
+                body: 'All data has been cleared.',
+                onOk: () => window.location.reload()
+            });
+        }
+    });
+}
+
+// 8. Auto-set "Date Created"
+function setDateCreated(prefix) {
+    const now = new Date();
+    const mmEl = document.getElementById(`${prefix}DateCreatedMM`);
+    const ddEl = document.getElementById(`${prefix}DateCreatedDD`);
+    const yyyyEl = document.getElementById(`${prefix}DateCreatedYYYY`);
+
+    if (mmEl) mmEl.value = String(now.getMonth() + 1).padStart(2, '0');
+    if (ddEl) ddEl.value = String(now.getDate()).padStart(2, '0');
+    if (yyyyEl) yyyyEl.value = now.getFullYear();
+}
+
+// 9. Generate Prescription ID
+function generatePrescriptionID() {
+    const records = JSON.parse(Storage.getItem('prescriptions') || '[]');
+    const currentYearShort = new Date().getFullYear().toString().slice(-2);
+
+    let nextNumber = 1;
+    let series = "AA";
+
+    if (records.length > 0) {
+        const lastRecord = records[records.length - 1];
+        const lastID = lastRecord.id;
+        const lastYear = lastID.substring(2, 4);
+        const lastSeries = lastID.substring(4, 6);
+        const lastNumPart = parseInt(lastID.substring(6));
+
+        if (lastYear === currentYearShort) {
+            if (lastNumPart >= 9999) {
+                series = incrementSeries(lastSeries);
+                nextNumber = 1;
+            } else {
+                series = lastSeries;
+                nextNumber = lastNumPart + 1;
+            }
+        }
+    }
+
+    const paddedNum = String(nextNumber).padStart(4, '0');
+    const newID = `RX${currentYearShort}${series}${paddedNum}`;
+
+    const inputEl = document.getElementById("prescriptionID");
+    if (inputEl) inputEl.value = newID;
+
+    return newID;
+}
+
+//--------------- Initialization ---------------
+
+function initFormLogic() {
+    // A. Numeric Restrictions
+    const numericInputs = document.querySelectorAll('.date-part, #customerInputNumber, #patientInputNumber');
+    numericInputs.forEach(input => {
+        input.removeEventListener('keydown', allowOnlyNumbers);
+        input.addEventListener('keydown', allowOnlyNumbers);
+    });
+
+    // B. Age Calculation Listeners
+    const setupBirthday = (prefix) => {
+        ['MM', 'DD', 'YYYY'].forEach(part => {
+            const el = document.getElementById(`${prefix}Birthday${part}`);
+            if (el) el.addEventListener('input', () => calculateAge(prefix));
+        });
+    };
+    setupBirthday('customer');
+    setupBirthday('patient');
+
+    // C. Form Submissions
+    document.getElementById('customerForm')?.addEventListener('submit', handleFormSubmit);
+    document.getElementById('patientForm')?.addEventListener('submit', handleFormSubmit);
+
+    // C2. Back Button — warn if typical inputs are dirty, then clear and navigate
+    const userInputIds = {
+        customer: ['customerInputName', 'customerInputNumber', 'customerInputEmail',
+                   'customerInputSex', 'customerInputAddress',
+                   'customerBirthdayMM', 'customerBirthdayDD', 'customerBirthdayYYYY'],
+        patient:  ['patientInputName', 'patientInputNumber', 'patientInputEmail',
+                   'patientInputSex', 'patientInputAddress',
+                   'patientBirthdayMM', 'patientBirthdayDD', 'patientBirthdayYYYY']
+    };
+
+    function isFormDirty(ids) {
+        return ids.some(id => {
+            const el = document.getElementById(id);
+            return el && el.value.trim() !== '' && el.value !== el.getAttribute('data-default');
+        });
+    }
+
+    function clearForm(formId, prefix) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        form.reset();
+        form.querySelectorAll('input, select').forEach(el => el.classList.remove('input-error'));
+        generateID(prefix);
+        setDateCreated(prefix);
+    }
+
+    function setupBackBtn(formId, prefix) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const backBtn = form.querySelector('a.back-btn-link');
+        if (!backBtn) return;
+
+        backBtn.addEventListener('click', (e) => {
+            const ids = userInputIds[prefix];
+            if (isFormDirty(ids)) {
+                e.preventDefault();
+                openModal({
+                    title: 'Unsaved Changes',
+                    body: 'You have unsaved changes that will not be saved. Leave anyway?',
+                    confirmText: 'Leave',
+                    cancelText: 'Stay',
+                    onConfirm: () => {
+                        clearForm(formId, prefix);
+                        window.location.hash = '#recordsPage';
+                    }
+                });
+                return;
+            }
+            clearForm(formId, prefix);
+            window.location.hash = '#recordsPage';
+        });
+    }
+
+    setupBackBtn('customerForm', 'customer');
+    setupBackBtn('patientForm', 'patient');
+
+    // C3. New Prescription back button
+    // - No patient selected yet → navigate freely to #recordsPage (anchor href handles it)
+    // - Patient selected        → stay on page, return to select patient table via changePatient()
+    //                             prompt with openModal if there is unsaved data
+    const newRxBackBtn = document.querySelector('#newPrescriptionMenu .new-rx-back-btn-link');
+    if (newRxBackBtn) {
+        newRxBackBtn.addEventListener('click', (e) => {
+            const patientSelected = !document.getElementById('patientProfileForm').classList.contains('hidden');
+            if (!patientSelected) return; // nothing loaded, let the href navigate to #recordsPage
+
+            e.preventDefault(); // stop href from firing
+
+            const orig = window._originalPatientNotes || {};
+            const notesDirty =
+                document.getElementById('patientProfilePatientNotes')?.value !== orig.patientNotes ||
+                document.getElementById('patientProfileGenHealthHxNotes')?.value !== orig.genHealthHx ||
+                document.getElementById('patientProfileOcuHxNotes')?.value !== orig.ocuHx;
+
+            const formDirty = [
+                'mainEyeExaminationForm', 'mainFinalPrescription', 'frxClForm',
+                'copyPrescriptionForm', 'copyPrescriptionFormCl'
+            ].some(sectionId => {
+                const section = document.getElementById(sectionId);
+                if (!section || section.classList.contains('hidden')) return false;
+                return [...section.querySelectorAll('input, textarea')].some(el => el.value.trim() !== '');
+            });
+
+            const isDirty = notesDirty || formDirty;
+
+            if (isDirty) {
+                openModal({
+                    title: 'Unsaved Changes',
+                    body: 'Going back will discard unsaved prescription data. Continue?',
+                    confirmText: 'Go Back',
+                    cancelText: 'Stay',
+                    onConfirm: () => {
+                        changePatient();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                });
+            } else {
+                changePatient(); // nothing to lose, go back to select patient immediately
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    }
+    document.getElementById('clearDataBtn')?.addEventListener('click', clearAllData);
+    document.getElementById('patientSampleBtn')?.addEventListener('click', addSamplePatients);
+    document.getElementById('selectDifferentPatientBtn')?.addEventListener('click', () => {
+        const orig = window._originalPatientNotes || {};
+        const notesDirty =
+            document.getElementById('patientProfilePatientNotes')?.value !== orig.patientNotes ||
+            document.getElementById('patientProfileGenHealthHxNotes')?.value !== orig.genHealthHx ||
+            document.getElementById('patientProfileOcuHxNotes')?.value !== orig.ocuHx;
+
+        const formDirty = [
+            'mainEyeExaminationForm',
+            'mainFinalPrescription',
+            'frxClForm',
+            'copyPrescriptionForm',
+            'copyPrescriptionFormCl'
+        ].some(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (!section || section.classList.contains('hidden')) return false;
+            return [...section.querySelectorAll('input, textarea')]
+                .some(el => el.value.trim() !== '');
+        });
+
+        if (notesDirty || formDirty) {
+            const body = notesDirty && !formDirty
+                ? 'You have unsaved notes that will not be saved. Change patient anyway?'
+                : formDirty && !notesDirty
+                ? 'Changing patient will discard all unsaved prescription data. Continue?'
+                : 'You have unsaved notes and prescription data that will not be saved. Change patient anyway?';
+            openModal({
+                title: 'Unsaved Changes',
+                body: body,
+                confirmText: 'Change Patient',
+                cancelText: 'Stay',
+                onConfirm: () => {
+                    changePatient();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+            return;
+        }
+
+        changePatient();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    document.getElementById('generateRxBtn')?.addEventListener('click', handleGenerateRx);
+    document.getElementById('generateToricBtn')?.addEventListener('click', generateToricCl);
+    document.getElementById('generateSphereBtn')?.addEventListener('click', generateSphereCl);
+
+
+
+    // D. Rx Method Selection
+    document.getElementById('rxSelect')?.addEventListener('change', (e) => {
+        // hide all forms first
+        document.getElementById('mainEyeExaminationForm').classList.add('hidden');
+        document.getElementById('copyPrescriptionForm').classList.add('hidden');
+        document.getElementById('copyPrescriptionFormCl').classList.add('hidden');
+        document.getElementById('addPrescriptionContainer').classList.add('hidden');
+        document.getElementById('prescriptionIdBlock').classList.add('hidden');
+        document.getElementById('mainFinalPrescription').classList.add('hidden');
+        document.getElementById('frxClForm').classList.add('hidden');  
+
+        // show selected
+        if (e.target.value === 'eyeExam') {
+                document.getElementById('mainEyeExaminationForm').classList.remove('hidden');
+                document.getElementById('prescriptionIdBlock').classList.remove('hidden'); // ← show
+            } else if (e.target.value === 'copyPrescription') {
+                document.getElementById('copyPrescriptionForm').classList.remove('hidden');
+                document.getElementById('addPrescriptionContainer').classList.remove('hidden');
+                document.getElementById('prescriptionIdBlock').classList.remove('hidden'); // ← show
+            } else if (e.target.value === 'copyPrescriptionCl') {
+                document.getElementById('copyPrescriptionFormCl').classList.remove('hidden');
+                document.getElementById('addPrescriptionContainer').classList.remove('hidden');
+                document.getElementById('prescriptionIdBlock').classList.remove('hidden'); // ← show
+            }
+    });
+
+
+    // E. Search Bar Listener
+    const searchBar = document.getElementById("selectPatientSearchBarInput");
+    if (searchBar) {
+        searchBar.addEventListener("input", (e) => {
+            renderSelectPatientTable(e.target.value);
+        });
+    }
+
+    // F. Set Defaults
+    setDateCreated('customer');
+    setDateCreated('patient');  
+    generateID('customer'); 
+    generateID('patient');
+    renderSelectPatientTable(); // Initial load of the table
+
+}
+
+// Helper — checks if an eye's distance inputs meet minimum requirement
+function isEyeValid(sphId, cylId, axisId) {
+    const sph = document.getElementById(sphId).value.trim();
+    const cyl = document.getElementById(cylId).value.trim();
+    const axis = document.getElementById(axisId).value.trim();
+    const axisInput = document.getElementById(axisId);
+
+    const hasSph = sph !== '';
+    const hasCyl = cyl !== '';
+    const hasAxis = axis !== '';
+
+    // CYL without AXIS → invalid, highlight axis red
+    if (hasCyl && !hasAxis) {
+        axisInput.classList.add('input-error');
+        return false;
+    }
+
+    // AXIS without CYL → invalid
+    if (hasAxis && !hasCyl) {
+        axisInput.classList.add('input-error');
+        return false;
+    }
+
+    // Clear error if valid
+    axisInput.classList.remove('input-error');
+
+    return hasSph || (hasCyl && hasAxis);
+}
+
+//--------------- Generate Rx Logic ---------------
+
+function handleGenerateRx() {
+
+    const odValid = isEyeValid('vt7OdDistanceSph', 'vt7OdDistanceCyl', 'vt7OdDistanceAxis');
+    const osValid = isEyeValid('vt7OsDistanceSph', 'vt7OsDistanceCyl', 'vt7OsDistanceAxis');
+
+    if (!odValid || !osValid) {
+        openAlert({ title: 'Invalid Rx', body: 'Minimum required per eye in VT7: Distance SPH alone, or Distance CYL + AXIS together.' });
+        return;
+    }
+
+    // -- Copy VT7 OD → Final Rx OD --
+    document.getElementById('frxOdDistanceSph').value   = document.getElementById('vt7OdDistanceSph').value;
+    document.getElementById('frxOdDistanceCyl').value   = document.getElementById('vt7OdDistanceCyl').value;
+    document.getElementById('frxOdDistanceAxis').value  = document.getElementById('vt7OdDistanceAxis').value;
+    document.getElementById('frxOdDistancePd').value    = document.getElementById('vt7OdDistancePd').value;
+    document.getElementById('frxOdDistanceVa').value    = document.getElementById('vt7OdDistanceVa').value;
+    document.getElementById('frxOdNearSph').value       = document.getElementById('vt7OdNearSph').value;
+    document.getElementById('frxOdNearCyl').value       = document.getElementById('vt7OdNearCyl').value;
+    document.getElementById('frxOdNearAxis').value      = document.getElementById('vt7OdNearAxis').value;
+    document.getElementById('frxOdNearPd').value        = document.getElementById('vt7OdNearPd').value;
+    document.getElementById('frxOdNearVa').value        = document.getElementById('vt7OdNearVa').value;
+    document.getElementById('frxOdAddSph').value        = document.getElementById('vt7OdAddSph').value;
+
+    // -- Copy VT7 OS → Final Rx OS --
+    document.getElementById('frxOsDistanceSph').value   = document.getElementById('vt7OsDistanceSph').value;
+    document.getElementById('frxOsDistanceCyl').value   = document.getElementById('vt7OsDistanceCyl').value;
+    document.getElementById('frxOsDistanceAxis').value  = document.getElementById('vt7OsDistanceAxis').value;
+    document.getElementById('frxOsDistancePd').value    = document.getElementById('vt7OsDistancePd').value;
+    document.getElementById('frxOsDistanceVa').value    = document.getElementById('vt7OsDistanceVa').value;
+    document.getElementById('frxOsNearSph').value       = document.getElementById('vt7OsNearSph').value;
+    document.getElementById('frxOsNearCyl').value       = document.getElementById('vt7OsNearCyl').value;
+    document.getElementById('frxOsNearAxis').value      = document.getElementById('vt7OsNearAxis').value;
+    document.getElementById('frxOsNearPd').value        = document.getElementById('vt7OsNearPd').value;
+    document.getElementById('frxOsNearVa').value        = document.getElementById('vt7OsNearVa').value;
+    document.getElementById('frxOsAddSph').value        = document.getElementById('vt7OsAddSph').value;
+
+    // Show Final Rx and Add button
+    document.getElementById('mainFinalPrescription').classList.remove('hidden');
+    document.getElementById('addPrescriptionContainer').classList.remove('hidden');
+
+    // Scroll to Final Rx
+    document.getElementById('mainFinalPrescription').scrollIntoView({ behavior: 'smooth' });
+}
+
+//--------------- Contact Lens Generation Logic ---------------
+// Depends on formatSigned() and roundToQuarter() from validation.js.
+// validation.js loads before form-logic.js in index.html — keep that order.
+
+const CL_VERTEX = 0.012; // 12mm default vertex distance in meters
+
+// -- Shared: Effective Power Formula --
+function effectivePower(F) {
+    return F / (1 - CL_VERTEX * F);
+}
+
+// -- Shared: Convert one eye to CL power --
+function convertEyeToCl(sphStr, cylStr, axisStr) {
+    const sph = parseFloat(sphStr) || 0;
+
+    if (cylStr === '') {
+        const clSph = Math.round(effectivePower(sph) * 4) / 4;
+        return { sph: formatSigned(clSph), cyl: '', axis: '' };
+    } else {
+        const cyl = parseFloat(cylStr);
+        const otherMeridian = sph + cyl;
+        const clSph = effectivePower(sph);
+        const clOtherMeridian = effectivePower(otherMeridian);
+        const clCyl = clOtherMeridian - clSph;
+        const clSphRounded = Math.round(clSph * 4) / 4;
+        const clCylRounded = Math.round(clCyl * 4) / 4;
+        return {
+            sph:  formatSigned(clSphRounded),
+            cyl:  clCylRounded !== 0 ? formatSigned(clCylRounded) : '',
+            axis: axisStr
+        };
+    }
+}
+
+// -- Shared: Validate FRx fields before CL generation --
+function validateClInputs(mode) {
+    const odSph  = document.getElementById('frxOdDistanceSph').value.trim();
+    const odCyl  = document.getElementById('frxOdDistanceCyl').value.trim();
+    const odAxis = document.getElementById('frxOdDistanceAxis').value.trim();
+    const osSph  = document.getElementById('frxOsDistanceSph').value.trim();
+    const osCyl  = document.getElementById('frxOsDistanceCyl').value.trim();
+    const osAxis = document.getElementById('frxOsDistanceAxis').value.trim();
+
+    if (mode === 'toric') {
+        if (odCyl === '' && osCyl === '') {
+            openAlert({ title: 'Validation Error', body: 'Both eyes have no cylinder. Use Sphere for sphere-only prescriptions.' });
+            return null;
+        }
+    } else {
+        if (odSph === '' && odCyl === '' && osSph === '' && osCyl === '') {
+            openAlert({ title: 'Validation Error', body: 'No prescription data found. Please fill in at least SPH or CYL for one eye.' });
+            return null;
+        }
+    }
+
+    if (odCyl !== '' && odAxis === '') {
+        openAlert({ title: 'Validation Error', body: 'OD has cylinder but no axis. Please fill in OD Axis before generating.' });
+        document.getElementById('frxOdDistanceAxis').classList.add('input-error');
+        return null;
+    }
+    if (osCyl !== '' && osAxis === '') {
+        openAlert({ title: 'Validation Error', body: 'OS has cylinder but no axis. Please fill in OS Axis before generating.' });
+        document.getElementById('frxOsDistanceAxis').classList.add('input-error');
+        return null;
+    }
+
+    return { odSph, odCyl, odAxis, osSph, osCyl, osAxis };
+}
+
+// -- Shared: Populate CL fields and show form --
+function populateClForm(odResult, osResult) {
+    document.getElementById('frxClOdSph').value  = odResult.sph;
+    document.getElementById('frxClOdCyl').value  = odResult.cyl;
+    document.getElementById('frxClOdAxis').value = odResult.axis;
+    document.getElementById('frxClOsSph').value  = osResult.sph;
+    document.getElementById('frxClOsCyl').value  = osResult.cyl;
+    document.getElementById('frxClOsAxis').value = osResult.axis;
+
+    // -- Copy BC and DIA from CL Parameters per eye --
+    document.getElementById('frxClOdBc').value  = document.getElementById('clpOdBc')?.value  || '';
+    document.getElementById('frxClOdDia').value = document.getElementById('clpOdDia')?.value || '';
+    document.getElementById('frxClOsBc').value  = document.getElementById('clpOsBc')?.value  || '';
+    document.getElementById('frxClOsDia').value = document.getElementById('clpOsDia')?.value || '';
+
+    document.getElementById('frxClForm').classList.remove('hidden');
+    document.getElementById('frxClForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+// -- Toric Button --
+function generateToricCl() {
+    const fields = validateClInputs('toric');
+    if (!fields) return;
+
+    const odResult = convertEyeToCl(fields.odSph, fields.odCyl, fields.odAxis);
+    const osResult = convertEyeToCl(fields.osSph, fields.osCyl, fields.osAxis);
+    populateClForm(odResult, osResult);
+}
+
+// -- Sphere Button --
+function generateSphereCl() {
+    const fields = validateClInputs('sphere');
+    if (!fields) return;
+
+    function toSE(sphStr, cylStr) {
+        const result = convertEyeToCl(sphStr, cylStr, '');
+        if (result.cyl === '') return result;
+        const clSph = parseFloat(result.sph);
+        const clCyl = parseFloat(result.cyl);
+        const se = Math.round((clSph + clCyl / 2) * 4) / 4;
+        return { sph: formatSigned(se), cyl: '', axis: '' };
+    }
+
+    const odResult = toSE(fields.odSph, fields.odCyl);
+    const osResult = toSE(fields.osSph, fields.osCyl);
+    populateClForm(odResult, osResult);
+}
+
+//--------------- Copy Rx Validation ---------------
+
+function isEyeValidCopyRx(sphId, cylId, axisId) {
+    const sph = document.getElementById(sphId).value.trim();
+    const cyl = document.getElementById(cylId).value.trim();
+    const axis = document.getElementById(axisId).value.trim();
+    const axisInput = document.getElementById(axisId);
+
+    const hasSph = sph !== '';
+    const hasCyl = cyl !== '';
+    const hasAxis = axis !== '';
+
+    if (hasCyl && !hasAxis) {
+        axisInput.classList.add('input-error');
+        return false;
+    }
+    if (hasAxis && !hasCyl) {
+        axisInput.classList.add('input-error');
+        return false;
+    }
+
+    axisInput.classList.remove('input-error');
+    return hasSph || (hasCyl && hasAxis);
+}
+
+function validateCopyRx() {
+    const odValid     = isEyeValidCopyRx('copyRxOdDistanceSph', 'copyRxOdDistanceCyl', 'copyRxOdDistanceAxis');
+    const osValid     = isEyeValidCopyRx('copyRxOsDistanceSph', 'copyRxOsDistanceCyl', 'copyRxOsDistanceAxis');
+    const odNearValid = isEyeValidCopyRx('copyRxOdNearSph',     'copyRxOdNearCyl',     'copyRxOdNearAxis');
+    const osNearValid = isEyeValidCopyRx('copyRxOsNearSph',     'copyRxOsNearCyl',     'copyRxOsNearAxis');
+    if (!odValid || !osValid || !odNearValid || !osNearValid) {
+        openAlert({ title: 'Invalid Rx', body: 'Minimum required per eye: SPH alone, or CYL + AXIS together. Applies to both Distance and Near rows.' });
+        return false;
+    }
+    return true;
+}
+
+function validateCopyRxCl() {
+    const odSph = document.getElementById('copyRxClOdSph').value.trim();
+    const odCyl = document.getElementById('copyRxClOdCyl').value.trim();
+    const odAxis = document.getElementById('copyRxClOdAxis').value.trim();
+    const osSph = document.getElementById('copyRxClOsSph').value.trim();
+    const osCyl = document.getElementById('copyRxClOsCyl').value.trim();
+    const osAxis = document.getElementById('copyRxClOsAxis').value.trim();
+
+    if (odSph === '' && odCyl === '' && osSph === '' && osCyl === '') {
+        openAlert({ title: 'Validation Error', body: 'Minimum required: at least SPH or CYL for one eye.' });
+        return false;
+    }
+
+    if (odCyl !== '' && odAxis === '') {
+        openAlert({ title: 'Validation Error', body: 'OD has cylinder but no axis.' });
+        document.getElementById('copyRxClOdAxis').classList.add('input-error');
+        return false;
+    }
+    if (osCyl !== '' && osAxis === '') {
+        openAlert({ title: 'Validation Error', body: 'OS has cylinder but no axis.' });
+        document.getElementById('copyRxClOsAxis').classList.add('input-error');
+        return false;
+    }
+    return true;
+}

@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <script>
+    (function() {
+        // Hide all page-content sections before first paint to prevent
+        // any section blinking visible before handleRouting() runs.
+        document.documentElement.classList.add('preload-hide-pages');
+
+        // Apply dark mode before first paint to prevent flash of light mode.
+        try {
+            const raw = localStorage.getItem('opticsite_data');
+            if (raw) {
+                const data = JSON.parse(raw);
+                if (data.themePreference === 'darkMode') {
+                    document.documentElement.classList.add('darkMode-preload');
+                }
+            }
+        } catch (_) {}
+    })();
+  </script>
+  <meta charset="UTF-8">
+
+  <!-- Page Title -->
+  <title>OpticSite</title>
+
+  <!-- Initial tags -->
+  <meta name="description" content="program that provides emr and crm system" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Page Icon |TO ADD HREF LINK | -->
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+
+  <!-- style.css link -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Font Awsome local link -->
+  <link rel="stylesheet" href="all.css" />
+
+  <!-- Font Awsome main link -->
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
+
+</head>
+
+<!-- TODO : on draft... a graph for AR, VT7, FRX progression display  -->
+
+<body>
+
+  <!-- Body Wrapper-->
+  <div class="wrapper">
+
+    <!-- Navigation Bar -->
+    <nav>
+      <div class="navigation-bar">
+
+        <!-- Logo and/or Title Area of Navigation Bar |TO ADD SRC AND HREF LINK | -->
+        <div class="title-page-area"><a id="titleLink" href="https://opticunity.github.io/" target="_blank"><img
+              src="assets/favicon.png" class="page-logo" alt="page logo" /></a></div>
+
+        <!-- Navigation Bar Links-->
+        <ul class="nav-links">
+          <li><a href="#homePage" class="active-nav">Home</a></li>
+          <li><a href="#recordsPage">Records</a></li>
+          <li><a href="#salesPage">Sales</a></li>
+          <li><a href="#settingsPage">Settings</a></li>
+        </ul>
+
+        <!-- Hamburger Toggle Links For Mobile Screens -->
+        <div class="nav-links-menu-toggle">
+          <i class="fas fa-bars"></i>
+        </div>
+
+        <!-- Appearance Area (Color Theme and DarkMode) of Navigation Bar -->
+        <div class="appearance-area">
+          <!-- Darkmode Button -->
+          <div class="dark-mode-btn" title="Dark Mode">
+            <!-- Data Color : Hex  0-White 1-text-color 2-primary-color 3-secondary-color 4---object-bg -->
+            <i class="btn fas fa-moon" data-color="#fff #e4e6eb #272B2F #1D2124 #171A1D #222529 #8a8f98 #33383d"></i>
+          </div>
+
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content Section -->
+    <main class="content">
+
+      <!-------- Intro Page ---------->
+      <section id="introPage" class="page-content intro-page">
+
+          <!-- Step 1: Welcome -->
+          <div class="intro-step" id="introStep1">
+              <div class="intro-content">
+                  <img src="assets/favicon.png" class="intro-logo" alt="OpticSite Logo" />
+                  <h1>Welcome to OpticSite</h1>
+                  <p class="intro-tagline">Your clinic assistant by OpticUnity</p>
+                  <hr class="intro-divider"/>
+                  <p>Program Made Possible by Claude (Sonnet 4.6) & Grock</p>
+                  <p>OpticSite is a standalone offline Electronic Medical Records system</p>
+                  <p>Program designed for small optometry clinics.</p>
+                  <br>
+                  <p>All data is stored locally on this device. No internet connection is required.</p>
+                  <br>
+                  <p>This is a <strong>beta release</strong>. Features are still being developed and improved.</p>
+              </div>
+              <div class="intro-actions">
+                  <button id="introNext1Btn">Get Started</button>
+              </div>
+              <div class="intro-steps-indicator">
+                  <span class="intro-dot active"></span>
+                  <span class="intro-dot"></span>
+                  <span class="intro-dot"></span>
+              </div>
+          </div>
+
+          <!-- Step 2: Disclaimer -->
+          <div class="intro-step hidden" id="introStep2">
+              <div class="intro-content">
+                  <h2>Disclaimer</h2>
+                  <hr class="intro-divider"/>
+                  <p>By continuing, you acknowledge the following:</p>
+                  <br>
+                  <p>• This program is intended for use by a <strong>licensed optometrist</strong> or under the supervision of one, in accordance with <strong>Republic Act 8050</strong> (Revised Optometry Law of the Philippines).</p>
+                  <br>
+                  <p>• OpticSite is currently in <strong>beta</strong>. While core functions are stable, you may encounter occasional bugs. Please report any issues to the developer.</p>
+                  <br>
+                  <p>• All patient data is stored <strong>locally on this device only</strong>. The developer is not responsible for any data loss. Regular backups are strongly recommended.</p>
+                  <br>
+                  <p>• Generated certificates are <strong>draft documents</strong> and must be reviewed and signed by the examining practitioner before official use.</p>
+              </div>
+              <div class="intro-actions">
+                  <button id="introNext2Btn">I Understand, Continue</button>
+              </div>
+              <div class="intro-steps-indicator">
+                  <span class="intro-dot"></span>
+                  <span class="intro-dot active"></span>
+                  <span class="intro-dot"></span>
+              </div>
+          </div>
+
+          <!-- Step 3: Clinic Setup -->
+          <div class="intro-step hidden" id="introStep3">
+              <div class="intro-content">
+                  <h2>Clinic Setup</h2>
+                  <hr class="intro-divider"/>
+                  <p>Set up your clinic information. This will appear on generated certificates.</p>
+                  <br>
+                  <div class="clinic-setup-form">
+                      <label>Clinic Name <span class="required-star">*</span></label>
+                      <input type="text" id="introClinicName" maxlength="60" placeholder="e.g. Santos Optical Clinic" />
+
+                      <label>Clinic Address</label>
+                      <input type="text" id="introClinicAddress" maxlength="100" placeholder="e.g. 123 Main St, Quezon City" />
+
+                      <label>Clinic Contact</label>
+                      <input type="text" id="introClinicContact" class="digits-only" maxlength="11" placeholder="e.g. 09XX-XXX-XXXX" />
+
+                      <label>Doctor Name <span class="required-star">*</span></label>
+                      <input type="text" id="introDoctorName" maxlength="60" placeholder="e.g. Dr. Juan dela Cruz" />
+
+                      <label>PRC License Number <span class="required-star">*</span></label>
+                      <input type="text" id="introPrcNumber" maxlength="7" class="digits-only" placeholder="e.g. 0012345" />
+                  </div>
+              </div>
+              <div class="intro-actions">
+                  <button id="introCompleteBtn">Complete Setup</button>
+                  <button id="introRestoreToggle" class="intro-link-btn" title="Restore from save file">
+                      <i class="fa-solid fa-file-import"></i>
+                  </button>
+              </div>
+              <div class="intro-steps-indicator">
+                  <span class="intro-dot"></span>
+                  <span class="intro-dot"></span>
+                  <span class="intro-dot active"></span>
+              </div>
+          </div>
+
+      </section>
+
+      <!----------------------------------- Under Development Page TO DELETE ON FINAL PRODUCT ------------------------------------------>
+      <section id="underDevelopmentPage" class="page-content">
+        <div class="under-development-nav">
+          <h1>Soon...</h1>
+          <h1><i class="fa-solid fa-server"></i> Under Development <i class="fas fa-triangle-exclamation"></i></h1>
+          <a href="#homePage">Back To Main</a>
+        </div>
+      </section>
+      <!----------------------------------- Under Development Page TO DELETE ON FINAL PRODUCT DELETE UP TO HERE------------------------------------------>
+
+      <!-------- Home Page ---------->
+      <section id="homePage" class="page-content active-section">
+        <h1 class="home-page-header"><i class="fa-solid fa-computer"></i><span class="color-text"> Optic</span>Site</h1>
+        <p class="home-page-subtitle">Your clinic assistant</p>
+
+        <div class="home-page-menu-links">
+          <a href="#recordsPage"><i class="fa-solid fa-clipboard"></i> Records</a>
+          <a href="#salesPage"><i class="fa-solid fa-coins"></i> Sales</a>
+          <a href="#settingsPage"><i class="fa-solid fa-gears"></i> Settings</a>
+          <a href="#guideMenu"><i class="fa-solid fa-book"></i> Guide</a>
+        </div>
+      </section>
+
+      <!--- Guide Menu --->
+      <section class="page-content guide-section" id="guideMenu" data-parent="#homePage">
+        <h2>Guide</h2>
+        <p>This program offers EMR & CRM system for Small Opticals</p>
+        <p>EMR - Electronic Medical Record</p>
+        <p>CRM - Customer Relationship Management</p>
+        <p>Currently on its prototype stage</p>
+        <p>Final Product will be a standalone offline version</p>
+        <p>Meaning, Expect some limitations such as:</p>
+        <p>-Not being online (cloud system backups)</p>
+        <p>-Inability to be used in multiple devices at once</p>
+        <p>-This makes the use of EMR and CRM a bit hassle, for high volume patients use</p>
+        <p>-Such scenario where a receptionist cannot record the next patient/customer,</p>
+        <p>'Cause the program is currently being used for eye checkup</p>
+        <p class="paragraph-spacing"> </p>
+        <p>Then again, the target users of this program are small clinics that cater small volume of patients</p>
+        <p>Which does not need the use of multiple devices and online functions.</p>
+        <p class="paragraph-spacing"> </p>
+        <p>The core function of EMR is now complete</p>
+        <p class="paragraph-spacing"> </p>
+        <h3>EMR Features includes:</h3>
+        <p>Creating Customer Record</p>
+        <p>Creating Patient Record</p>
+        <p>Creating Prescription Via: Eye exam, Copy Rx (spectacle & contact lens)</p>
+        <p>Viewing, Editing and Deleting of Patient Records</p>
+        <p>Viewing, Editing and Deleting of Prescriptions</p>
+        <p>Generation of draft Certificate</p>
+        <p>Export and Import of clinic saved data (cross-platform available)</p>
+        <p class="paragraph-spacing"> </p>
+        <h3>Features still on development:</h3>
+        <p>Entire CRM system (new orders, pull out of rx for the order, job order, and sales)</p>
+        <p>Additional EMR features (Graph for AR and VT7, for progression reference; UI polishing)</p>
+        <p class="paragraph-spacing"> </p>
+        <h3>System Flow</h3>
+        <p>Creating patient record</p>
+        <p>Creating prescription for the patient</p>
+        <p>View, Edit, Delete of records</p>
+        <p>Generation of Certificates</p>
+        <p class="paragraph-spacing"> </p>
+        <!-- FOR BROWSER BLOCK ONLY -->
+        <div id="windowsDownloadSection" style="display: none; flex-direction: column; align-items: center;">
+            <h3>Windows Version:</h3>
+            <p>For a more reliable experience, download the Windows version.</p>
+            <p>No internet connection required after installation.</p>
+            <a href="https://github.com/OpticUnity/opticsite/releases/download/v0.2.1/OpticSite_0.2.1_x64-setup.exe" target="_blank" style="margin-bottom: 10px;">
+                Download <i class="fa-brands fa-windows"></i>
+            </a>
+            <p>After the download, run the installer to install the main program (.exe)</p>
+          <p class="paragraph-spacing"> </p>
+        </div>   
+        <h3>Where are the data stored?</h3>
+        <p>For Web Browser - It's locally saved in your web browser</p>
+        <p>Be careful on clearing your web browser's cache as it will permanently delete all records.</p>
+        <p>For Windows (Downloaded Version) - It's stored by default in this path:</p>
+        <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticunity.opticsite\</p>
+        <p class="paragraph-spacing"> </p>
+        <a href="#homePage">Back</a>
+      </section>
+
+      <!-------- Records Page ---------->
+      <section id="recordsPage" class="page-content">
+        <h2><i class="fa-solid fa-clipboard"></i> Records</h2>
+        <div class="nav-menu-links">
+          <a href="#newCustomerMenu">New Customer</a>
+          <a href="#newPatientMenu">New Patient</a>
+          <a href="#newPrescriptionMenu">New Prescription</a>
+          <a href="#viewRecordsMenu">View Records</a>
+        </div>
+      </section>
+
+      <!--- New Customer Menu --->
+      <section class="page-content" id="newCustomerMenu" data-parent="#recordsPage">
+        <div id="customerFormMount"></div>
+      </section>
+
+      <!--- New Patient Menu --->
+      <section class="page-content" id="newPatientMenu" data-parent="#recordsPage">
+        <div id="patientFormMount"></div>
+      </section>
+
+      <!--- New Prescription Menu --->
+      <section class="page-content" id="newPrescriptionMenu" data-parent="#recordsPage" data-on-entry="renderSelectPatientTable">
+        <h2>New Prescription</h2>
+
+        <div id="newPrescriptionSelectPatientMenu" class="new-prescription-select-patient-menu">
+          <h3>Select Patient</h3>
+          <p>Select a patient for the new prescription.</p>
+          <div class="select-patient-table-container">
+            <div class="select-patient-search-area flex-column">
+              <label>Search : </label><input id="selectPatientSearchBarInput" placeholder="Search ID, Name, Number...">
+            </div>
+            <div class="select-patient-main-table-new-rx">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Patient ID</th>
+                    <th>Name</th>
+                    <th>Number</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="4">Empty</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="selectPatientPagination" class="pagination-controls new-rx-pagination-controls"></div>
+          </div>
+          <button type="button" id="patientSampleBtn">Add 10 Samples</button>
+          <!----- DEBUG | TO DELETE ON FINAL PRODUCT ------>
+        </div>
+
+        <div id="patientProfileForm" class="patient-profile-section hidden">
+
+          <div id="changePatientContainer" class="change-patient-container hidden">
+            <h3>Select Patient</h3>
+            <p>Looking for different patient? Click "Select" below.</p>
+           <button id="selectDifferentPatientBtn">Select</button>
+          </div>
+
+          <h3 class="new-rx-patient-profile-section-header">Patient Profile</h3>
+          <label for="patientProfileName" class="patient-profile-name">Name : </label><input id="patientProfileName" readonly>
+          <div class="patient-profile-container flex-row">
+            <div class="patient-profile-container-division-1 flex-column">
+              <label for="patientProfileIdNumber">Patient ID : </label><input id="patientProfileIdNumber" readonly>
+              <label for="patientProfileNumber">Number : </label><input id="patientProfileNumber" readonly>
+              <label for="patientProfileEmail">Email : </label><input id="patientProfileEmail" maxlength="40" class="lowercase" readonly>
+              <label for="patientProfileBirthday">Birthday : </label><input id="patientProfileBirthday" readonly>
+            </div>
+            <div class="patient-profile-container-division-2 flex-column">
+              <label for="patientProfileDateCreated">Date Created : </label><input id="patientProfileDateCreated" readonly>
+              <label for="patientProfileSex">Sex :</label><input id="patientProfileSex" readonly>
+              <label for="patientProfileAddress">Address : </label><input id="patientProfileAddress"
+                readonly>
+              <label for="patientProfileAge">Age : </label><input id="patientProfileAge" readonly>
+            </div>
+          </div>
+          <label for="patientProfileNotes">Patient Notes : </label><textarea id="patientProfilePatientNotes"
+            class="patient-profile-textarea" maxlength="1500" placeholder="Occupation, Hobbies, Management"></textarea>
+          <label for="caseHistoryGeneralHealthHx">General Health Hx : </label><textarea
+            id="patientProfileGenHealthHxNotes" class="patient-profile-textarea" maxlength="1000"
+            placeholder="Hypertensive, Diabetic, Stroke patient, Medications"></textarea>
+          <label for="caseHistoryOcularHx">Ocular Hx: </label><textarea id="patientProfileOcuHxNotes"
+            class="patient-profile-textarea" maxlength="1000"
+            placeholder="Hx of Ocular Diseases, Trauma, Surgery"></textarea>
+        </div>
+
+        <div id="prescriptionMethodSelection" class="prescription-method-selection hidden">
+          <h3>Prescription Method</h3>
+          <p>Select on how the prescription will be taken</p>
+          <select class="rx-select" id="rxSelect">
+            <option value="" disabled selected>- SELECT -</option>
+            <option value="eyeExam">EYE EXAM</option>
+            <option value="copyPrescription">COPY RX (SPECS)</option>
+            <option value="copyPrescriptionCl">COPY RX (CL)</option>
+          </select>
+        </div>
+
+        <div id="prescriptionIdBlock" class="prescription-id-block hidden">
+          <h3 class="eye-examination-form-test-id-label">Prescription ID : </h3><input id="prescriptionID"
+            class="eye-examination-id" readonly> <!-- readonly computer generated -->
+          <label>Date Created : </label>
+          <div class="date-field"><!-- Current date as default -->
+            <input id="prescriptionDateCreatedMM" type="text" maxlength="2" placeholder="MM" class="date-part">
+            <span> - </span>
+            <input id="prescriptionDateCreatedDD" type="text" maxlength="2" placeholder="DD" class="date-part">
+            <span> - </span>
+            <input id="prescriptionDateCreatedYYYY" type="text" maxlength="4" placeholder="YYYY" class="date-part">
+          </div>
+        </div>
+
+        <!-- Copy Rx Specs Form — built and mounted by forms.js -->
+        <div id="copyRxSpecsMount"></div>
+
+        <!-- Copy Rx CL Form — built and mounted by forms.js -->
+        <div id="copyRxClMount"></div>
+
+        <form id="mainEyeExaminationForm" class="main-eye-examination-form fill-out-form hidden">
+
+          <h3 class="eye-examination-header">Eye Examination</h3>
+
+          <!-- Preliminary Examination Form HRx VA , UVA , PHA -->
+          <div class="eye-examination-form flex-column">
+            <h4 class="preliminary-header">Preliminary</h4>
+
+            <!-- Preliminary Block (UVA + PH) — built and mounted by forms.js -->
+            <div id="preliminaryMount"></div>
+
+            <!-- HRx Block — built and mounted by forms.js -->
+            <div id="hrxMount"></div>
+
+          </div>
+
+          <!-- AR + CL Parameters — built and mounted by forms.js -->
+          <div id="arClpMount"></div>
+
+          <!-- VT7 Block — built and mounted by forms.js -->
+          <div id="vt7Mount"></div>
+
+          <div id="generateRxContainer" class="generate-btn-container flex-column">
+            <h3>Generate Prescription</h3>
+            <button type="button" id="generateRxBtn">Generate</button>
+          </div>
+        </form>
+
+        <!-- Final Rx Form — built and mounted by forms.js -->
+        <div id="frxMount"></div>
+
+        <div id="addPrescriptionContainer" class="add-rx-btn-container hidden">
+          <h3>Add Prescription</h3>
+          <button id="addPrescriptionBtn">Add</button>
+        </div>
+
+        <a href="#recordsPage" class="back-btn-link new-rx-back-btn-link">Back</a>
+      </section>
+
+      <!--- View Records Menu --->
+      <section class="page-content" id="viewRecordsMenu" data-parent="#recordsPage">
+
+        <!-- Main Menu -->
+        <div id="viewRecordsMainMenu" class="view-records-main-menu">
+          <h2><i class="fa-solid fa-clipboard"></i> View Records</h2>
+          <div class="view-records-menu">
+            <button id="customerMenuBtn">Customer</button>
+            <button id="patientMenuBtn">Patient</button>
+            <a href="#recordsPage">Back</a>
+          </div>
+        </div>
+
+        <!-- View Customer Menu (stub for now) -->
+        <div id="viewRecordsCustomerMenu" class="view-records-selection-menu hidden">
+          <h2>Customer Records</h2>
+          <button id="viewRecordsCtmBackBtn" class="view-records-back-btn">Back</button>
+        </div>
+
+        <!-- View Patient Menu -->
+        <div id="viewRecordsPatientMenu" class="view-records-selection-menu hidden">
+          <h2>Patient Records</h2>
+          <!-- Select Patient Table -->
+          <div id="viewPatientSelectMenu" class="view-patient-menu">
+            <h3>Select Patient</h3>
+            <p>Select a patient you wish to view.</p>
+            <div class="select-patient-search-area flex-column">
+              <label for="viewPatientSearchBarInput">Search : </label><input id="viewPatientSearchBarInput" placeholder="Search ID, Name, Number...">
+            </div>
+            <div class="select-patient-main-table">
+              <table id="viewPatientTable">
+                <thead>
+                  <tr>
+                    <th>Patient ID</th>
+                    <th>Name</th>
+                    <th>Number</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div id="viewPatientPagination" class="pagination-controls"></div>
+            <a id="viewRecordsPtmBackBtn" class="back-btn-link patient-records-back-btn-link">Back</a>
+          </div>
+
+          <!-- Viewed Patient Profile + Rx Table -->
+          <div id="viewPatientProfileMenu" class="view-patient-container hidden">
+
+            <!-- Patient Profile Display -->
+            <div class="patient-profile-section">
+              <h3 class="patient-profile-section-header">Patient Profile</h3>
+              <label class="patient-profile-name">Name : </label>
+              <input id="viewPatientName" readonly class="uppercase">
+              <div class="patient-profile-container flex-row">
+                <div class="patient-profile-container-division-1 flex-column">
+                  <label>Patient ID : </label><input id="viewPatientIdNumber" readonly>
+                  <label>Contact Number : </label><input id="viewPatientNumber" maxlength="11" readonly>
+                  <label>Email : </label><input id="viewPatientEmail" maxlength="40" class="lowercase" readonly>
+                  <label>Birthday : </label><input id="viewPatientBirthday" readonly>
+                </div>
+                <div class="patient-profile-container-division-2 flex-column">
+                  <label>Date Created : </label><input id="viewPatientDateCreated" readonly>
+                  <label>Sex : </label><input id="viewPatientSex" readonly>
+                  <label>Address : </label><input id="viewPatientAddress" readonly>
+                  
+                  <label>Age : </label><input id="viewPatientAge" readonly>
+                </div>
+              </div>
+              <label>Patient Notes : </label>
+              <textarea id="viewPatientNotes" class="patient-profile-textarea" readonly placeholder="Occupation, Hobbies, Management"></textarea>
+              <label>General Health Hx : </label>
+              <textarea id="viewPatientGenHealthHx" class="patient-profile-textarea" readonly placeholder="Hypertensive, Diabetic, Stroke patient, Medications"></textarea>
+              <label>Ocular Hx : </label>
+              <textarea id="viewPatientOcuHx" class="patient-profile-textarea" readonly placeholder="Hx of Ocular Diseases, Trauma, Surgery"></textarea>
+            </div>
+
+            <!-- View Patient Action Buttons -->
+            <div id="viewPatientMainBtnContainer" class="view-patient-action-btn-container">
+              <div class="view-patient-action-btn-item">
+                <h4>Patient Selection</h4>
+                <button id="viewPatientToSelectionBackBtn">Back</button>
+              </div>
+              <div class="view-patient-action-btn-item">
+                <h4>Edit Patient Profile</h4>
+                <button id="editPatientProfileBtn">Edit</button>
+              </div>
+              <div class="view-patient-action-btn-item">
+                <h4>Delete Record</h4>
+                <button id="deletePatientBtn">Delete</button>
+              </div>
+            </div>
+
+
+            <!-- Edit Mode Actions -->
+            <div id="editPatientActionBtns" class="view-patient-action-btn-container hidden">
+              <div class="view-patient-action-btn-item">
+                <h4>Cancel Edit</h4>
+                <button id="cancelEditPatientBtn">Cancel</button>
+              </div>
+              <div class="view-patient-action-btn-item">
+                <h4>Save Changes</h4>
+                <button id="saveEditPatientBtn">Save</button>
+              </div>
+            </div>
+
+            <!-- Rx Table -->
+            <div class="view-rx-table-section" id="viewRxTableSection">
+              <h3 class="view-rx-table-section-header">Prescription Records</h3>
+              <div class="select-patient-main-table">
+                <table id="viewRxTable">
+                  <thead>
+                    <tr>
+                      <th>Rx ID</th>
+                      <th>Date Created</th>
+                      <th>Method</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="viewRxTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Edit Rx Panel — injected by view-records.js -->
+            <div id="editRxPanel" class="hidden"></div>
+
+          </div>
+        </div>
+
+      </section>
+
+      <!-------- Sales Page ---------->
+      <section id="salesPage" class="page-content">
+        <h2><i class="fa-solid fa-coins"></i> Sales</h2>
+        <div class="nav-menu-links">
+          <a href="#salesNewOrder">New Order</a>
+          <a href="#salesPendingJobs">Pending Jobs</a>
+          <a href="#salesPendingOrders">Pending Orders</a>
+          <a href="#salesSalesHistory">Sales History</a>
+        </div>
+      </section>
+
+      <section class="page-content" id="salesNewOrder" data-parent="#salesPage" data-on-entry="onEnterNewOrder">
+        <h2>New Order</h2>
+
+        <div id="newOrderSelectCustomerMenu" class="new-order-select-customer-menu">
+          <div class="walkin-selection-container">
+            <h3>Walk-in</h3>
+            <p>New order for Walk-in customer? Click the button below.</p>
+            <button id="walkInBtn">Walk-in</button>
+          </div>
+          <h3>Select Customer</h3>
+          <p>Select a customer for the order.</p>
+          <div class="select-customer-table-container">
+            <div class="select-customer-search-area flex-column">
+              <label>Search : </label><input id="selectCustomerSearchBarInput" placeholder="Search ID, Name, Number...">
+            </div>
+            <div class="select-customer-main-table-new-order">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Customer ID</th>
+                    <th>Name</th>
+                    <th>Number</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="4">Empty</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="selectCustomerPagination" class="pagination-controls new-order-pagination-controls"></div>
+          </div>
+          <button type="button" id="customerSampleBtn">Add 10 Samples</button>
+          <!----- DEBUG | TO DELETE ON FINAL PRODUCT ------>
+        </div>
+
+        <div id="changeCustomerContainer" class="change-customer-container hidden">
+            <h3>Select Customer</h3>
+            <p>Looking for different customer? Click "Select" below.</p>
+           <button id="selectDifferentCustomerBtn">Select</button>
+          </div>
+
+        <div id="customerProfileForm" class="customer-profile-section hidden">
+
+          <h3 class="new-order-customer-profile-section-header">Customer Profile</h3>
+          <label for="customerProfileName" class="customer-profile-name">Name : </label>
+          <input id="customerProfileName" readonly>
+
+          <div class="customer-profile-container flex-row">
+            <div class="customer-profile-container-division-1 flex-column">
+              <label for="customerProfileIdNumber">Customer ID : </label>
+              <input id="customerProfileIdNumber" readonly>
+              
+              <label for="customerProfileNumber">Number : </label>
+              <input id="customerProfileNumber" readonly>
+              
+              <label for="customerProfileEmail">Email : </label>
+              <input id="customerProfileEmail" maxlength="40" class="lowercase" readonly>
+              
+              <label for="customerProfileBirthday">Birthday : </label>
+              <input id="customerProfileBirthday" readonly>
+            </div>
+            
+            <div class="customer-profile-container-division-2 flex-column">
+              <label for="customerProfileDateCreated">Date Created : </label>
+              <input id="customerProfileDateCreated" readonly>
+              
+              <label for="customerProfileSex">Sex :</label>
+              <input id="customerProfileSex" readonly>
+              
+              <label for="customerProfileAddress">Address : </label>
+              <input id="customerProfileAddress" readonly>
+              
+              <label for="customerProfileAge">Age : </label>
+              <input id="customerProfileAge" readonly>
+            </div>
+          </div>
+
+        </div>
+
+        <div id="walkinCustomerHeader" class="walk-in-customer-header hidden">
+          <h3>Walk-in Customer</h3>
+          <p>Choose order items below for the transsaction.</p>
+        </div>
+
+        <div id="orderIdBlock" class="order-id-block hidden">
+          <h3 class="sales-order-form-id-label">Order ID : </h3><input id="orderID"
+            class="sales-order-id" readonly> <!-- readonly computer generated -->
+          <label>Date Created : </label>
+          <div class="date-field"><!-- Current date as default -->
+            <input id="orderDateCreatedMM" type="text" maxlength="2" placeholder="MM" class="date-part">
+            <span> - </span>
+            <input id="orderDateCreatedDD" type="text" maxlength="2" placeholder="DD" class="date-part">
+            <span> - </span>
+            <input id="orderDateCreatedYYYY" type="text" maxlength="4" placeholder="YYYY" class="date-part">
+          </div>
+        </div>
+
+        <!-- ── Order Items Table ── -->
+        <div class="so-table-wrapper hidden" id="orderItemsBlock">
+          <h3 class="so-section-header">Order Items</h3>
+          <div class="so-order-table-wrapper">
+            <table class="so-order-table" id="orderTable">
+              <thead>
+                <tr>
+                  <th class="so-col-num">#</th>
+                  <th class="so-col-type">Type</th>
+                  <th class="so-col-qty">Qty</th>
+                  <th class="so-col-price">Price</th>
+                  <th class="so-col-disctype">Discount</th>
+                  <th class="so-col-discpct">Disc %</th>
+                  <th class="so-col-discval">Disc ₱</th>
+                  <th class="so-col-rowtotal">Total</th>
+                  <th class="so-col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orderTableBody">
+                <!-- rows injected by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ── Payment Summary ── -->
+          <div class="so-order-summary">
+            <h3>Payment Summary</h3>
+
+            <div class="so-summary-row">
+              <label>Gross Total :</label>
+              <input id="summaryGrossTotal" type="text" readonly value="0.00">
+            </div>
+            <div class="so-summary-row">
+              <label>Discount :</label>
+              <input id="summaryDiscount" type="text" readonly value="0.00">
+            </div>
+            <div class="so-summary-row">
+              <label>Subtotal :</label>
+              <input id="summarySubtotal" type="text" readonly value="0.00">
+            </div>
+
+            <hr class="so-summary-divider">
+
+            <div class="so-summary-row so-summary-total-row">
+              <label>Total :</label>
+              <input id="summaryTotal" type="text" readonly value="0.00">
+            </div>
+            <div class="so-summary-row">
+              <label>Deposit :</label>
+              <input id="summaryDeposit" type="number" min="0" value="0" placeholder="0.00">
+            </div>
+            <div class="so-summary-row">
+              <label>Balance :</label>
+              <input id="summaryBalance" type="text" readonly value="0.00">
+            </div>
+
+            <hr class="so-summary-divider">
+
+            <div class="so-summary-row">
+              <label>Payment Method :</label>
+              <select id="paymentMethod">
+                <option value="">-- Select --</option>
+                <option value="cash">Cash</option>
+                <option value="gcash">GCash</option>
+                <option value="maya">Maya</option>
+                <option value="card">Card</option>
+                <option value="bank">Bank Transfer</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- ── Save Order Button ── -->
+          <div class="so-order-actions">
+            <button class="save-btn" id="saveOrderBtn">Save Order</button>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════
+             ITEM MODALS — one per item type
+             ════════════════════════════════════════ -->
+
+        <!-- Lens Modal -->
+        <div class="so-item-modal-overlay" id="modalLens">
+          <div class="so-item-modal">
+            <div class="so-item-modal-header">Lens Details</div>
+            <div class="so-item-modal-body">
+              <p class="so-future-tag">★ Rx auto-fill from prescription records — future implementation</p>
+              <label>Lens Brand</label>
+              <select id="lensBrand" onchange="soOnLensBrandChange(this)">
+                <option value="">-- Select --</option>
+                <option value="Homebrand">Homebrand</option>
+                <option value="__custom__">Custom...</option>
+              </select>
+              <input type="text" id="lensBrandCustom" class="hidden" placeholder="Enter lab / brand name...">
+              <label>Lens Type</label>
+              <select id="lensType" onchange="soOnLensTypeChange(this)">
+                <option value="">-- Select --</option>
+                <option>Single Vision (Dist.)</option>
+                <option>Single Vision (Near)</option>
+                <option>Kryptok</option>
+                <option>Flattop</option>
+                <option>Progressive</option>
+                <option value="__other__">Other</option>
+              </select>
+              <input type="text" id="lensTypeOther" class="hidden" placeholder="Specify lens type...">
+              <label>Coating</label>
+              <input type="text" id="lensCoating" placeholder="Uncoated, Multicoated, Photochromic...">
+              <label>Index <span class="so-optional-tag">(optional)</span></label>
+              <input type="text" id="lensIndex" placeholder="e.g. 1.56, 1.61, 1.67...">
+              <label>Rx (OD / OS)</label>
+              <div class="so-rx-grid">
+                <div></div>
+                <div class="so-rx-header">SPH</div>
+                <div class="so-rx-header">CYL</div>
+                <div class="so-rx-header">AXIS</div>
+                <div class="so-rx-header">ADD</div>
+                <div class="so-rx-eye">OD</div>
+                <input type="text" id="lensOdSph"  placeholder="SPH">
+                <input type="text" id="lensOdCyl"  placeholder="CYL">
+                <input type="text" id="lensOdAxis" placeholder="AXIS">
+                <input type="text" id="lensOdAdd"  placeholder="ADD">
+                <div class="so-rx-eye">OS</div>
+                <input type="text" id="lensOsSph"  placeholder="SPH">
+                <input type="text" id="lensOsCyl"  placeholder="CYL">
+                <input type="text" id="lensOsAxis" placeholder="AXIS">
+                <input type="text" id="lensOsAdd"  placeholder="ADD">
+              </div>
+              <label>Notes</label>
+              <textarea id="lensNotes" placeholder="Additional notes..."></textarea>
+            </div>
+            <div class="so-item-modal-actions">
+              <button class="so-modal-cancel-btn" onclick="cancelModal('modalLens')">Cancel</button>
+              <button class="so-modal-ok-btn"     onclick="confirmModal('modalLens', 'lens')">Confirm</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Frame Modal -->
+        <div class="so-item-modal-overlay" id="modalFrame">
+          <div class="so-item-modal">
+            <div class="so-item-modal-header">Frame Details</div>
+            <div class="so-item-modal-body">
+              <label>Frame Source</label>
+              <div class="so-radio-group">
+                <label class="so-radio-option">
+                  <input type="radio" id="frameSourceClinic" name="frameSource" value="clinic" checked>
+                  Clinic's Frame
+                </label>
+                <label class="so-radio-option">
+                  <input type="radio" id="frameSourceOwn" name="frameSource" value="own">
+                  Customer's Frame
+                </label>
+              </div>
+              <label>Type</label>
+              <select id="frameType" onchange="soOnFrameTypeChange(this)">
+                <option value="">-- Select --</option>
+                <option value="Full-rim">Full-rim</option>
+                <option value="Semi-rim">Semi-rim</option>
+                <option value="Rimless">Rimless</option>
+                <option value="__other__">Others</option>
+              </select>
+              <input type="text" id="frameTypeOther" class="hidden" placeholder="Specify frame type...">
+              <label>Material</label>
+              <select id="frameMaterial" onchange="soOnFrameMaterialChange(this)">
+                <option value="">-- Select --</option>
+                <option value="Metal">Metal</option>
+                <option value="Plastic">Plastic</option>
+                <option value="__other__">Others</option>
+              </select>
+              <input type="text" id="frameMaterialOther" class="hidden" placeholder="Specify material...">
+              <label>Brand / Model / Code</label>
+              <input type="text" id="frameBrandModel" placeholder="e.g. Ray-Ban / RB2140...">
+              <label>Color</label>
+              <input type="text" id="frameColor" placeholder="e.g. Black, Brown...">
+              <label>Shape</label>
+              <input type="text" id="frameShape" placeholder="e.g. Round, Aviator, Square...">
+              <label>Notes</label>
+              <textarea id="frameNotes" placeholder="Additional notes..."></textarea>
+            </div>
+            <div class="so-item-modal-actions">
+              <button class="so-modal-cancel-btn" onclick="cancelModal('modalFrame')">Cancel</button>
+              <button class="so-modal-ok-btn"     onclick="confirmModal('modalFrame', 'frame')">Confirm</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Lens Modal -->
+        <div class="so-item-modal-overlay" id="modalCL">
+          <div class="so-item-modal">
+            <div class="so-item-modal-header">Contact Lens Details</div>
+            <div class="so-item-modal-body">
+              <label>Brand</label>
+              <input type="text" id="clBrand" placeholder="e.g. Acuvue, Bausch & Lomb...">
+              <label>Type</label>
+              <select id="clType">
+                <option value="">-- Select --</option>
+                <option>Daily</option>
+                <option>Monthly</option>
+                <option>Yearly</option>
+                <option>Colored</option>
+                <option>Toric</option>
+              </select>
+              <label>Grade (OD / OS)</label>
+              <div class="so-rx-grid" style="grid-template-columns: 36px repeat(3, 1fr);">
+                <div></div>
+                <div class="so-rx-header">SPH</div>
+                <div class="so-rx-header">BC</div>
+                <div class="so-rx-header">DIA</div>
+                <div class="so-rx-eye">OD</div>
+                <input type="text" id="clOdSph" placeholder="SPH">
+                <input type="text" id="clOdBc"  placeholder="BC">
+                <input type="text" id="clOdDia" placeholder="DIA">
+                <div class="so-rx-eye">OS</div>
+                <input type="text" id="clOsSph" placeholder="SPH">
+                <input type="text" id="clOsBc"  placeholder="BC">
+                <input type="text" id="clOsDia" placeholder="DIA">
+              </div>
+              <label>Notes</label>
+              <textarea id="clNotes" placeholder="Additional notes..."></textarea>
+            </div>
+            <div class="so-item-modal-actions">
+              <button class="so-modal-cancel-btn" onclick="cancelModal('modalCL')">Cancel</button>
+              <button class="so-modal-ok-btn"     onclick="confirmModal('modalCL', 'cl')">Confirm</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Service Modal -->
+        <div class="so-item-modal-overlay" id="modalService">
+          <div class="so-item-modal">
+            <div class="so-item-modal-header">Service Details</div>
+            <div class="so-item-modal-body">
+              <label>Service Type</label>
+              <select id="serviceType">
+                <option value="">-- Select --</option>
+                <option>Eye Checkup</option>
+                <option>Lens Transfer</option>
+                <option>Frame Repair</option>
+                <option>Lens Replacement</option>
+                <option>Others</option>
+              </select>
+              <label>Notes</label>
+              <textarea id="serviceNotes" placeholder="Details about the service..."></textarea>
+            </div>
+            <div class="so-item-modal-actions">
+              <button class="so-modal-cancel-btn" onclick="cancelModal('modalService')">Cancel</button>
+              <button class="so-modal-ok-btn"     onclick="confirmModal('modalService', 'service')">Confirm</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item Modal -->
+        <div class="so-item-modal-overlay" id="modalItem">
+          <div class="so-item-modal">
+            <div class="so-item-modal-header">Item Details</div>
+            <div class="so-item-modal-body">
+              <label>Category</label>
+              <select id="itemCategory">
+                <option value="">-- Select --</option>
+                <option>Readymade Glasses</option>
+                <option>Contact Lens Solution</option>
+                <option>Accessories</option>
+                <option>Others</option>
+              </select>
+              <label>Brand / Name</label>
+              <input type="text" id="itemName" placeholder="Product name or brand...">
+              <label>Notes</label>
+              <textarea id="itemNotes" placeholder="Additional notes..."></textarea>
+            </div>
+            <div class="so-item-modal-actions">
+              <button class="so-modal-cancel-btn" onclick="cancelModal('modalItem')">Cancel</button>
+              <button class="so-modal-ok-btn"     onclick="confirmModal('modalItem', 'item')">Confirm</button>
+            </div>
+          </div>
+        </div>
+
+        <a href="#salesPage" class="back-btn-link new-order-back-btn-link">Back</a>
+
+      </section>
+
+      <section class="page-content" id="salesPendingJobs" data-parent="#salesPage">
+
+      </section>
+
+      <section class="page-content" id="salesPendingOrders" data-parent="#salesPage">
+
+      </section>
+
+      <section class="page-content" id="salesSalesHistory" data-parent="#salesPage">
+
+      </section>
+
+      <!-------- Settings Page ---------->
+      <section id="settingsPage" class="page-content">
+        <h2><i class="fa-solid fa-gears"></i> Settings</h2>
+        <div class="nav-menu-links">
+          <a href="#clinicSetupPage">Clinic Setup</a>
+          <a href="#backupPage">Clinic Data</a>
+        </div>
+      </section>
+
+      <!-------- Clinic Setup Page ---------->
+      <section class="page-content" id="clinicSetupPage" data-parent="#settingsPage" data-on-entry="_loadClinicSettingsIntoForm">
+        <h2><i class="fa-solid fa-hospital"></i> Clinic Setup</h2>
+        <p>This information will appear on generated certificates.</p>
+
+        <div class="clinic-setup-form">
+          <label>Clinic Name</label>
+          <input type="text" id="setupClinicName"    maxlength="60"  placeholder="e.g. Santos Optical Clinic" />
+
+          <label>Clinic Address</label>
+          <input type="text" id="setupClinicAddress" maxlength="100" placeholder="e.g. 123 Main St, Quezon City" />
+
+          <label>Clinic Contact</label>
+          <input type="text" id="setupClinicContact" maxlength="11" class="digits-only" placeholder="e.g. 09XX-XXX-XXXX" />
+
+          <label>Doctor Name</label>
+          <input type="text" id="setupDoctorName"    maxlength="60"  placeholder="e.g. Dr. Juan dela Cruz" />
+
+          <label>PRC License Number</label>
+          <input type="text" id="setupPrcNumber"  class="digits-only"   maxlength="7"   placeholder="e.g. 0012345" />
+        </div>
+        <div class="clinic-setup-action-btn-container">
+          <button id="saveClinicSetupBtn" class="save-btn">Save</button>
+          <a href="#settingsPage">Back</a>
+        </div>
+      </section>
+
+      <!-------- Backup Page ---------->
+      <section class="page-content backup-page" id="backupPage" data-parent="#settingsPage" data-on-entry="_initBackupPage">
+        <h2><i class="fa-solid fa-database"></i> Clinic Data </h2>
+
+        <!-- Tauri / Windows App Panel -->
+        <div id="backupPanelTauri" class="hidden">
+          <h3 class="backup-panel-header">About Your Data</h3>
+          <p>All your records are stored locally in a single JSON file on this computer.</p>
+          <p>Default save location:</p>
+          <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticunity.opticsite\</p>
+          <p class="paragraph-spacing"> </p>
+          <p class="paragraph-spacing"> </p>
+
+          <h3 class="guide-header">Data Migration</h3>
+          <p>You can transfer your clinic data to a new device or even migrate to web browser platform seamlessly.</p>
+          <p>You can do this by Exporting and Importing it to your desired location (Instructions below).</p>
+          <p class="paragraph-spacing"> </p>
+
+          <h3 class="guide-header">How to Export</h3>
+          <p>Click <strong>Export Save File</strong> below and the program will download a <code>.JSON</code> file.</p>
+          <p>Choose where you wish to save your file and store it (USB drive, Google Drive, OneDrive, etc.).</p>
+          <p>Rename the file if needed, the contents are what matter, not the filename.</p>
+          <p><strong>JSON</strong> is a versatile file format widely used specifically in storing data.</p>
+        </div>
+
+        <!-- Browser Panel -->
+        <div id="backupPanelBrowser" class="hidden">
+          <h3 class="backup-panel-header">About Your Data</h3>
+          <p>All your records are stored in your <strong>browser's local storage</strong> of this device.</p>
+          <p>Browser storage can be cleared by the browser itself (clearing site data, cache wipes, etc.), exporting your save file regularly for backup is <strong>strongly advised.</strong></p>
+          <p class="paragraph-spacing"> </p>
+
+          <h3 class="guide-header">Data Migration</h3>
+          <p>You can transfer your clinic data to a new device or even migrate to windows platform seamlessly.</p>
+          <p>You can do this by Exporting and Importing it to your desired location (Instructions below).</p>
+          <p class="paragraph-spacing"> </p>
+
+          <h3 class="guide-header">How to Export</h3>
+          <p>Click <strong>Export Save File</strong> below and your browser will download a <code>.JSON</code> file.</p>
+          <p>Choose where you wish to save your file and store it (USB drive, Google Drive, OneDrive, etc.).</p>
+          <p>Rename the file if needed, the contents are what matter, not the filename.</p>
+          <p><strong>JSON</strong> is a versatile file format widely used specifically in storing data.</p>
+        </div>
+
+        <!-- Shared buttons same function on both platforms -->
+        <p class="paragraph-spacing"> </p>
+        <h3>How to Import</h3>
+        <p>Click <strong>Import Save File</strong> below and select your previously exported <code>.JSON</code> save file.</p>
+        <p>The program will check the validity of the file and ask you for confirmation.</p>
+        <p><strong>This will replace all current records.</strong> Export your current data first if needed.</p>
+        <p class="paragraph-spacing"> </p>
+
+        <h3>Migrate Files</h3>
+        <button id="exportBackupBtn" class="backup-btn"><i class="fa-solid fa-floppy-disk"></i> Export Save File</button>
+        <button id="importBackupBtn" class="backup-btn"><i class="fa-solid fa-file-import"></i> Import Save File</button>
+        <p class="paragraph-spacing"> </p>
+        <h3>Clear Data</h3>
+        <button id="clearDataBtn" class="clear-btn"><i class="fas fa-triangle-exclamation"></i> Clear Data</button>
+        <p class="paragraph-spacing"> </p>
+        <a href="#settingsPage">Back</a>
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      <p>OpticUnity</p>
+    </footer>
+
+  </div>
+
+</body>
+
+<!-- scripts -->
+<!-- <script src="scripts/lock.js"></script> -->
+<script src="scripts/storage.js"></script>
+<script src="scripts/forms.js"></script>
+<script src="scripts/form-logic.js"></script>
+<script src="scripts/sales-form-logic.js"></script>
+<script src="scripts/order-form-logic.js"></script>
+<script src="scripts/validation.js"></script>
+<script src="scripts/prescription-logic.js"></script>
+<script src="scripts/ui-and-navigation.js"></script>
+<script src="scripts/view-records.js"></script>
+<script src="scripts/modal.js"></script>
+<script src="scripts/print.js"></script>
+<script src="main.js"></script>
+
+</html>

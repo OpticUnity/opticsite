@@ -1,0 +1,1943 @@
+/* -------- Global Reset -------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none;   /* Safari */
+  -khtml-user-select: none;    /* Konqueror HTML */
+  -moz-user-select: none;      /* Old versions of Firefox */
+  -ms-user-select: none;       /* Internet Explorer/Edge */
+  user-select: none;           /* Standard syntax */
+}
+
+/* -------- Global Variables -------- */
+:root {
+  --white: #fff;
+  --text-color: #000000;
+  --primary-color: #000;
+  --secondary-color: #272B2F;
+  --ui-bg: #fff;
+  --object-bg: #F3F4F6;
+  --border-color: #555;
+  --cancel-hover-bg: #ddd;
+}
+
+/* -------- Preload Guards -------- */
+/* Both classes are added by the inline <head> script before first paint
+   and removed as soon as the app has determined what to show.         */
+
+/* Hides all page sections until handleRouting() decides what's active.
+   Prevents any section blinking visible on load.                       */
+html.preload-hide-pages .page-content {
+  display: none !important;
+}
+
+/* Sets dark mode CSS variables before first paint to prevent flash of
+   light mode when dark mode was the last saved preference.
+   Removed by applyTheme() in ui-and-navigation.js once app loads.     */
+html.darkMode-preload {
+  --white: #fff;
+  --text-color: #e4e6eb;
+  --primary-color: #272B2F;
+  --secondary-color: #1D2124;
+  --ui-bg: #171A1D;
+  --object-bg: #222529;
+  --border-color: #8a8f98;
+  --cancel-hover-bg: #33383d;
+}
+
+html.darkMode-preload body {
+  background-color: #171A1D;
+  color: #e4e6eb;
+}
+
+/* -------- Page Layout Setup -------- */
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--ui-bg);
+  color: var(--text-color);
+}
+
+button{
+  background-color: var(--primary-color);
+  color: var(--white);
+  font-size: 18px;
+  height: 50px;
+  width: 200px;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+button:hover{
+  background: var(--secondary-color)
+}
+
+.wrapper {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Table Styling ------- */
+table {
+  border-collapse: collapse;
+  background: var(--ui-bg); 
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px; border: 1px solid #ddd; 
+  width: 900px; /* Set a specific width or use max-width for better display */ 
+  max-width: 1200px; 
+} 
+
+th, td { 
+  padding: 12px 16px; 
+  text-align: center; 
+  border-bottom: 1px solid #ddd; 
+} 
+
+th { 
+  background-color: var(--object-bg); 
+  font-weight: bold; 
+  color: var(--text-color); 
+} /* Hover effect for data rows */ 
+
+tbody tr:hover { 
+  background-color: var(--object-bg); 
+} 
+
+/* -- Table Pagination Styles -- */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  gap: 5px;
+}
+
+.pagination-controls button {
+  width: auto;
+  height: 35px;
+  min-width: 35px;
+  padding: 0 10px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.pagination-controls .active-page {
+  background-color: var(--secondary-color);
+  color: var(--white);
+  pointer-events: none; /* Disable click on current page */
+}
+
+.pagination-controls .disabled-page {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* -------- Navigation Bar -------- */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: var(--primary-color);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.navigation-bar {
+  max-width: 1300px;
+  height: 100%;
+  margin: auto;
+  padding: 0 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navigation-bar a {
+  color: var(--white);
+  text-decoration: none;
+  font-size: 18px;
+  opacity: 0.75;
+}
+
+.navigation-bar a:hover,
+.navigation-bar a.active-nav {
+  opacity: 1;
+}
+
+.title-page-area{
+  font-size: 30px;
+  font-weight: 600;
+  opacity: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  cursor: default;
+  user-select: none;
+}
+
+#titleLink{
+  font-size: 30px;
+  font-weight: 600;
+  opacity: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  cursor: pointer;
+  user-select: none;
+}
+
+.page-logo {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+}
+
+/* -------- Navigation Bar Links -------- */
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: 10px;
+}
+
+.nav-links li {
+  list-style: none;
+  margin: 0 8px;
+  padding-right: 10px;
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.nav-links li:last-child {
+  border-right: none;
+}
+
+.nav-links-menu-toggle {
+  display: none;
+  font-size: 24px;
+  color: var(--white);
+  cursor: pointer;
+}
+
+/* -------- Appearance Area Style -------- */
+.appearance-area {
+  display: flex;
+  align-items: center;
+}
+
+.dark-mode-btn {
+  width: 50px;
+  height: 50px;
+  background: var(--secondary-color);
+  color: var(--white);
+  border-radius: 6px;
+  font-size: 20px;
+  text-align: center;
+  line-height: 50px;
+  cursor: pointer;
+  margin-left: 10px;
+  opacity: 0.8;
+}
+
+.dark-mode-btn:hover {
+  opacity: 1;
+}
+
+/* -------- Page Content Style -------- */
+.content {
+  flex: 1;
+  padding-top: 50px;
+}
+
+textarea ,input, select{
+  border: 1px solid gray;
+  border-radius: 6px;
+  font-size: 16px;
+  width: 250px;
+  padding: 8px;
+  margin-bottom: 5px;
+  text-align: center;
+  background-color: var(--ui-bg);
+  color: var(--text-color);
+}
+
+input{
+  height: 32px;
+}
+
+/* -------- Main Section Style -------- */
+.page-content {
+  margin-top: 70px;
+  padding: 0 60px;
+  background: var(--ui-bg);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: left;
+  margin-bottom: 40px;
+}
+
+.page-content.active-section {
+  display: flex;
+}
+
+.color-text {
+  color: var(--primary-color);
+}
+
+.page-content h2{
+  font-size: 30px;
+}
+
+.page-content p{
+  font-size: 16px;
+  max-width: 700px;
+  margin: 20px 0 30px;
+}
+
+/* --- Page Links Style --- */
+.content a {
+  font-size: 20px;
+  padding: 12px 20px;
+  background: var(--primary-color);
+  color: var(--white);
+  border-radius: 6px;
+  text-decoration: none;
+  text-align: center;
+  align-items: center;
+  gap: 8px;
+  width: 200px;
+  height: 50px;
+}
+
+.content a:hover {
+  background: var(--secondary-color);
+}
+
+.nav-menu-links{
+  margin-top: 45px;
+  display: flex;
+  flex-direction: column;
+  gap: 45px;
+}
+
+/* ---------------- Intro Page -------------------- */
+.intro-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: #fff;
+}
+
+.intro-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    max-width: 520px;
+    width: 100%;
+    padding: 40px 20px;
+    gap: 20px;
+}
+
+.intro-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+
+}
+
+.intro-logo {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 20px;
+}
+
+.intro-content h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    align-items: center;
+    text-align: center;
+}
+
+.intro-content h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    align-items: center;
+    text-align: center;
+}
+
+.intro-step .intro-content .intro-tagline {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.intro-divider {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 16px 0;
+}
+
+.intro-content p {
+    font-size: 14px;
+    line-height: 1.7;
+    text-align: left;
+    margin-bottom: 8px;
+}
+
+.intro-optional-note {
+    font-size: 12px;
+    color: #888;
+    text-align: center !important;
+    margin-top: 4px;
+}
+
+.required-star {
+    color: red;
+}
+
+.intro-actions {
+    margin-top: 30px;
+    margin-left: 50px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    align-items: center;
+}
+
+.intro-actions button:first-child {
+    width: 100%;
+    max-width: 280px;
+    padding: 14px;
+    font-size: 16px;
+}
+
+/* Restore button */
+.intro-restore-dropdown {
+    position: relative;
+    display: inline-block;
+}
+.intro-link-btn {
+    width: 50px;
+    height: 50px;
+    background: var(--primary-color);
+    color: var(--white);
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    opacity: 1;
+}
+.intro-link-btn:hover { opacity: 1; }
+
+.intro-steps-indicator {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    justify-content: center;
+}
+
+.intro-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ccc;
+}
+
+.intro-dot.active {
+    background-color: #000;
+}
+
+/* --- Form Layouts --- */
+
+.fill-out-form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
+  gap: 5px;
+}
+
+.date-field{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+}
+
+.date-field input{
+  width: 70px;
+  text-align: center;
+}
+
+.form-action-buttons{
+  margin-top: 25px;
+}
+
+/* Red border for validation errors */
+.input-error {
+  border: 2px solid #ff4d4d;
+}
+
+/* Style for readonly fields to show they are auto-generated */
+input[readonly] {
+  background-color: var(--object-bg, #F3F4F6);
+}
+
+textarea[readonly] {
+  background-color: var(--object-bg, #F3F4F6);
+}
+
+.eye-examination-form .date-field input{
+  width: 70px;
+  text-align: center;
+  align-items: center;
+}
+
+.selectable-text{
+  user-select: text;
+  text-align: center;
+}
+
+/* -------- Home Page -------- */
+
+.home-page-header{
+  font-size: 36px;
+}
+
+.page-content .home-page-subtitle{
+  font-size: 20px;
+  margin-top: 40px;
+  text-align: center;
+}
+
+.home-page-menu-links{
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 45px;
+  align-items: center;
+}
+
+/* ---- Guide Style ----- */
+.guide-section{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* ---- New customer and patient form ---- */
+
+.new-person-form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* -------- Select Patient -------- */
+.select-patient-button{
+  width: 80px;
+  height: 35px;
+  font-size: 14px;
+  margin-bottom: 0; /* Override the global button margin */
+  padding: 5px;
+}
+
+#selectPatientSearchBarInput:focus {
+  border-color: var(--secondary-color);
+  outline: none;
+}
+
+.select-patient-search-area{
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 25px;
+}
+
+.select-patient-search-area input{
+  width: 300px;
+}
+
+.new-prescription-select-patient-menu{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
+  gap: 5px;
+}
+
+.select-patient-main-table {
+  display: flex;
+  justify-content: center;
+}
+
+.select-patient-main-table-new-rx{
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+/* -- Prescription ID Block -- */
+.prescription-id-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 5px;
+}
+
+.prescription-id-block input {
+  width: 250px;
+  padding: 8px;
+}
+
+.prescription-id-block .date-field input {
+  width: 70px;
+  padding: 3px;
+}
+
+/* -------- New Prescription Style -------- */
+
+.main-eye-examination-form{
+  display: flex;
+  flex-direction: column;
+}
+
+.eye-examination-header{
+  margin-top: 10px;
+}
+
+.change-patient-container, .change-customer-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
+}
+
+.change-patient-container button, .change-customer-container button{
+  width: 100px;
+  height: 45px;
+}
+
+.new-rx-pagination-controls, .new-order-pagination-controls{
+  margin-top: 25px;
+}
+
+/* -- Patient Profile --*/
+.patient-profile-section{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.new-rx-patient-profile-section-header{
+  margin-top: 45px;
+}
+
+.patient-profile-section-header{
+  margin-top: 25px;
+}
+
+.patient-profile-container{
+  align-items: center;
+  text-align: center;
+  gap: 40px;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+.patient-profile-name{
+  margin-top: 20px;
+}
+
+.patient-profile-textarea{
+  padding: 8px;
+  width: 450px;
+  height: 150px;
+  outline: none;
+  vertical-align: top;
+  resize: none;
+}
+
+.patient-profile-container-division-1, .patient-profile-container-division-2{
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* -- Rx Method Selection -- */
+.prescription-method-selection{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+/* -- Copy Rx Form -- */
+.copy-prescription-form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.eye-test-label-header{
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  align-items: center;
+}
+
+/* -- Copy Rx Cl Form -- */
+.copy-prescription-form-cl{
+  display: flex;
+  flex-direction: column;
+  margin-top: 25px;
+  margin-bottom: 40px;
+  align-items: center;
+}
+
+.copy-prescription-form-cl-header{
+  margin-bottom: 25px;
+}
+
+.copy-prescription-contact-lens-label{
+  margin-left: 18px;
+  gap: 46px;
+}
+
+.copy-rx-cl-notes-container{
+  margin-left: 25px;
+}
+
+/* -- Eye Examination -- */
+.eye-examination-form{
+  align-items: center;
+}
+
+.near-compute-btn{
+  height: 35px;
+  width: 80px;
+  font-size: 12px;
+}
+
+/* -- Preliminary Style -- */
+
+.eye-examination-form-preliminary{
+  align-items: center;
+  gap: 70px;
+  margin-right: 70px;
+}
+
+.eye-examination-form-test-id-label{
+  margin-top: 30px;
+}
+
+.preliminary-header{
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+.eye-examination-form input, .eye-examination-form-preliminary input{
+  width: 70px;
+  padding: 3px;
+  margin: 3px;
+}
+
+.v-line-uva-pa{
+  margin-top: 5px;
+  border-left: 1px solid var(--text-color); 
+  height: 150px;     
+  margin: 0 10px;  
+}
+
+.fill-out-form .eye-examination-form .eye-examination-id{
+  width: 250px;
+  padding: 8px;
+  margin-bottom: 5px;
+}
+
+.preliminary-uva, .preliminary-ph{
+  gap: 10px;
+}
+
+.eye-test-label-uva{
+  margin-left: 85px;
+}
+
+.eye-test-label-uva-dist{
+  margin-left: 55px;
+}
+
+.eye-test-label-uva-near{
+  margin-left: 25px;
+}
+
+.eye-test-label-0{
+  margin-top: 8px;
+}
+
+.eye-test-label-1{
+  margin-top: 5px;
+}
+
+.eye-test-label-ph{
+ margin-left: 32px;
+}
+
+.eye-test-label-ph-dist{
+  margin-left: 50px;
+}
+
+/* -- HRX -- */
+
+.eye-test-label-hrx{
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+/* -- AR and CL Style -- */
+
+.ar-clp-container{
+  display: flex;
+  flex-direction: row;
+  text-align: center;
+  align-items: center;
+  gap: 75px;
+  margin-top: 30px;
+}
+
+.ar-clp-container input{
+  width: 70px;
+  padding: 3px;
+  margin: 3px;
+}
+
+.ar-clp-container textarea{
+  padding: 8px;
+  width: 350px;
+  height: 100px;
+  outline: none;
+  vertical-align: top;
+  resize: none;
+}
+
+.ar-label-container{
+  display: flex;
+  flex-direction: row;
+  gap:50px;
+  margin-left: 60px;
+  margin-top: 10px;
+}
+
+.clp-label-container{
+  display: flex;
+  flex-direction: row;
+  gap: 50px;
+  margin-left: 100px;
+  margin-top: 10px;
+}
+
+.ar-form-notes, .clp-form-notes{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.v-line-ar-clp{
+  margin-top: 15px;
+  border-left: 1px solid var(--text-color); 
+  height: 250px;     
+  margin: 0 10px;  
+}
+
+/* -- VT7 Form -- */
+.vt7-header{
+  margin-top: 30px;
+}
+
+.generate-btn-container{
+  margin-top: 30px;
+  gap: 15px;
+  align-items: center;
+}
+
+/* -- Final Rx Form -- */
+.main-final-prescription{
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.final-prescription-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+}
+
+.frx-header{
+  margin-top: 15px;
+}
+
+
+/* -- Final Rx Contact Lens -- */
+
+.contact-lens-frx-btn-selection{
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.contact-lens-frx-btn-selection button{
+  width: 150px;
+}
+
+.contact-lens-frx-btn-container{
+  gap: 10px;
+}
+
+.add-rx-btn-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.patient-records-back-btn-link{
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.new-rx-back-btn-link{
+  margin-top: 25px;
+  margin-bottom: 20px;
+}
+
+/* ---- Prescription Form Format ---- */
+
+.prescription-format-form{
+  display: flex;
+  flex-direction: row;
+  gap: 25px;
+}
+
+.prescription-format-form input{
+  width: 70px;
+  padding: 3px;
+  margin: 3px;
+}
+
+.prescription-format-division{
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.prescription-format-label{
+  display: flex;
+  flex-direction: row;
+  margin-left: 25px;
+  gap: 50px;
+}
+
+.prescription-format-near{
+  margin-left: 26px;
+  gap: 5px;
+}
+
+.prescription-format-add{
+  margin-left: 32px;
+  gap: 5px;
+}
+
+.prescription-format-side-label{
+  margin-top: 5px;
+}
+
+.prescription-format-notes{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.prescription-format-notes-label{
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.prescription-format-notes textarea{
+  padding: 8px;
+  width: 450px;
+  height: 100px;
+  outline: none;
+  vertical-align: top;
+  resize: none;
+}
+
+/* -------- Contact Lens Form Format -------- */
+.contact-lens-form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.contact-lens-label{
+  margin-left: 55px;
+  gap: 45px;
+}
+
+.contact-lens-side-label{
+  margin-top: 7px;
+}
+
+.contact-lens-form input{
+  width: 70px;
+  padding: 3px;
+  margin: 3px;
+}
+
+/* -------- View Patient Records -------- */
+.view-records-main-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.view-records-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 25px;
+  margin-top: 45px;
+}
+
+.view-records-selection-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.view-patient-menu{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 5px;
+  gap: 5px;
+}
+
+.view-records-back-btn {
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+.view-rx-table-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 30px;
+  width: 100%;
+}
+
+.view-rx-table-section-header{
+  margin-bottom: 15px;
+}
+
+.view-patient-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.view-patient-action-btn-container{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 25px;
+  gap: 25px;
+}
+
+.view-patient-action-btn-item{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.view-patient-action-btn-item button{
+  height: 40px;
+  width: 95px;
+  font-size: 16px;
+}
+
+/* -- Inner expandable Rx table -- */
+.inner-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.inner-table th, .inner-table td {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.inner-table th {
+  background-color: var(--object-bg);
+}
+
+.details-row td {
+  background-color: var(--ui-bg);
+  padding: 15px;
+}
+
+.toggle-btn {
+  width: 40px;
+  height: 30px;
+  font-size: 12px;
+  padding: 0;
+  margin: 0;
+}
+
+/* -------------- Sales Page Style -------------- */
+.new-order-select-customer-menu{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
+  gap: 5px;
+}
+
+.walkin-selection-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.walkin-selection-container button{
+  height: 50px;
+  width: 125px;
+}
+
+.select-customer-search-area{
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 25px;
+}
+
+.select-customer-search-area input{
+  width: 300px;
+}
+
+
+.select-customer-main-table-new-order{
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+/*-- Customer Profile Style --*/
+
+.customer-profile-section{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.new-order-customer-profile-section-header{
+  margin-top: 45px;
+}
+
+.customer-profile-name{
+  margin-top: 20px;
+}
+
+.customer-profile-container-division-1, .customer-profile-container-division-2{
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.customer-profile-container{
+  align-items: center;
+  text-align: center;
+  gap: 40px;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+.walk-in-customer-header{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 30px;
+}
+
+/*-- Order Id Style --*/
+.order-id-block{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 5px;
+}
+
+.sales-order-form-id-label{
+  margin-top: 30px;
+}
+
+.sales-order-id{
+  width: 250px;
+  padding: 8px;
+  margin-bottom: 5px;
+}
+
+/*-- New Order Id style --*/
+.new-order-back-btn-link{
+  margin-top: 25px;
+  margin-bottom: 20px;
+}
+
+
+
+/* -------------- Settings Page Style -------------- */
+
+/*-------- clinic setup panel style --------*/
+.clinic-setup-form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.clinic-setup-action-btn-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-top: 35px;
+}
+
+/* -------- Clinic Data panel style -------- */
+.backup-page{
+  align-items: center;
+  text-align: center;
+}
+
+.backup-panel-header{
+  margin-top: 50px;
+}
+
+.guide-header{
+  margin-top: 50px;
+}
+
+.backup-btn, .clear-btn{
+  margin-top: 10px;
+}
+
+/* -------- Footer -------- */
+.footer {
+  background: var(--primary-color);
+  color: var(--white);
+  text-align: center;
+  padding: 20px;
+  margin-top: auto;
+}
+
+
+/* -------- Dark Mode Theme -------- */
+.color-text.darkMode {
+  color: #FFD700;  /* yellow */
+}
+
+/* --------- Other Function Mode and Styles ----- */
+
+.hidden{
+  display: none;
+}
+
+.flex-column{
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-row{
+  display: flex;
+  flex-direction: row;
+}
+
+.uppercase{
+  text-transform: uppercase;
+}
+
+.lowercase{
+  text-transform: lowercase;
+}
+
+.align-center{
+  align-items: center;
+}
+
+.font-weight-normal{
+  font-weight: normal;
+}
+
+.paragraph-spacing{
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+/* -------- Responsive Media -------- */
+@media (max-width: 1100px) {
+  .page-content {
+    padding: 0 30px;
+  }
+
+  .page-content p {
+    width: 90%;
+    text-align: center;
+    align-items: center;
+  }
+}
+
+/* ------- Mobile Device ------- */
+@media (max-width: 768px) {
+  .nav-links-menu-toggle {
+    display: block;
+    height: 50px;
+    width: 50px;
+    background: var(--secondary-color);
+    color: var(--white);
+    border-radius: 6px;
+    font-size: 20px;
+    text-align: center;
+    line-height: 50px;
+    cursor: pointer;
+    margin-left: 10px;
+    opacity: 0.8;
+  }
+
+  .nav-links-menu-toggle:hover{
+    opacity: 1.0;
+  }
+  
+  .nav-links {
+    position: absolute;
+    top: calc(70px + 10px); /* navigation-bar height + gap */
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary-color);
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    border-radius: 8px;
+    display: none; /* hidden by default */
+    width: auto;
+    text-align: center;
+  }
+
+  .nav-links.show {
+    display: flex;
+  }
+
+  .nav-links li {
+    border: none;
+    margin: 10px 0;
+  }
+
+  .appearance-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+}
+
+/* -------- Deleted Record Styles -------- */
+.record-deleted td {
+  color: #999;
+  font-style: italic;
+}
+
+.record-deleted:hover td {
+  background-color: var(--object-bg);
+}
+
+.deleted-label {
+  color: #999;
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* -------- Reusable Modal -------- */
+.app-modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  align-items: center;
+  justify-content: center;
+}
+
+.app-modal.active {
+  display: flex;
+}
+
+.app-modal-content {
+  background: var(--ui-bg);
+  color: var(--text-color);
+  width: 340px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.app-modal-header {
+  background: var(--primary-color);
+  color: var(--white);
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.app-modal-body {
+  padding: 20px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.app-modal-body p {
+  margin: 0 0 12px 0;
+  max-width: 100%;
+}
+
+.app-modal-body p:last-child {
+  margin-bottom: 0;
+}
+
+.app-modal-body input {
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 0;
+  text-align: left;
+}
+
+.app-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid #ddd;
+}
+
+.app-modal-actions button {
+  width: auto;
+  height: 38px;
+  font-size: 14px;
+  padding: 0 18px;
+  margin: 0;
+}
+
+.app-modal-actions .modal-cancel-btn {
+  background: var(--object-bg);
+  color: var(--text-color);
+}
+
+.app-modal-actions .modal-cancel-btn:hover {
+  background: var(--cancel-hover-bg);
+}
+
+.app-modal-actions .modal-confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* -------- Edit Rx UI -------- */
+.edit-rx-ui {
+    width: 100%;
+}
+
+.edit-rx-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: 45px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--primary-color);
+    gap: 10px;
+}
+
+.edit-rx-header h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.edit-rx-note {
+    align-items: center;
+    text-align: center;
+    font-size: 11px;
+    color: #888;
+    font-style: italic;
+}
+
+.edit-rx-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 25px;
+    margin-top: 20px;
+    border-top: 1px solid #ddd;
+    padding-top: 30px;
+}
+
+/* -------------------- DEBUG STYLE ------------ TO DELETE ON FINAL PRODUCT ---------- */
+
+.page-content .under-development-nav{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+
+.page-content .under-development-nav h1{
+  font-size: 30px;
+}
+
+.page-content .under-development-nav h2{
+  font-size: 15px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   Sales Order — Order Items Table  (so- prefix to avoid
+   collisions with existing app styles)
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Section wrapper ── */
+.so-table-wrapper {
+  margin-top: 24px;
+}
+
+.so-section-header {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+/* ── Table shell ── */
+.so-order-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+
+table.so-order-table {
+  width: 100%;
+  min-width: 938px; /* current column widths sum to ~838px — bump this number to grow/shrink the whole table (e.g. +100 per 100px wider) */
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+table.so-order-table th {
+  background: var(--primary-color);
+  color: var(--white);
+  padding: 10px 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+table.so-order-table td {
+  padding: 6px 6px;
+  border-bottom: 1px solid #e0e0e0;
+  vertical-align: middle;
+  text-align: center;
+}
+
+table.so-order-table tr:nth-child(even) td {
+  background: var(--object-bg);
+}
+
+/* ── Column widths ── */
+.so-col-num      { width: 36px; }
+.so-col-type     { width: 120px; }
+.so-col-qty      { width: 60px; }
+.so-col-price    { width: 130px; }
+.so-col-disctype { width: 120px; }
+.so-col-discpct  { width: 72px; }
+.so-col-discval  { width: 90px; }
+.so-col-rowtotal { width: 100px; }
+.so-col-actions  { width: 110px; }
+
+/* ── Cell inputs ── */
+table.so-order-table select,
+table.so-order-table input[type="text"],
+table.so-order-table input[type="number"] {
+  width: 100%;
+  padding: 5px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 13px;
+  background: var(--ui-bg);
+  color: var(--text-color);
+}
+
+table.so-order-table select:disabled,
+table.so-order-table input[type="text"]:disabled,
+table.so-order-table input[type="number"]:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Qty fixed at 1 (Lens/Service/Frame) — intentional lock, not an unfilled-row
+   state, so keep full text darkness instead of the generic disabled dimming. */
+table.so-order-table input[type="number"].so-qty-fixed:disabled {
+  opacity: 1;
+  color: var(--text-color);
+  cursor: default;
+}
+
+/* ── Row total display ── */
+.so-row-total-display {
+  font-weight: 600;
+  text-align: right;
+  padding-right: 4px;
+}
+
+/* ── Locked row ── */
+tr.so-row-locked td {
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Actions column ── */
+.so-actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.so-action-btn {
+  background: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: 4px;
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.so-action-btn svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+  pointer-events: none;
+}
+
+.so-action-btn:disabled {
+  background: #ccc;
+  cursor: default;
+  opacity: 0.5;
+}
+
+.so-edit-item-btn:not(:disabled):hover   { background: var(--secondary-color); }
+.so-delete-row-btn:not(:disabled):hover  { background: #b91c1c; }
+
+/* ── Discount detail sub-row ── */
+tr.so-disc-detail-row td {
+  background: var(--object-bg);
+  text-align: left;
+  padding: 10px 14px;
+}
+
+.so-disc-detail-content {
+  display: flex;
+  align-items: center;
+  gap: 0; /* spacing handled inside each block instead, so block widths stay precise for alignment */
+  font-size: 13px;
+}
+
+/* Left: item description, styled like the fields above it.
+   Width mirrors the combined #, Type, Qty, Price, Discount, Disc %
+   column widths (36 + 120 + 60 + 130 + 120 + 72 = 538px) so it
+   covers through Disc % and Promo Name starts right at Disc ₱. */
+.so-disc-desc-block {
+  flex: 0 0 538px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 10px;
+}
+
+/* Right: promo name, starts at Disc ₱ and only spans through
+   Disc ₱ + Total + Actions (90 + 100 + 110 = 300px) — no longer
+   stretches all the way to the far edge of the row. */
+.so-disc-promo-block {
+  flex: 0 0 300px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.so-disc-detail-content label {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.so-disc-detail-content input[type="text"] {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 13px;
+  background: var(--ui-bg);
+  color: var(--text-color);
+}
+
+.so-disc-label-disabled { color: #999; }
+
+.so-disc-detail-content input[type="text"]:disabled {
+  background: var(--object-bg);
+  color: var(--text-color);
+  opacity: 0.6;
+  cursor: default; /* explicitly overriding browser's default not-allowed cursor on disabled inputs */
+}
+
+/* ── Payment Summary ── */
+.so-order-summary {
+  background: var(--object-bg);
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  max-width: 400px;
+  margin-left: auto;
+}
+
+.so-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 14px;
+  gap: 12px;
+}
+
+.so-summary-row label { white-space: nowrap; }
+
+.so-summary-row input,
+.so-summary-row select {
+  width: 160px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 13px;
+  background: var(--ui-bg);
+  color: var(--text-color);
+  text-align: right;
+}
+
+.so-summary-row select { text-align: left; }
+
+.so-summary-divider {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 10px 0;
+}
+
+.so-summary-total-row {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* ── Save button ── */
+.so-order-actions {
+  text-align: center;
+  margin-top: 8px;
+  margin-bottom: 24px;
+}
+
+/* ── Item modals ── */
+.so-item-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+.so-item-modal-overlay.active { display: flex; }
+
+.so-item-modal {
+  background: var(--ui-bg);
+  color: var(--text-color);
+  border-radius: 8px;
+  width: 360px;
+  max-width: 95vw;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.so-item-modal-header {
+  background: var(--primary-color);
+  color: var(--white);
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.so-item-modal-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.so-item-modal-body label {
+  font-weight: 500;
+  margin-bottom: 2px;
+  display: block;
+}
+
+.so-item-modal-body input,
+.so-item-modal-body select,
+.so-item-modal-body textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 13px;
+  background: var(--ui-bg);
+  color: var(--text-color);
+}
+
+.so-item-modal-body textarea { resize: vertical; min-height: 64px; }
+
+.so-radio-group {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 4px;
+}
+
+.so-radio-option {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400 !important;
+  cursor: pointer;
+}
+
+.so-radio-option input[type="radio"] {
+  width: auto;
+  margin: 0;
+}
+
+.so-item-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid #ddd;
+}
+
+.so-item-modal-actions button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.so-modal-ok-btn     { background: var(--primary-color); color: var(--white); }
+.so-modal-cancel-btn { background: var(--object-bg); color: var(--text-color); }
+.so-modal-cancel-btn:hover { background: var(--cancel-hover-bg); }
+
+/* ── Rx mini grid inside item modals ── */
+.so-rx-grid {
+  display: grid;
+  grid-template-columns: 36px repeat(4, 1fr);
+  gap: 4px;
+  font-size: 12px;
+  margin-top: 4px;
+}
+.so-rx-header { font-weight: 600; text-align: center; }
+.so-rx-eye    { font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.so-rx-grid input { padding: 4px; font-size: 12px; }
+
+/* ── Future tag note ── */
+.so-future-tag {
+  font-size: 11px;
+  color: #888;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* ── Inline "(optional)" label tag ── */
+.so-optional-tag {
+  font-weight: 400;
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
