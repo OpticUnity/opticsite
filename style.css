@@ -4,7 +4,7 @@
   padding: 0;
   box-sizing: border-box;
   font-family: 'Poppins', sans-serif;
-  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+  transition: all 0.3s ease;
   -webkit-touch-callout: none; /* iOS Safari */
   -webkit-user-select: none;   /* Safari */
   -khtml-user-select: none;    /* Konqueror HTML */
@@ -21,37 +21,6 @@
   --secondary-color: #272B2F;
   --ui-bg: #fff;
   --object-bg: #F3F4F6;
-  --border-color: #555;
-  --cancel-hover-bg: #ddd;
-}
-
-/* -------- Preload Guards -------- */
-/* Both classes are added by the inline <head> script before first paint
-   and removed as soon as the app has determined what to show.         */
-
-/* Hides all page sections until handleRouting() decides what's active.
-   Prevents any section blinking visible on load.                       */
-html.preload-hide-pages .page-content {
-  display: none !important;
-}
-
-/* Sets dark mode CSS variables before first paint to prevent flash of
-   light mode when dark mode was the last saved preference.
-   Removed by applyTheme() in ui-and-navigation.js once app loads.     */
-html.darkMode-preload {
-  --white: #fff;
-  --text-color: #e4e6eb;
-  --primary-color: #272B2F;
-  --secondary-color: #1D2124;
-  --ui-bg: #171A1D;
-  --object-bg: #222529;
-  --border-color: #8a8f98;
-  --cancel-hover-bg: #33383d;
-}
-
-html.darkMode-preload body {
-  background-color: #171A1D;
-  color: #e4e6eb;
 }
 
 /* -------- Page Layout Setup -------- */
@@ -423,42 +392,17 @@ input{
 
 .intro-actions {
     margin-top: 30px;
-    margin-left: 50px;
     width: 100%;
     display: flex;
     justify-content: center;
-    gap: 10px;
-    align-items: center;
 }
 
-.intro-actions button:first-child {
+.intro-actions button {
     width: 100%;
-    max-width: 280px;
+    max-width: 320px;
     padding: 14px;
     font-size: 16px;
 }
-
-/* Restore button */
-.intro-restore-dropdown {
-    position: relative;
-    display: inline-block;
-}
-.intro-link-btn {
-    width: 50px;
-    height: 50px;
-    background: var(--primary-color);
-    color: var(--white);
-    border-radius: 6px;
-    font-size: 16px;
-    cursor: pointer;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    opacity: 1;
-}
-.intro-link-btn:hover { opacity: 1; }
 
 .intro-steps-indicator {
     display: flex;
@@ -638,19 +582,19 @@ textarea[readonly] {
   margin-top: 10px;
 }
 
-.change-patient-container, .change-customer-container{
+.change-patient-container{
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-top: 25px;
 }
 
-.change-patient-container button, .change-customer-container button{
+.change-patient-container button{
   width: 100px;
   height: 45px;
 }
 
-.new-rx-pagination-controls, .new-order-pagination-controls{
+.new-rx-pagination-controls{
   margin-top: 25px;
 }
 
@@ -885,6 +829,184 @@ textarea[readonly] {
   margin: 0 10px;  
 }
 
+/* AR Scan Upload Card & Previews */
+.ar-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--secondary-color, #4f4f4f);
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  background: var(--object-bg, rgba(255, 255, 255, 0.05));
+  transition: border-color 0.2s, background-color 0.2s;
+  width: 350px;
+  margin-top: 10px;
+}
+
+.ar-upload-area:hover {
+  border-color: var(--primary-color, #007bff);
+  background: var(--ui-bg, rgba(255, 255, 255, 0.08));
+}
+
+.ar-upload-area i {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  color: var(--primary-color, #007bff);
+}
+
+.ar-upload-area span {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.ar-upload-area p {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin: 4px 0 0 0;
+}
+
+.ar-image-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+  justify-content: center;
+  max-width: 350px;
+}
+
+.ar-image-thumb-container {
+  position: relative;
+  width: 70px;
+  height: 90px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background: #eee;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.ar-image-thumb-container:hover {
+  transform: scale(1.05);
+}
+
+.ar-image-thumb-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ar-image-thumb-container .remove-thumb-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Lightbox Modal for Scan Previews */
+.lightbox-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.lightbox-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lightbox-content-container {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lightbox-content-container img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  object-fit: contain;
+}
+
+.lightbox-close-btn {
+  position: absolute;
+  top: -45px;
+  right: 0;
+  background: transparent;
+  color: white;
+  border: none;
+  font-size: 2.5rem;
+  cursor: pointer;
+}
+
+/* AR display in details */
+.ar-record-display-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--object-bg, rgba(255,255,255,0.03));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ar-record-display-title {
+  font-weight: bold;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary-color, #007bff);
+}
+
+.ar-record-display-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.ar-record-display-thumb {
+  width: 60px;
+  height: 80px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  object-fit: cover;
+  transition: transform 0.2s;
+}
+
+.ar-record-display-thumb:hover {
+  transform: scale(1.08);
+}
+
+
 /* -- VT7 Form -- */
 .vt7-header{
   margin-top: 30px;
@@ -1111,6 +1233,31 @@ textarea[readonly] {
   font-size: 16px;
 }
 
+/*-- clinic setup panel style --*/
+.clinic-setup-form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.clinic-setup-action-btn-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-top: 35px;
+}
+/* -- Backup panel style -- */
+.backup-page{
+  align-items: center;
+  text-align: center;
+}
+
+.backup-panel-header{
+  margin-top: 50px;
+}
+
 /* -- Inner expandable Rx table -- */
 .inner-table {
   width: 100%;
@@ -1140,145 +1287,6 @@ textarea[readonly] {
   font-size: 12px;
   padding: 0;
   margin: 0;
-}
-
-/* -------------- Sales Page Style -------------- */
-.new-order-select-customer-menu{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 25px;
-  gap: 5px;
-}
-
-.walkin-selection-container{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.walkin-selection-container button{
-  height: 50px;
-  width: 125px;
-}
-
-.select-customer-search-area{
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 25px;
-}
-
-.select-customer-search-area input{
-  width: 300px;
-}
-
-
-.select-customer-main-table-new-order{
-  display: flex;
-  justify-content: center;
-  margin-top: 30px;
-}
-
-/*-- Customer Profile Style --*/
-
-.customer-profile-section{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-}
-
-.new-order-customer-profile-section-header{
-  margin-top: 45px;
-}
-
-.customer-profile-name{
-  margin-top: 20px;
-}
-
-.customer-profile-container-division-1, .customer-profile-container-division-2{
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.customer-profile-container{
-  align-items: center;
-  text-align: center;
-  gap: 40px;
-  margin-top: 30px;
-  margin-bottom: 30px;
-}
-
-.walk-in-customer-header{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 30px;
-}
-
-/*-- Order Id Style --*/
-.order-id-block{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 10px;
-  gap: 5px;
-}
-
-.sales-order-form-id-label{
-  margin-top: 30px;
-}
-
-.sales-order-id{
-  width: 250px;
-  padding: 8px;
-  margin-bottom: 5px;
-}
-
-/*-- New Order Id style --*/
-.new-order-back-btn-link{
-  margin-top: 25px;
-  margin-bottom: 20px;
-}
-
-
-
-/* -------------- Settings Page Style -------------- */
-
-/*-------- clinic setup panel style --------*/
-.clinic-setup-form{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-}
-
-.clinic-setup-action-btn-container{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  margin-top: 35px;
-}
-
-/* -------- Clinic Data panel style -------- */
-.backup-page{
-  align-items: center;
-  text-align: center;
-}
-
-.backup-panel-header{
-  margin-top: 50px;
-}
-
-.guide-header{
-  margin-top: 50px;
-}
-
-.backup-btn, .clear-btn{
-  margin-top: 10px;
 }
 
 /* -------- Footer -------- */
@@ -1326,11 +1334,6 @@ textarea[readonly] {
 
 .font-weight-normal{
   font-weight: normal;
-}
-
-.paragraph-spacing{
-  margin-top: 20px;
-  margin-bottom: 20px;
 }
 
 /* -------- Responsive Media -------- */
@@ -1492,7 +1495,7 @@ textarea[readonly] {
 }
 
 .app-modal-actions .modal-cancel-btn:hover {
-  background: var(--cancel-hover-bg);
+  background: #ddd;
 }
 
 .app-modal-actions .modal-confirm-btn:disabled {
@@ -1559,385 +1562,3 @@ textarea[readonly] {
   font-size: 15px;
 }
 
-/* ════════════════════════════════════════════════════════════
-   Sales Order — Order Items Table  (so- prefix to avoid
-   collisions with existing app styles)
-   ════════════════════════════════════════════════════════════ */
-
-/* ── Section wrapper ── */
-.so-table-wrapper {
-  margin-top: 24px;
-}
-
-.so-section-header {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  text-align: center;
-}
-
-/* ── Table shell ── */
-.so-order-table-wrapper {
-  overflow-x: auto;
-  margin-bottom: 24px;
-}
-
-table.so-order-table {
-  width: 100%;
-  min-width: 938px; /* current column widths sum to ~838px — bump this number to grow/shrink the whole table (e.g. +100 per 100px wider) */
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-table.so-order-table th {
-  background: var(--primary-color);
-  color: var(--white);
-  padding: 10px 8px;
-  text-align: center;
-  white-space: nowrap;
-}
-
-table.so-order-table td {
-  padding: 6px 6px;
-  border-bottom: 1px solid #e0e0e0;
-  vertical-align: middle;
-  text-align: center;
-}
-
-table.so-order-table tr:nth-child(even) td {
-  background: var(--object-bg);
-}
-
-/* ── Column widths ── */
-.so-col-num      { width: 36px; }
-.so-col-type     { width: 120px; }
-.so-col-qty      { width: 60px; }
-.so-col-price    { width: 130px; }
-.so-col-disctype { width: 120px; }
-.so-col-discpct  { width: 72px; }
-.so-col-discval  { width: 90px; }
-.so-col-rowtotal { width: 100px; }
-.so-col-actions  { width: 110px; }
-
-/* ── Cell inputs ── */
-table.so-order-table select,
-table.so-order-table input[type="text"],
-table.so-order-table input[type="number"] {
-  width: 100%;
-  padding: 5px 6px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--ui-bg);
-  color: var(--text-color);
-}
-
-table.so-order-table select:disabled,
-table.so-order-table input[type="text"]:disabled,
-table.so-order-table input[type="number"]:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-/* Qty fixed at 1 (Lens/Service/Frame) — intentional lock, not an unfilled-row
-   state, so keep full text darkness instead of the generic disabled dimming. */
-table.so-order-table input[type="number"].so-qty-fixed:disabled {
-  opacity: 1;
-  color: var(--text-color);
-  cursor: default;
-}
-
-/* ── Row total display ── */
-.so-row-total-display {
-  font-weight: 600;
-  text-align: right;
-  padding-right: 4px;
-}
-
-/* ── Locked row ── */
-tr.so-row-locked td {
-  opacity: 0.55;
-  pointer-events: none;
-  user-select: none;
-}
-
-/* ── Actions column ── */
-.so-actions-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.so-action-btn {
-  background: var(--primary-color);
-  color: var(--white);
-  border: none;
-  border-radius: 4px;
-  width: 26px;
-  height: 26px;
-  font-size: 11px;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.so-action-btn svg {
-  width: 13px;
-  height: 13px;
-  fill: currentColor;
-  pointer-events: none;
-}
-
-.so-action-btn:disabled {
-  background: #ccc;
-  cursor: default;
-  opacity: 0.5;
-}
-
-.so-edit-item-btn:not(:disabled):hover   { background: var(--secondary-color); }
-.so-delete-row-btn:not(:disabled):hover  { background: #b91c1c; }
-
-/* ── Discount detail sub-row ── */
-tr.so-disc-detail-row td {
-  background: var(--object-bg);
-  text-align: left;
-  padding: 10px 14px;
-}
-
-.so-disc-detail-content {
-  display: flex;
-  align-items: center;
-  gap: 0; /* spacing handled inside each block instead, so block widths stay precise for alignment */
-  font-size: 13px;
-}
-
-/* Left: item description, styled like the fields above it.
-   Width mirrors the combined #, Type, Qty, Price, Discount, Disc %
-   column widths (36 + 120 + 60 + 130 + 120 + 72 = 538px) so it
-   covers through Disc % and Promo Name starts right at Disc ₱. */
-.so-disc-desc-block {
-  flex: 0 0 538px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-right: 10px;
-}
-
-/* Right: promo name, starts at Disc ₱ and only spans through
-   Disc ₱ + Total + Actions (90 + 100 + 110 = 300px) — no longer
-   stretches all the way to the far edge of the row. */
-.so-disc-promo-block {
-  flex: 0 0 300px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.so-disc-detail-content label {
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.so-disc-detail-content input[type="text"] {
-  flex: 1;
-  padding: 6px 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--ui-bg);
-  color: var(--text-color);
-}
-
-.so-disc-label-disabled { color: #999; }
-
-.so-disc-detail-content input[type="text"]:disabled {
-  background: var(--object-bg);
-  color: var(--text-color);
-  opacity: 0.6;
-  cursor: default; /* explicitly overriding browser's default not-allowed cursor on disabled inputs */
-}
-
-/* ── Payment Summary ── */
-.so-order-summary {
-  background: var(--object-bg);
-  border-radius: 8px;
-  padding: 18px 20px;
-  margin-bottom: 20px;
-  max-width: 400px;
-  margin-left: auto;
-}
-
-.so-summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  font-size: 14px;
-  gap: 12px;
-}
-
-.so-summary-row label { white-space: nowrap; }
-
-.so-summary-row input,
-.so-summary-row select {
-  width: 160px;
-  padding: 5px 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--ui-bg);
-  color: var(--text-color);
-  text-align: right;
-}
-
-.so-summary-row select { text-align: left; }
-
-.so-summary-divider {
-  border: none;
-  border-top: 1px solid #ccc;
-  margin: 10px 0;
-}
-
-.so-summary-total-row {
-  font-size: 15px;
-  font-weight: 700;
-}
-
-/* ── Save button ── */
-.so-order-actions {
-  text-align: center;
-  margin-top: 8px;
-  margin-bottom: 24px;
-}
-
-/* ── Item modals ── */
-.so-item-modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 2000;
-  align-items: center;
-  justify-content: center;
-}
-.so-item-modal-overlay.active { display: flex; }
-
-.so-item-modal {
-  background: var(--ui-bg);
-  color: var(--text-color);
-  border-radius: 8px;
-  width: 360px;
-  max-width: 95vw;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-}
-
-.so-item-modal-header {
-  background: var(--primary-color);
-  color: var(--white);
-  padding: 10px 20px;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.so-item-modal-body {
-  padding: 16px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  font-size: 14px;
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-.so-item-modal-body label {
-  font-weight: 500;
-  margin-bottom: 2px;
-  display: block;
-}
-
-.so-item-modal-body input,
-.so-item-modal-body select,
-.so-item-modal-body textarea {
-  width: 100%;
-  padding: 7px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--ui-bg);
-  color: var(--text-color);
-}
-
-.so-item-modal-body textarea { resize: vertical; min-height: 64px; }
-
-.so-radio-group {
-  display: flex;
-  gap: 18px;
-  margin-bottom: 4px;
-}
-
-.so-radio-option {
-  display: flex !important;
-  align-items: center;
-  gap: 6px;
-  font-weight: 400 !important;
-  cursor: pointer;
-}
-
-.so-radio-option input[type="radio"] {
-  width: auto;
-  margin: 0;
-}
-
-.so-item-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 12px 20px;
-  border-top: 1px solid #ddd;
-}
-
-.so-item-modal-actions button {
-  padding: 8px 20px;
-  border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.so-modal-ok-btn     { background: var(--primary-color); color: var(--white); }
-.so-modal-cancel-btn { background: var(--object-bg); color: var(--text-color); }
-.so-modal-cancel-btn:hover { background: var(--cancel-hover-bg); }
-
-/* ── Rx mini grid inside item modals ── */
-.so-rx-grid {
-  display: grid;
-  grid-template-columns: 36px repeat(4, 1fr);
-  gap: 4px;
-  font-size: 12px;
-  margin-top: 4px;
-}
-.so-rx-header { font-weight: 600; text-align: center; }
-.so-rx-eye    { font-weight: 600; display: flex; align-items: center; justify-content: center; }
-.so-rx-grid input { padding: 4px; font-size: 12px; }
-
-/* ── Future tag note ── */
-.so-future-tag {
-  font-size: 11px;
-  color: #888;
-  font-style: italic;
-  margin-top: 4px;
-}
-
-/* ── Inline "(optional)" label tag ── */
-.so-optional-tag {
-  font-weight: 400;
-  font-size: 12px;
-  color: #888;
-  font-style: italic;
-}

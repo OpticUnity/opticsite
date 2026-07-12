@@ -168,60 +168,6 @@ function blurDia(e) {
     input.value = val.toFixed(1);
 }
 
-// ---- Date Part Blur Validators ----
-// Clamp MM, DD, YYYY on blur. Zero-pads MM and DD.
-// Leaves empty fields alone — required check handles those at submit.
-
-function blurDateMM(e) {
-    const raw = e.target.value.trim();
-    if (raw === '') return;
-    const num = parseInt(raw, 10);
-    if (isNaN(num) || num < 1) { e.target.value = '01'; }
-    else if (num > 12)         { e.target.value = '12'; }
-    else                       { e.target.value = String(num).padStart(2, '0'); }
-    e.target.dispatchEvent(new Event('input')); // re-triggers calculateAge
-}
-
-function blurDateDD(e) {
-    const raw = e.target.value.trim();
-    if (raw === '') return;
-    const num = parseInt(raw, 10);
-    if (isNaN(num) || num < 1) { e.target.value = '01'; }
-    else if (num > 31)         { e.target.value = '31'; }
-    else                       { e.target.value = String(num).padStart(2, '0'); }
-    e.target.dispatchEvent(new Event('input')); // re-triggers calculateAge
-}
-
-function blurDateYYYY(e) {
-    const raw = e.target.value.trim();
-    if (raw === '') return;
-    const num = parseInt(raw, 10);
-    const currentYear = new Date().getFullYear();
-    if (isNaN(num) || num < 1900) { e.target.value = '1900'; }
-    else if (num > currentYear)   { e.target.value = String(currentYear); }
-    else                          { e.target.value = String(num); }
-    e.target.dispatchEvent(new Event('input')); // re-triggers calculateAge
-}
-
-// Wire blur validators to all date parts of a given form prefix.
-// Covers both Birthday (MM/DD/YYYY) and DateCreated (MM/DD/YYYY).
-// prefix: 'customer' | 'patient'
-function attachDatePartValidators(prefix) {
-    const birthdayMM   = document.getElementById(`${prefix}BirthdayMM`);
-    const birthdayDD   = document.getElementById(`${prefix}BirthdayDD`);
-    const birthdayYYYY = document.getElementById(`${prefix}BirthdayYYYY`);
-    const createdMM    = document.getElementById(`${prefix}DateCreatedMM`);
-    const createdDD    = document.getElementById(`${prefix}DateCreatedDD`);
-    const createdYYYY  = document.getElementById(`${prefix}DateCreatedYYYY`);
-
-    if (birthdayMM)   birthdayMM.addEventListener('blur',   blurDateMM);
-    if (birthdayDD)   birthdayDD.addEventListener('blur',   blurDateDD);
-    if (birthdayYYYY) birthdayYYYY.addEventListener('blur', blurDateYYYY);
-    if (createdMM)    createdMM.addEventListener('blur',    blurDateMM);
-    if (createdDD)    createdDD.addEventListener('blur',    blurDateDD);
-    if (createdYYYY)  createdYYYY.addEventListener('blur',  blurDateYYYY);
-}
-
 // ---- CYL → AXIS Dependency Check ----
 // Call on blur of any CYL field to check if paired AXIS is required
 function checkAxisRequired(cylInputId, axisInputId) {
@@ -466,15 +412,9 @@ function initValidation() {
     attachValidator('frxClOsBc', 'bc');
     attachValidator('frxClOsDia', 'dia');
     attachValidator('frxClOsVa', 'va');
-
-    // -- Date Part Validators (Birthday + DateCreated) --
-    attachDatePartValidators('customer');
-    attachDatePartValidators('patient');
-    attachDatePartValidators('prescription');
 }
 
-// initValidation is called from main.js after mountForms()
-// so all DOM elements exist before listeners are attached.
+window.addEventListener('load', initValidation);
 
 // ---- Near SPH ↔ ADD Bidirectional Sync ----
 // ADD → Near SPH: distSph + add = nearSph
@@ -515,7 +455,7 @@ function computeNearFromAdd(distSphId, addId, nearSphId, nearCylId, nearAxisId, 
     nearAxisEl.value = distAxis;
 }
 
-function computeAddFromNear(distSphId, nearSphId, addId, distCylId, distAxisId, nearCylId, nearAxisId) {
+function computeAddFromNear(distSphId, nearSphId, addId) {
     const distSph = parseFloat(document.getElementById(distSphId)?.value);
     const nearSph = parseFloat(document.getElementById(nearSphId)?.value);
     const addEl   = document.getElementById(addId);
@@ -532,15 +472,6 @@ function computeAddFromNear(distSphId, nearSphId, addId, distCylId, distAxisId, 
         return;
     }
     addEl.value = '+' + add.toFixed(2);
-
-    // Copy dist CYL + AXIS into near — covers lensometry workflow where
-    // nearSph is written before ADD is filled in.
-    if (distCylId && distAxisId && nearCylId && nearAxisId) {
-        const nearCylEl  = document.getElementById(nearCylId);
-        const nearAxisEl = document.getElementById(nearAxisId);
-        if (nearCylEl)  nearCylEl.value  = document.getElementById(distCylId)?.value.trim()  || '';
-        if (nearAxisEl) nearAxisEl.value = document.getElementById(distAxisId)?.value.trim() || '';
-    }
 }
 
 // -- Wire up one eye's near↔add sync --
@@ -588,11 +519,11 @@ function attachNearAddSync(ids, flag) {
         });
     });
 
-    // Near SPH blur → recompute ADD + copy dist CYL/AXIS into near
+    // Near SPH blur → recompute ADD
     nearSphEl.addEventListener('blur', () => {
         if (flag.syncing) return;
         flag.syncing = true;
-        computeAddFromNear(distSphId, nearSphId, addId, distCylId, distAxisId, nearCylId, nearAxisId);
+        computeAddFromNear(distSphId, nearSphId, addId);
         flag.syncing = false;
     });
 }
@@ -658,7 +589,7 @@ function initNearAddSync() {
     }, { syncing: false });
 }
 
-// initNearAddSync is called from main.js after mountForms().
+window.addEventListener('load', initNearAddSync);
 
 // ---- Near PD Auto-fill (distPd - 1) ----
 // On blur of dist PD, compute near PD = dist PD - 1
@@ -697,7 +628,7 @@ function initNearPdSync() {
     attachNearPdSync('copyRxOsDistancePd', 'copyRxOsNearPd');
 }
 
-// initNearPdSync is called from main.js after mountForms().
+window.addEventListener('load', initNearPdSync);
 
 // Force uppercase value on all .uppercase inputs
 document.addEventListener('input', (e) => {

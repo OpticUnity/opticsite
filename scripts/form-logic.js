@@ -342,51 +342,12 @@ function addSamplePatients() {
         Storage.setItem('patients', JSON.stringify(patients));
     }
 
-    openAlert({ title: 'Done', body: '10 sample patients added!' });
+    alert("10 sample patients added!");
     renderSelectPatientTable();
     generateID('patient'); // Refresh the ID field to next available
 }
 
 //--------------- Unified Save & Clear Logic ---------------
-
-// ── ID Collision Guard ────────────────────────────────────────────
-// At save time, re-reads storage fresh to check if the displayed ID
-// was already consumed by another tab/window. If taken, regenerates
-// a safe new one and updates the input before proceeding with save.
-// Returns the safe ID to use (may be different from what was shown).
-
-function _resolveUniqueID(type) {
-    // Re-read fresh from storage right now
-    const storageKey = type === 'patient' ? 'patients' : 'customers';
-    const inputId    = type === 'patient' ? 'patientIdInput' : 'customerIdInput';
-    const inputEl    = document.getElementById(inputId);
-    const displayedID = inputEl ? inputEl.value.trim() : '';
-
-    const records = JSON.parse(Storage.getItem(storageKey) || '[]');
-    const idTaken = records.some(r => r.id === displayedID);
-
-    if (!idTaken) return displayedID; // Still safe — use as-is
-
-    // Collision detected — silently regenerate
-    console.warn(`[ID Guard] ${displayedID} already exists in ${storageKey}. Regenerating...`);
-    const freshID = generateID(type); // writes new ID into the input too
-    return freshID;
-}
-
-// Same guard for prescriptions
-function _resolveUniquePrescriptionID() {
-    const inputEl     = document.getElementById('prescriptionID');
-    const displayedID = inputEl ? inputEl.value.trim() : '';
-
-    const records = JSON.parse(Storage.getItem('prescriptions') || '[]');
-    const idTaken = records.some(r => r.id === displayedID);
-
-    if (!idTaken) return displayedID;
-
-    console.warn(`[ID Guard] ${displayedID} already exists in prescriptions. Regenerating...`);
-    const freshID = generatePrescriptionID(); // writes new ID into the input too
-    return freshID;
-}
 
 // 6. Unified Save Logic
 function handleFormSubmit(event) {
@@ -423,7 +384,7 @@ function handleFormSubmit(event) {
         }
     }
 
-    if (!isValid) { openAlert({ title: 'Required Fields', body: 'Please check the highlighted fields.' }); return; }
+    if (!isValid) return alert("Please check the highlighted fields.");
 
     const name = document.getElementById(`${prefix}InputName`).value.toUpperCase().trim();
     const number = document.getElementById(`${prefix}InputNumber`).value.trim();
@@ -441,11 +402,8 @@ function handleFormSubmit(event) {
         return;
     }
 
-    // ── Collision guard: re-check ID is still free at save time ──
-    const safeID = _resolveUniqueID(isPatient ? 'patient' : 'customer');
-
     const newData = {
-        id: safeID,
+        id: document.getElementById(idInput).value,
         dateCreated: `${document.getElementById(`${prefix}DateCreatedYYYY`).value}-${document.getElementById(`${prefix}DateCreatedMM`).value}-${document.getElementById(`${prefix}DateCreatedDD`).value}`,
         name: name,
         number: number,
@@ -456,11 +414,8 @@ function handleFormSubmit(event) {
         age: document.getElementById(`${prefix}InputAge`).value
     };
 
-    // Re-read fresh immediately before push — another tab may have saved
-    // between the duplicate check above and this write.
-    const freshRecords = JSON.parse(Storage.getItem(storageKey) || '[]');
-    freshRecords.push(newData);
-    Storage.setItem(storageKey, JSON.stringify(freshRecords));
+    currentRecords.push(newData);
+    Storage.setItem(storageKey, JSON.stringify(currentRecords));
 
     const savedId = newData.id;
 
@@ -488,13 +443,9 @@ function handleFormSubmit(event) {
                 confirmText: 'Yes, Create',
                 cancelText: 'No Thanks',
                 onConfirm: () => {
-                    // generateID writes to input; then guard double-checks freshness
-                    generateID('patient');
-                    const newPatientID = _resolveUniqueID('patient');
-                    // Re-read fresh — modal interaction may have let another tab save
-                    const freshPatientRecords = JSON.parse(Storage.getItem('patients') || '[]');
-                    freshPatientRecords.push({ ...newData, id: newPatientID });
-                    Storage.setItem('patients', JSON.stringify(freshPatientRecords));
+                    const newPatientID = generateID('patient');
+                    patientRecords.push({ ...newData, id: newPatientID });
+                    Storage.setItem('patients', JSON.stringify(patientRecords));
                     openAlert({ title: 'Saved', body: `Customer ${savedId} and Patient ${newPatientID} successfully created.`, onOk: afterSave });
                 },
                 onCancel: () => {
@@ -639,17 +590,8 @@ function initFormLogic() {
             const ids = userInputIds[prefix];
             if (isFormDirty(ids)) {
                 e.preventDefault();
-                openModal({
-                    title: 'Unsaved Changes',
-                    body: 'You have unsaved changes that will not be saved. Leave anyway?',
-                    confirmText: 'Leave',
-                    cancelText: 'Stay',
-                    onConfirm: () => {
-                        clearForm(formId, prefix);
-                        window.location.hash = '#recordsPage';
-                    }
-                });
-                return;
+                const leave = confirm("You have unsaved changes. Leave anyway?");
+                if (!leave) return;
             }
             clearForm(formId, prefix);
             window.location.hash = '#recordsPage';
@@ -728,22 +670,13 @@ function initFormLogic() {
         });
 
         if (notesDirty || formDirty) {
-            const body = notesDirty && !formDirty
-                ? 'You have unsaved notes that will not be saved. Change patient anyway?'
+            const msg = notesDirty && !formDirty
+                ? "You have unsaved notes that will not be saved. Change patient anyway?"
                 : formDirty && !notesDirty
-                ? 'Changing patient will discard all unsaved prescription data. Continue?'
-                : 'You have unsaved notes and prescription data that will not be saved. Change patient anyway?';
-            openModal({
-                title: 'Unsaved Changes',
-                body: body,
-                confirmText: 'Change Patient',
-                cancelText: 'Stay',
-                onConfirm: () => {
-                    changePatient();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            });
-            return;
+                ? "Changing patient will discard all unsaved prescription data. Continue?"
+                : "You have unsaved notes and prescription data that will not be saved. Change patient anyway?";
+            const leave = confirm(msg);
+            if (!leave) return;
         }
 
         changePatient();
@@ -836,7 +769,7 @@ function handleGenerateRx() {
     const osValid = isEyeValid('vt7OsDistanceSph', 'vt7OsDistanceCyl', 'vt7OsDistanceAxis');
 
     if (!odValid || !osValid) {
-        openAlert({ title: 'Invalid Rx', body: 'Minimum required per eye in VT7: Distance SPH alone, or Distance CYL + AXIS together.' });
+        alert("Minimum required per eye in Vt7: SPH alone, or CYL + AXIS together.");
         return;
     }
 
@@ -875,8 +808,6 @@ function handleGenerateRx() {
 }
 
 //--------------- Contact Lens Generation Logic ---------------
-// Depends on formatSigned() and roundToQuarter() from validation.js.
-// validation.js loads before form-logic.js in index.html — keep that order.
 
 const CL_VERTEX = 0.012; // 12mm default vertex distance in meters
 
@@ -919,23 +850,23 @@ function validateClInputs(mode) {
 
     if (mode === 'toric') {
         if (odCyl === '' && osCyl === '') {
-            openAlert({ title: 'Validation Error', body: 'Both eyes have no cylinder. Use Sphere for sphere-only prescriptions.' });
+            alert("Both eyes have no cylinder. Use Sphere for sphere-only prescriptions.");
             return null;
         }
     } else {
         if (odSph === '' && odCyl === '' && osSph === '' && osCyl === '') {
-            openAlert({ title: 'Validation Error', body: 'No prescription data found. Please fill in at least SPH or CYL for one eye.' });
+            alert("No prescription data found. Please fill in at least SPH or CYL for one eye.");
             return null;
         }
     }
 
     if (odCyl !== '' && odAxis === '') {
-        openAlert({ title: 'Validation Error', body: 'OD has cylinder but no axis. Please fill in OD Axis before generating.' });
+        alert("OD has cylinder but no axis. Please fill in OD Axis before generating.");
         document.getElementById('frxOdDistanceAxis').classList.add('input-error');
         return null;
     }
     if (osCyl !== '' && osAxis === '') {
-        openAlert({ title: 'Validation Error', body: 'OS has cylinder but no axis. Please fill in OS Axis before generating.' });
+        alert("OS has cylinder but no axis. Please fill in OS Axis before generating.");
         document.getElementById('frxOsDistanceAxis').classList.add('input-error');
         return null;
     }
@@ -1017,12 +948,10 @@ function isEyeValidCopyRx(sphId, cylId, axisId) {
 }
 
 function validateCopyRx() {
-    const odValid     = isEyeValidCopyRx('copyRxOdDistanceSph', 'copyRxOdDistanceCyl', 'copyRxOdDistanceAxis');
-    const osValid     = isEyeValidCopyRx('copyRxOsDistanceSph', 'copyRxOsDistanceCyl', 'copyRxOsDistanceAxis');
-    const odNearValid = isEyeValidCopyRx('copyRxOdNearSph',     'copyRxOdNearCyl',     'copyRxOdNearAxis');
-    const osNearValid = isEyeValidCopyRx('copyRxOsNearSph',     'copyRxOsNearCyl',     'copyRxOsNearAxis');
-    if (!odValid || !osValid || !odNearValid || !osNearValid) {
-        openAlert({ title: 'Invalid Rx', body: 'Minimum required per eye: SPH alone, or CYL + AXIS together. Applies to both Distance and Near rows.' });
+    const odValid = isEyeValidCopyRx('copyRxOdDistanceSph', 'copyRxOdDistanceCyl', 'copyRxOdDistanceAxis');
+    const osValid = isEyeValidCopyRx('copyRxOsDistanceSph', 'copyRxOsDistanceCyl', 'copyRxOsDistanceAxis');
+    if (!odValid || !osValid) {
+        alert("Minimum required per eye: SPH alone, or CYL + AXIS together.");
         return false;
     }
     return true;
@@ -1037,17 +966,17 @@ function validateCopyRxCl() {
     const osAxis = document.getElementById('copyRxClOsAxis').value.trim();
 
     if (odSph === '' && odCyl === '' && osSph === '' && osCyl === '') {
-        openAlert({ title: 'Validation Error', body: 'Minimum required: at least SPH or CYL for one eye.' });
+        alert("Minimum required: at least SPH or CYL for one eye.");
         return false;
     }
 
     if (odCyl !== '' && odAxis === '') {
-        openAlert({ title: 'Validation Error', body: 'OD has cylinder but no axis.' });
+        alert("OD has cylinder but no axis.");
         document.getElementById('copyRxClOdAxis').classList.add('input-error');
         return false;
     }
     if (osCyl !== '' && osAxis === '') {
-        openAlert({ title: 'Validation Error', body: 'OS has cylinder but no axis.' });
+        alert("OS has cylinder but no axis.");
         document.getElementById('copyRxClOsAxis').classList.add('input-error');
         return false;
     }

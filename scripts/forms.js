@@ -1,6 +1,118 @@
 //--------------- JS-Generated Form Components ---------------
 // Replaces static HTML form structures with dynamically injected equivalents.
 
+// Global state arrays for AR Images
+window._arImages = [];
+window._erxArImages = [];
+
+// Lightbox helper function
+function openLightbox(base64Src) {
+    let modal = document.getElementById('arLightboxModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'arLightboxModal';
+        modal.className = 'lightbox-modal';
+        modal.innerHTML = `
+            <div class="lightbox-content-container">
+                <button class="lightbox-close-btn">&times;</button>
+                <img id="lightboxImg" src="" alt="AR Slip Scan">
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('.lightbox-close-btn').addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+    }
+    const img = modal.querySelector('#lightboxImg');
+    img.src = base64Src;
+    setTimeout(() => {
+        modal.classList.add('active');
+    }, 10);
+}
+window.openLightbox = openLightbox;
+
+// Handle files selection, canvas compression, and array storage
+function handleArImageUpload(files, targetArray, galleryElement) {
+    if (!files || files.length === 0) return;
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith('image/')) continue;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                // Compression boundaries: max 600px width, max 800px height
+                const maxW = 600;
+                const maxH = 800;
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > height) {
+                    if (width > maxW) {
+                        height = Math.round((height * maxW) / width);
+                        width = maxW;
+                    }
+                } else {
+                    if (height > maxH) {
+                        width = Math.round((width * maxH) / height);
+                        height = maxH;
+                    }
+                }
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                
+                targetArray.push(dataUrl);
+                renderArGallery(targetArray, galleryElement);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+window.handleArImageUpload = handleArImageUpload;
+
+// Re-render gallery elements with thumbnails and removal handlers
+function renderArGallery(imagesArray, galleryElement) {
+    if (!galleryElement) return;
+    galleryElement.innerHTML = '';
+    imagesArray.forEach((imgSrc, index) => {
+        const thumbContainer = document.createElement('div');
+        thumbContainer.className = 'ar-image-thumb-container';
+        
+        const img = document.createElement('img');
+        img.src = imgSrc;
+        img.addEventListener('click', () => openLightbox(imgSrc));
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-thumb-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            imagesArray.splice(index, 1);
+            renderArGallery(imagesArray, galleryElement);
+        });
+        
+        thumbContainer.appendChild(img);
+        thumbContainer.appendChild(removeBtn);
+        galleryElement.appendChild(thumbContainer);
+    });
+}
+window.renderArGallery = renderArGallery;
+
 function _buildSpecsEyeDivision(eyeLabel, prefix) {
     return `
         <div class="prescription-format-division">
@@ -248,37 +360,26 @@ function buildCopyRxClForm() {
 
 // ---- AR + CL Parameters Block ----
 function buildArClpBlock() {
+    // Reset temporary image array for new prescription
+    window._arImages = [];
+
     const wrapper = document.createElement('div');
     wrapper.className = 'ar-clp-container flex-row';
     wrapper.innerHTML = `
-        <!-- AR -->
+        <!-- AR Scan (Photo/File Upload) -->
         <div class="ar-form-container flex-column">
-            <h4>AR</h4>
-            <div>
-                <div class="ar-label-container">
-                    <label class="ar-sph-label">SPH</label>
-                    <label class="ar-cyl-label">CYL</label>
-                    <label class="ar-axis-label">AXIS</label>
-                    <label class="ar-kr-label">KR</label>
-                </div>
-                <div>
-                    <label>OD : </label>
-                    <input id="arOdSph" maxlength="8">
-                    <input id="arOdCyl" maxlength="8">
-                    <input id="arOdAxis" maxlength="3">
-                    <input id="arOdKr" maxlength="6">
-                </div>
-                <div>
-                    <label>OS : </label>
-                    <input id="arOsSph" maxlength="8">
-                    <input id="arOsCyl" maxlength="8">
-                    <input id="arOsAxis" maxlength="3">
-                    <input id="arOsKr" maxlength="6">
-                </div>
+            <h4>AR Findings</h4>
+            <div class="ar-upload-area" id="arUploadArea">
+                <i class="fa-solid fa-camera"></i>
+                <span>Take Photo / Upload scan</span>
+                <p>Snaps will be optimized and saved</p>
+                <input type="file" id="arImageInput" accept="image/*" capture="environment" multiple style="display: none;">
             </div>
-            <div class="ar-form-notes">
-                <label for="arNotes">Notes : </label>
-                <textarea id="arNotes"></textarea>
+            <div class="ar-image-gallery" id="arImageGallery"></div>
+            
+            <div class="ar-form-notes" style="margin-top: 15px;">
+                <label for="arNotes">AR Notes : </label>
+                <textarea id="arNotes" placeholder="Enter findings manually or write comments here..."></textarea>
             </div>
         </div>
 
@@ -311,6 +412,17 @@ function buildArClpBlock() {
                 <textarea id="clParametersNotes"></textarea>
             </div>
         </div>`;
+
+    const uploadArea = wrapper.querySelector('#arUploadArea');
+    const fileInput = wrapper.querySelector('#arImageInput');
+    const gallery = wrapper.querySelector('#arImageGallery');
+
+    if (uploadArea && fileInput && gallery) {
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            handleArImageUpload(e.target.files, window._arImages, gallery);
+        });
+    }
 
     return wrapper;
 }
@@ -438,10 +550,6 @@ function buildEditRxUI(rx) {
                         ${prefilledSpecsEye('OD', 'hrxOd', hrx.od)}
                         ${prefilledSpecsEye('OS', 'hrxOs', hrx.os)}
                     </div>
-                    <div class="prescription-format-notes">
-                        <label class="prescription-format-notes-label">Notes : </label>
-                        <textarea id="erx_hrxNotes">${pf(hrx.notes)}</textarea>
-                    </div>
                 </div>
             </div>
 
@@ -449,32 +557,18 @@ function buildEditRxUI(rx) {
             <div style="display:flex;flex-direction:column;align-items:center;width:100%;">
                 <div class="ar-clp-container flex-row">
                     <div class="ar-form-container flex-column">
-                        <h4>AR</h4>
-                        <div>
-                            <div class="ar-label-container">
-                                <label class="ar-sph-label">SPH</label>
-                                <label class="ar-cyl-label">CYL</label>
-                                <label class="ar-axis-label">AXIS</label>
-                                <label class="ar-kr-label">KR</label>
-                            </div>
-                            <div>
-                                <label>OD : </label>
-                                <input id="erx_arOdSph" maxlength="8" value="${pf(ar.od?.sph)}">
-                                <input id="erx_arOdCyl" maxlength="8" value="${pf(ar.od?.cyl)}">
-                                <input id="erx_arOdAxis" maxlength="3" value="${pf(ar.od?.axis)}">
-                                <input id="erx_arOdKr" maxlength="6" value="${pf(ar.od?.kr)}">
-                            </div>
-                            <div>
-                                <label>OS : </label>
-                                <input id="erx_arOsSph" maxlength="8" value="${pf(ar.os?.sph)}">
-                                <input id="erx_arOsCyl" maxlength="8" value="${pf(ar.os?.cyl)}">
-                                <input id="erx_arOsAxis" maxlength="3" value="${pf(ar.os?.axis)}">
-                                <input id="erx_arOsKr" maxlength="6" value="${pf(ar.os?.kr)}">
-                            </div>
+                        <h4>AR Findings</h4>
+                        <div class="ar-upload-area" id="erx_arUploadArea">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>Take Photo / Upload scan</span>
+                            <p>Snaps will be optimized and saved</p>
+                            <input type="file" id="erx_arImageInput" accept="image/*" capture="environment" multiple style="display: none;">
                         </div>
-                        <div class="ar-form-notes">
-                            <label>Notes : </label>
-                            <textarea id="erx_arNotes">${pf(ar.notes)}</textarea>
+                        <div class="ar-image-gallery" id="erx_arImageGallery"></div>
+                        
+                        <div class="ar-form-notes" style="margin-top: 15px;">
+                            <label>AR Notes : </label>
+                            <textarea id="erx_arNotes" placeholder="Enter findings manually or write comments here...">${pf(ar.notes)}</textarea>
                         </div>
                     </div>
                     <div class="v-line-ar-clp"></div>
@@ -616,6 +710,27 @@ function buildEditRxUI(rx) {
                 <button id="saveEditRxBtn">Save</button>
             </div>
         </div>`;
+
+    if (isEyeExam) {
+        // Initialize edit image array with existing images
+        window._erxArImages = Array.isArray(rx.ar?.images) ? [...rx.ar.images] : [];
+
+        const uploadArea = wrapper.querySelector('#erx_arUploadArea');
+        const fileInput = wrapper.querySelector('#erx_arImageInput');
+        const gallery = wrapper.querySelector('#erx_arImageGallery');
+
+        if (uploadArea && fileInput && gallery) {
+            uploadArea.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                handleArImageUpload(e.target.files, window._erxArImages, gallery);
+            });
+            
+            // Render existing images
+            setTimeout(() => {
+                renderArGallery(window._erxArImages, gallery);
+            }, 0);
+        }
+    }
 
     return wrapper;
 }

@@ -396,12 +396,6 @@ function downloadAsWord(rx, patient) {
     const { fullHTML, fileName } = _buildWordHTML(rx, patient);
 
     if (_IS_TAURI) {
-        // [MAC-TODO] — The '.doc' extension triggers a "not a real Word file" warning on macOS
-        // because this is actually HTML-wrapped-as-doc (MIME: application/msword), not true OOXML.
-        // On macOS, consider changing the extension to '.html' and advising users to open in Pages/Word,
-        // OR use a proper docx library (e.g. docx.js) to generate a real .docx file.
-        // Also verify that window.__TAURI__.dialog.save() and fs.writeTextFile() behave
-        // identically on macOS — they should, but test the native dialog appearance on Mac.
         // Native save dialog
         window.__TAURI__.dialog.save({
             defaultPath: fileName,
@@ -483,11 +477,6 @@ function _triggerPrint(rx, patient, paperSize) {
 
     iframe.onload = () => {
         iframe.contentWindow.focus();
-        // [MAC-TODO] — window.print() works on macOS but the system print dialog
-        // looks different from Windows. On macOS, 'Save as PDF' is a built-in option in
-        // the print dialog (bottom-left dropdown), so no special handling is needed.
-        // However, test that iframe print styling (page breaks, margins) renders correctly
-        // in Safari's print preview on Mac — WebKit handles @media print slightly differently.
         iframe.contentWindow.print();
     };
 }
