@@ -44,23 +44,11 @@ function collectEyeExamData() {
                 nearCyl: val('hrxOsNearCyl'), nearAxis: val('hrxOsNearAxis'),
                 nearPd: val('hrxOsNearPd'), nearVa: val('hrxOsNearVa'),
                 addSph: val('hrxOsAddSph')
-            },
-            notes: val('hrxNotes')
+            }
         },
         // AR - FIXED
         ar: {
-            od: { 
-                sph: val('arOdSph'), 
-                cyl: val('arOdCyl'), 
-                axis: val('arOdAxis'),
-                kr: val('arOdKr')
-            },
-            os: { 
-                sph: val('arOsSph'), 
-                cyl: val('arOsCyl'), 
-                axis: val('arOsAxis'),
-                kr: val('arOsKr')
-            },
+            images: window._arImages || [],
             notes: val('arNotes')
         },
         // VT7 - FIXED
@@ -184,36 +172,19 @@ function collectCopyRxClData() {
 function handleAddPrescription() {
     const rxMethod = document.getElementById('rxSelect').value;
     const patientId = document.getElementById('patientProfileIdNumber').value.trim();
-
-    // ── Collision guard: re-check prescription ID is still free at save time ──
-    const prescriptionId = _resolveUniquePrescriptionID();
+    const prescriptionId = document.getElementById('prescriptionID').value.trim();
 
     if (rxMethod === 'eyeExam') {
         const odValid = isEyeValid('frxOdDistanceSph', 'frxOdDistanceCyl', 'frxOdDistanceAxis');
         const osValid = isEyeValid('frxOsDistanceSph', 'frxOsDistanceCyl', 'frxOsDistanceAxis');
         if (!odValid || !osValid) {
-            openAlert({ title: 'Invalid Rx', body: 'Minimum required per eye in Final Rx: Distance SPH alone, or Distance CYL + AXIS together.' });
+            alert("Final Rx minimum required per eye: SPH alone, or CYL + AXIS together.");
             return;
         }
     } else if (rxMethod === 'copyPrescription') {
         if (!validateCopyRx()) return;
     } else if (rxMethod === 'copyPrescriptionCl') {
         if (!validateCopyRxCl()) return;
-    }
-
-    // ── Date validation — blur validators already clamp, just check not blank + not future ──
-    const rxMM   = val('prescriptionDateCreatedMM');
-    const rxDD   = val('prescriptionDateCreatedDD');
-    const rxYYYY = val('prescriptionDateCreatedYYYY');
-    if (!rxMM || !rxDD || !rxYYYY) {
-        openAlert({ title: 'Invalid Date', body: 'Please enter a valid date for this prescription (MM / DD / YYYY).' });
-        return;
-    }
-    const rxDate = new Date(parseInt(rxYYYY), parseInt(rxMM) - 1, parseInt(rxDD));
-    const today  = new Date(); today.setHours(0, 0, 0, 0);
-    if (isNaN(rxDate.getTime()) || rxDate > today) {
-        openAlert({ title: 'Invalid Date', body: 'Prescription date cannot be a future date.' });
-        return;
     }
 
     let rxData = {};
@@ -228,32 +199,30 @@ function handleAddPrescription() {
     const prescription = {
         id: prescriptionId,
         patientId: patientId,
-        dateCreated: `${rxYYYY}-${rxMM}-${rxDD}`,
+        dateCreated: `${val('prescriptionDateCreatedYYYY')}-${val('prescriptionDateCreatedMM')}-${val('prescriptionDateCreatedDD')}`,
         rxMethod: rxMethod,
         ...rxData
     };
 
-    // Re-read fresh immediately before push — another tab may have saved
-    // between form open / selectPatient and this save click.
-    const freshPrescriptions = JSON.parse(Storage.getItem('prescriptions') || '[]');
-    freshPrescriptions.push(prescription);
-    Storage.setItem('prescriptions', JSON.stringify(freshPrescriptions));
+    const prescriptions = JSON.parse(Storage.getItem('prescriptions') || '[]');
+    prescriptions.push(prescription);
+    Storage.setItem('prescriptions', JSON.stringify(prescriptions));
 
-    // Update patient record — re-read fresh here too
-    const freshPatients = JSON.parse(Storage.getItem('patients') || '[]');
-    const patientIndex = freshPatients.findIndex(p => p.id === patientId);
+    // Update patient record
+    const patients = JSON.parse(Storage.getItem('patients') || '[]');
+    const patientIndex = patients.findIndex(p => p.id === patientId);
     if (patientIndex !== -1) {
-        if (!freshPatients[patientIndex].prescriptions) freshPatients[patientIndex].prescriptions = [];
-        if (!freshPatients[patientIndex].prescriptions.includes(prescriptionId)) {
-            freshPatients[patientIndex].prescriptions.push(prescriptionId);
+        if (!patients[patientIndex].prescriptions) patients[patientIndex].prescriptions = [];
+        if (!patients[patientIndex].prescriptions.includes(prescriptionId)) {
+            patients[patientIndex].prescriptions.push(prescriptionId);
         }
 
         const notes = collectPatientNotes();
-        freshPatients[patientIndex].patientNotes = notes.patientNotes;
-        freshPatients[patientIndex].genHealthHx  = notes.genHealthHx;
-        freshPatients[patientIndex].ocuHx        = notes.ocuHx;
+        patients[patientIndex].patientNotes = notes.patientNotes;
+        patients[patientIndex].genHealthHx  = notes.genHealthHx;
+        patients[patientIndex].ocuHx        = notes.ocuHx;
 
-        Storage.setItem('patients', JSON.stringify(freshPatients));
+        Storage.setItem('patients', JSON.stringify(patients));
     }
 
     openAlert({ title: 'Saved', body: `Prescription ${prescriptionId} saved successfully!` });
@@ -266,6 +235,10 @@ function handleAddPrescription() {
             else el.value = '';
             el.classList.remove('input-error');
         });
+
+    window._arImages = [];
+    const arGallery = document.getElementById('arImageGallery');
+    if (arGallery) arGallery.innerHTML = '';
 
     document.getElementById('frxClForm')?.classList.add('hidden');
     changePatient();

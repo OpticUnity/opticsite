@@ -12,9 +12,7 @@ const defaultLightModeColors = [
   "#000",       // --primary-color
   "#272B2F",    // --secondary-color
   "#fff",       // --ui-bg
-  "#F3F4F6",    // --object-bg
-  "#555",       // --border-color
-  "#ddd"        // --cancel-hover-bg
+  "#F3F4F6"     // --object-bg
 ];
 
 // Function to apply theme colors
@@ -25,8 +23,6 @@ function applyThemeColors(colors) {
   root.style.setProperty("--secondary-color", colors[3]);
   root.style.setProperty("--ui-bg", colors[4]);
   root.style.setProperty("--object-bg", colors[5]);
-  root.style.setProperty("--border-color", colors[6]);
-  root.style.setProperty("--cancel-hover-bg", colors[7]);
 }
 
 // Function to toggle dark mode classes
@@ -62,10 +58,6 @@ darkToggle.addEventListener("click", () => {
 
 // applyTheme — called from main.js after Storage is ready
 function applyTheme(preference) {
-  // Always remove the preload class — it has done its job preventing
-  // the flash and applyThemeColors() now takes full control.
-  document.documentElement.classList.remove('darkMode-preload');
-
   if (preference === 'darkMode') {
     const colorData = darkToggle.getAttribute("data-color").split(" ");
     darkToggle.classList.replace("fa-moon", "fa-sun");
@@ -112,9 +104,6 @@ function handleRouting() {
   if (typeof navLinksContainer !== 'undefined' && navLinksContainer) {
     navLinksContainer.classList.remove('show');
   }
-
-  // Remove preload guard now that the correct section is visible.
-  document.documentElement.classList.remove('preload-hide-pages');
 }
 
 // ----- View Records Mini Navigation Logic -----
@@ -322,12 +311,6 @@ document.getElementById('viewRecordsPtmBackBtn')?.addEventListener('click', () =
 
 function _initBackupPage() {
     const isTauri = !!window.__TAURI__;
-    // [MAC-TODO] — This currently shows one panel for ALL Tauri builds (Windows + macOS + Linux).
-    // If the backup panel's instructions mention Windows-specific paths or UI (e.g. "C:\Users\..."),
-    // consider adding a 'backupPanelMac' panel in index.html with macOS-appropriate wording
-    // (e.g. "~/Library/Application Support/...") and toggling it based on OS detection:
-    //   const { platform } = window.__TAURI__.os;
-    //   const os = await platform(); // use to show Mac vs Windows specific instructions
     document.getElementById('backupPanelTauri')?.classList.toggle('hidden', !isTauri);
     document.getElementById('backupPanelBrowser')?.classList.toggle('hidden', isTauri);
 }
@@ -350,18 +333,4 @@ document.addEventListener('click', (e) => {
   if (!navLinksContainer.contains(e.target) && !toggle.contains(e.target)) {
     navLinksContainer.classList.remove('show');
   }
-});
-
-//--------------- Intro Restore Modal ---------------
-
-document.getElementById('introRestoreToggle')?.addEventListener('click', function() {
-    openModal({
-        title: 'Restore from Save File',
-        body: 'Continuing from another device?\nClick Import and choose your save file.',
-        confirmText: 'Import Save File',
-        cancelText: 'Cancel',
-        onConfirm: () => {
-            if (typeof importBackupIntro === 'function') importBackupIntro();
-        }
-    });
 });

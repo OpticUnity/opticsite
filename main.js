@@ -14,12 +14,6 @@ initStorage().then(() => {
 
     // ── Show Windows download section on browser only ─────────────
     if (!window.__TAURI__) {
-        // [MAC-TODO] — This block shows the Windows-only download section on the browser build.
-        // When shipping a macOS build, add a parallel 'macDownloadSection' element in index.html
-        // and show it here using platform detection. You can detect the OS via:
-        //   const { platform } = window.__TAURI__.os;  (or @tauri-apps/plugin-os if using v2 plugin)
-        //   const os = await platform(); // 'windows' | 'macos' | 'linux'
-        // Then toggle the correct section per platform.
         document.getElementById('windowsDownloadSection').style.display = 'flex';
     }
 
@@ -43,12 +37,6 @@ initStorage().then(() => {
         document.getElementById('introStep2').classList.add('hidden');
         document.getElementById('introStep3').classList.remove('hidden');
     });
-
-    // ── Intro Step 3: Restore backup link ────────────────────────
-    // Subtle option at the bottom of the clinic setup form.
-    // Uses importBackupIntro() — lighter path that skips the overwrite
-    // confirm modal since there is no existing data on first launch.
-
 
     document.getElementById('introCompleteBtn')?.addEventListener('click', () => {
         const clinicNameEl = document.getElementById('introClinicName');
@@ -110,17 +98,10 @@ initStorage().then(() => {
     // explicitly so patientIdInput / customerIdInput are in the DOM
     // before initFormLogic() / generateID() try to write to them.
     console.log('[Main] Storage initialized. Bootstrapping app...');
-    if (typeof mountForms              === 'function') mountForms();
-    if (typeof initValidation          === 'function') initValidation();
-    if (typeof initNearAddSync         === 'function') initNearAddSync();
-    if (typeof initNearPdSync          === 'function') initNearPdSync();
-    if (typeof initFormLogic           === 'function') initFormLogic();
-    if (typeof initSalesFormLogic      === 'function') initSalesFormLogic();
-    if (typeof initOrderFormLogic      === 'function') initOrderFormLogic();
-    if (typeof initViewRecordsNav      === 'function') initViewRecordsNav();
-    if (typeof initEditPatientProfile  === 'function') initEditPatientProfile();
-    if (typeof generateID              === 'function') { generateID('patient'); generateID('customer'); }
-    if (typeof setDateCreated          === 'function') { setDateCreated('patient'); setDateCreated('customer'); }
+    if (typeof mountForms     === 'function') mountForms();
+    if (typeof initFormLogic  === 'function') initFormLogic();
+    if (typeof generateID     === 'function') { generateID('patient'); generateID('customer'); }
+    if (typeof setDateCreated === 'function') { setDateCreated('patient'); setDateCreated('customer'); }
 
     // ── Load saved clinic settings into Clinic Setup form ─────────
     _loadClinicSettingsIntoForm();
@@ -131,9 +112,9 @@ initStorage().then(() => {
 });
 
 
-// ── Export / Import Save File buttons ───────────────────────────────
-// Delegates to Storage.exportBackup() / Storage.importBackup() which
-// handle the correct platform behavior (Tauri: native dialog / Browser: file).
+// ── Export / Backup button ────────────────────────────────────────
+// Delegates to Storage.exportBackup() which handles the correct
+// platform behavior (Tauri: native dialog / Browser: file download).
 window.addEventListener('load', () => {
     document.getElementById('exportBackupBtn')?.addEventListener('click', () => {
         Storage.exportBackup();

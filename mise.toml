@@ -1,0 +1,7 @@
+[tools]
+python = "3.12"
+
+[tasks.start]
+description = "Start the local development server"
+run = ".venv/bin/uvicorn server:app --host 127.0.0.1 --port 8000 --reload"
+

@@ -284,7 +284,75 @@ function createRxDetailRow(rx) {
             </table>
         `;
 
-        detailRow.innerHTML = `<td colspan="4" style="padding:15px;">${content}</td>`;
+        let arContent = '';
+        if (rx.ar) {
+            if (Array.isArray(rx.ar.images) && rx.ar.images.length > 0) {
+                const imgThumbs = rx.ar.images.map(imgSrc => 
+                    `<img src="${imgSrc}" class="ar-record-display-thumb" onclick="openLightbox('${imgSrc}')">`
+                ).join('');
+                
+                arContent = `
+                    <div class="ar-record-display-container">
+                        <div class="ar-record-display-title"><i class="fa-solid fa-camera"></i> Auto-Refraction (AR) Scan(s)</div>
+                        <div class="ar-record-display-gallery">${imgThumbs}</div>
+                        ${rx.ar.notes ? `<div style="font-size:0.85rem; margin-top:5px; opacity:0.85;"><strong>Notes:</strong> ${rx.ar.notes}</div>` : ''}
+                    </div>
+                `;
+            } else if (rx.ar.od && (rx.ar.od.sph || rx.ar.od.cyl || rx.ar.od.axis || rx.ar.os.sph || rx.ar.os.cyl || rx.ar.os.axis)) {
+                arContent = `
+                    <div class="ar-record-display-container" style="align-self: stretch;">
+                        <div class="ar-record-display-title"><i class="fa-solid fa-list-numeric"></i> Auto-Refraction (AR) Findings</div>
+                        <table class="inner-table" style="margin-top: 5px; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>AR</th>
+                                    <th>SPH</th>
+                                    <th>CYL</th>
+                                    <th>AXIS</th>
+                                    <th>KR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>OD</strong></td>
+                                    <td>${rx.ar.od.sph || '-'}</td>
+                                    <td>${rx.ar.od.cyl || '-'}</td>
+                                    <td>${rx.ar.od.axis || '-'}</td>
+                                    <td>${rx.ar.od.kr || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>OS</strong></td>
+                                    <td>${rx.ar.os.sph || '-'}</td>
+                                    <td>${rx.ar.os.cyl || '-'}</td>
+                                    <td>${rx.ar.os.axis || '-'}</td>
+                                    <td>${rx.ar.os.kr || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Notes</strong></td>
+                                    <td colspan="4" style="text-align:left;">${rx.ar.notes || '-'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (rx.ar.notes) {
+                arContent = `
+                    <div class="ar-record-display-container">
+                        <div class="ar-record-display-title">Auto-Refraction (AR) Notes</div>
+                        <div style="font-size:0.85rem; opacity:0.85;">${rx.ar.notes}</div>
+                    </div>
+                `;
+            }
+        }
+
+        detailRow.innerHTML = `
+            <td colspan="4" style="padding:15px;">
+                <div style="display:flex; flex-direction:column; gap:15px;">
+                    ${content}
+                    ${arContent}
+                </div>
+            </td>
+        `;
 
         if (cl) {
             const clBtn = detailRow.querySelector('.cl-toggle-btn');
@@ -637,26 +705,6 @@ function openEditRxUI(rx) {
     // -- Save --
     document.getElementById('saveEditRxBtn').addEventListener('click', () => {
         const patientId = document.getElementById('viewPatientIdNumber').value.trim();
-
-        // ── CYL / AXIS pair guard — distance only, near is optional ──
-        if (rx.rxMethod === 'eyeExam') {
-            const odValid = isEyeValid('erx_frxOdDistanceSph', 'erx_frxOdDistanceCyl', 'erx_frxOdDistanceAxis');
-            const osValid = isEyeValid('erx_frxOsDistanceSph', 'erx_frxOsDistanceCyl', 'erx_frxOsDistanceAxis');
-            if (!odValid || !osValid) {
-                openAlert({ title: 'Invalid Rx', body: 'Final Rx: minimum required per eye is Distance SPH alone, or Distance CYL + AXIS together.' });
-                return;
-            }
-        }
-
-        if (rx.rxMethod === 'copyPrescription') {
-            const odValid = isEyeValid('erx_copyRxOdDistanceSph', 'erx_copyRxOdDistanceCyl', 'erx_copyRxOdDistanceAxis');
-            const osValid = isEyeValid('erx_copyRxOsDistanceSph', 'erx_copyRxOsDistanceCyl', 'erx_copyRxOsDistanceAxis');
-            if (!odValid || !osValid) {
-                openAlert({ title: 'Invalid Rx', body: 'Copy Rx: minimum required per eye is Distance SPH alone, or Distance CYL + AXIS together.' });
-                return;
-            }
-        }
-
         const newRxData = collectEditRxData(rx);
 
         openModal({
@@ -734,12 +782,10 @@ function collectEditRxData(rx) {
             ph: { od: v('phOd'), os: v('phOs') },
             hrx: {
                 od: { distSph: v('hrxOdDistanceSph'), distCyl: v('hrxOdDistanceCyl'), distAxis: v('hrxOdDistanceAxis'), distPd: v('hrxOdDistancePd'), distVa: v('hrxOdDistanceVa'), nearSph: v('hrxOdNearSph'), nearCyl: v('hrxOdNearCyl'), nearAxis: v('hrxOdNearAxis'), nearPd: v('hrxOdNearPd'), nearVa: v('hrxOdNearVa'), addSph: v('hrxOdAddSph') },
-                os: { distSph: v('hrxOsDistanceSph'), distCyl: v('hrxOsDistanceCyl'), distAxis: v('hrxOsDistanceAxis'), distPd: v('hrxOsDistancePd'), distVa: v('hrxOsDistanceVa'), nearSph: v('hrxOsNearSph'), nearCyl: v('hrxOsNearCyl'), nearAxis: v('hrxOsNearAxis'), nearPd: v('hrxOsNearPd'), nearVa: v('hrxOsNearVa'), addSph: v('hrxOsAddSph') },
-                notes: v('hrxNotes')
+                os: { distSph: v('hrxOsDistanceSph'), distCyl: v('hrxOsDistanceCyl'), distAxis: v('hrxOsDistanceAxis'), distPd: v('hrxOsDistancePd'), distVa: v('hrxOsDistanceVa'), nearSph: v('hrxOsNearSph'), nearCyl: v('hrxOsNearCyl'), nearAxis: v('hrxOsNearAxis'), nearPd: v('hrxOsNearPd'), nearVa: v('hrxOsNearVa'), addSph: v('hrxOsAddSph') }
             },
             ar: {
-                od: { sph: v('arOdSph'), cyl: v('arOdCyl'), axis: v('arOdAxis'), kr: v('arOdKr') },
-                os: { sph: v('arOsSph'), cyl: v('arOsCyl'), axis: v('arOsAxis'), kr: v('arOsKr') },
+                images: window._erxArImages || [],
                 notes: v('arNotes')
             },
             vt7: {
@@ -840,12 +886,6 @@ function generateClFromErx(type) {
     document.getElementById('erx_frxClOsAxis').value = osResult.axis;
 
     clForm.classList.remove('hidden');
-
-    // Programmatic value writes don't fire 'input' events, so the dirty
-    // check won't auto-reveal the save button — do it explicitly here.
-    const saveBtn     = document.getElementById('saveEditRxBtn');
-    const saveBtnItem = saveBtn?.closest('.view-patient-action-btn-item');
-    if (saveBtnItem) saveBtnItem.classList.remove('hidden');
 }
 
 // ---- Save Rx Overwrite ----
@@ -1072,18 +1112,6 @@ function validateEditPatientForm() {
         sexEl?.classList.remove('input-error');
     }
 
-    // Email: optional, but if filled must be a valid format — mirrors form-logic.js
-    const emailEl = document.getElementById('viewPatientEmail');
-    if (emailEl) {
-        const emailVal = emailEl.value.trim();
-        if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
-            emailEl.classList.add('input-error');
-            valid = false;
-        } else {
-            emailEl.classList.remove('input-error');
-        }
-    }
-
     if (!valid) {
         openAlert({ title: 'Required Fields', body: 'Please fill in all required fields correctly.' });
     }
@@ -1228,5 +1256,7 @@ function isViewRecordsEditDirty() {
 window._isViewRecordsEditDirty = isViewRecordsEditDirty;
 
 // ---- Init ----
-// initViewRecordsNav() and initEditPatientProfile() are called from main.js
-// inside initStorage().then() to keep all init in one controlled sequence.
+window.addEventListener('load', () => {
+    initViewRecordsNav();
+    initEditPatientProfile();
+});

@@ -1,36 +1,32 @@
 // ================================================================
 //  storage.js — OpticSite / OpticUnity
-//  Centralized storage abstraction layer
+//  Centralized storage abstraction layer with SQLite / FastAPI backend
 // ================================================================
 //
-//  PLATFORM DETECTION — automatic, no manual switching needed.
+//  PLATFORM & BACKEND DETECTION — automatic fallback chain:
 //
-//  ➜ Running inside Tauri (.exe):
-//      window.__TAURI__ exists → Tauri adapter activates.
+//  1. FastAPI Backend (Local Server):
+//      Attempts to query `/api/storage`. If successful, the app upgrades
+//      to use SQLite storage via the local FastAPI server.
+//
+//  2. Tauri Desktop Mode (.exe / .app):
+//      If backend is absent and window.__TAURI__ exists → Tauri adapter activates.
 //      Uses readTextFile / writeTextFile via Tauri FS API.
 //      Atomic write (.tmp → rename) protects against corruption.
 //      Export uses native save dialog.
 //
-//  ➜ Running in a browser (web build):
-//      window.__TAURI__ is undefined → Browser adapter activates.
+//  3. Browser Mode (Local Storage fallback):
+//      If backend is absent and not in Tauri → Browser adapter activates.
 //      Uses localStorage. No atomic write needed.
 //      Export triggers a file download.
 //
-//  Both adapters expose the same interface:
+//  All adapters expose the same interface:
 //      Storage.getItem(key)
 //      Storage.setItem(key, value)
 //      Storage.removeItem(key)
 //      Storage.clear()
 //      Storage.exportBackup()
 //      Storage.importBackup()
-//
-//  importBackup() validation chain:
-//      1. File must be readable and valid JSON          → hard reject
-//      2. Must have a `version` key (OpticSite file)   → hard reject
-//      3. Version mismatch                             → warn, allow
-//      4. Missing patients / prescriptions keys        → warn, allow
-//      5. Confirm overwrite (requireTyping: 'RESTORE') → safety gate
-//      6. Overwrite _dataCache → persist → reload
 //
 //  initStorage() must be awaited before anything else runs.
 //  It is called once in main.js on load.
@@ -42,17 +38,96 @@ const DATA_VERSION = '0.1-emr';
 const DATA_KEY     = 'opticsite_data';   // browser localStorage key
 
 let _dataCache = null;
+let _useBackend = false;
 const _IS_TAURI = !!(window.__TAURI__);
 
 // ================================================================
-//  initStorage — detects platform and initializes the right adapter
+//  initStorage — detects platform/backend and initializes the right adapter
 // ================================================================
 
 async function initStorage() {
+    // 1. Try FastAPI/SQLite Backend first
+    try {
+        const response = await fetch('/api/storage');
+        if (response.ok) {
+            _dataCache = await response.json();
+            _useBackend = true;
+            console.log('[Storage] SQLite/FastAPI backend adapter initialized successfully.');
+            return;
+        }
+    } catch (e) {
+        console.warn('[Storage] Backend server not detected, falling back to local files/storage.', e);
+    }
+
+    // 2. Fallback to Tauri or Browser
     if (_IS_TAURI) {
         await _initTauri();
     } else {
         _initBrowser();
+    }
+}
+
+// ================================================================
+//  BACKEND WRITER HELPERS
+// ================================================================
+
+async function _persistKey(key, value) {
+    if (_useBackend) {
+        try {
+            await fetch('/api/storage/' + encodeURIComponent(key), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ value: value })
+            });
+        } catch (err) {
+            console.error('[Storage] Backend save failed for key:', key, err);
+        }
+    } else {
+        _persist();
+    }
+}
+
+async function _deleteKey(key) {
+    if (_useBackend) {
+        try {
+            await fetch('/api/storage/' + encodeURIComponent(key), {
+                method: 'DELETE'
+            });
+        } catch (err) {
+            console.error('[Storage] Backend delete failed for key:', key, err);
+        }
+    } else {
+        _persist();
+    }
+}
+
+async function _clearBackend() {
+    if (_useBackend) {
+        try {
+            await fetch('/api/storage-clear', {
+                method: 'POST'
+            });
+        } catch (err) {
+            console.error('[Storage] Backend clear failed:', err);
+        }
+    } else {
+        _persist();
+    }
+}
+
+async function _bulkPersistBackend() {
+    if (_useBackend) {
+        try {
+            await fetch('/api/storage-bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: _dataCache })
+            });
+        } catch (err) {
+            console.error('[Storage] Backend bulk persist failed:', err);
+        }
+    } else {
+        _persist();
     }
 }
 
@@ -65,10 +140,6 @@ async function _initTauri() {
     const { appDataDir } = window.__TAURI__.path;
 
     const appDataPath = await appDataDir();
-    // [MAC-TODO] — '\\' is a Windows-only path separator and will break on macOS/Linux.
-    // Replace with Tauri's path.join() API so the separator resolves per-platform:
-    //   const { join } = window.__TAURI__.path;  (add 'join' to the destructure above)
-    //   window._tauriFilePath = await join(appDataPath, DATA_FILE);
     window._tauriFilePath = appDataPath + '\\' + DATA_FILE;
 
     const dirExists = await exists(appDataPath);
@@ -109,18 +180,6 @@ function _initBrowser() {
         _dataCache = JSON.parse(raw);
     }
 
-    // Cross-tab cache sync — fires in THIS tab whenever ANOTHER tab
-    // writes to localStorage. Keeps _dataCache live so that the next
-    // getItem / setItem in this tab sees the latest data immediately.
-    window.addEventListener('storage', (e) => {
-        if (e.key === DATA_KEY && e.newValue) {
-            try {
-                _dataCache = JSON.parse(e.newValue);
-                console.log('[Storage] Cache synced from another tab.');
-            } catch (_) {}
-        }
-    });
-
     console.log('[Storage] Browser adapter initialized.');
 }
 
@@ -129,48 +188,36 @@ function _persistBrowser() {
 }
 
 // ================================================================
-//  Unified _persist — calls the right adapter automatically
+//  Unified _persist — calls the right fallback adapter automatically
 // ================================================================
 
 function _persist() {
     if (_IS_TAURI) {
-        _persistTauri();   // async, fire-and-forget is fine —
-    } else {               // _dataCache is always the source of truth.
-        _persistBrowser(); // reads never touch the file, only _dataCache.
+        _persistTauri();   // async, fire-and-forget
+    } else {
+        _persistBrowser();
     }
 }
 
 // ================================================================
-//  Storage — public interface, same for both platforms
+//  Storage — public interface, same for both platforms + backend
 // ================================================================
 
 const Storage = {
     getItem(key) {
-        // Browser: always pull from live localStorage so another tab's writes
-        // are immediately visible — _dataCache is per-tab and can be stale.
-        if (!_IS_TAURI) {
-            const raw = localStorage.getItem(DATA_KEY);
-            if (raw) { try { _dataCache = JSON.parse(raw); } catch (_) {} }
-        }
         return _dataCache[key] !== undefined ? _dataCache[key] : null;
     },
     setItem(key, value) {
-        // Browser: re-sync before writing too, so we don't clobber keys
-        // that another tab saved between our last read and now.
-        if (!_IS_TAURI) {
-            const raw = localStorage.getItem(DATA_KEY);
-            if (raw) { try { _dataCache = JSON.parse(raw); } catch (_) {} }
-        }
         _dataCache[key] = value;
-        _persist();
+        _persistKey(key, value);
     },
     removeItem(key) {
         delete _dataCache[key];
-        _persist();
+        _deleteKey(key);
     },
     clear() {
         _dataCache = { version: DATA_VERSION };
-        _persist();
+        _clearBackend();
     },
 
     // ── importBackup ─────────────────────────────────────────────
@@ -187,18 +234,18 @@ const Storage = {
 
     exportBackup() {
         const date     = new Date().toISOString().split('T')[0];
-        const fileName = `OpticSite_SaveFile_${date}.json`;
+        const fileName = `OpticSite_Backup_${date}.json`;
 
         if (_IS_TAURI) {
             // Native save dialog
             window.__TAURI__.dialog.save({
                 defaultPath: fileName,
-                filters: [{ name: 'JSON Save File', extensions: ['json'] }]
+                filters: [{ name: 'JSON Backup', extensions: ['json'] }]
             }).then(savePath => {
                 if (!savePath) return;
                 window.__TAURI__.fs.writeTextFile(savePath, JSON.stringify(_dataCache, null, 2))
-                    .then(() => openAlert({ title: 'Save File Exported', body: 'Save file exported successfully!' }))
-                    .catch(err => openAlert({ title: 'Error', body: `Failed to export save file:\n${err}` }));
+                    .then(() => openAlert({ title: 'Backup Saved', body: 'Backup saved successfully!' }))
+                    .catch(err => openAlert({ title: 'Error', body: `Failed to save backup:\n${err}` }));
             });
         } else {
             // Browser file download
@@ -209,7 +256,7 @@ const Storage = {
             a.download = fileName;
             a.click();
             URL.revokeObjectURL(url);
-            openAlert({ title: 'Save File Download', body: 'Save file will be downloaded to the chosen destination.' });
+            openAlert({ title: 'Backup Download', body: 'Backup will be saved to the chosen destination.' });
         }
     }
 };
@@ -227,7 +274,7 @@ function _processImport(rawText) {
     try {
         parsed = JSON.parse(rawText);
     } catch (e) {
-        openAlert({ title: 'Invalid File', body: 'This file is not valid JSON.\nPlease select a valid OpticSite save file.' });
+        openAlert({ title: 'Invalid File', body: 'This file is not valid JSON.\nPlease select a valid OpticSite backup file.' });
         return;
     }
 
@@ -242,7 +289,7 @@ function _processImport(rawText) {
         /^\d+\.\d+.*-emr$/.test(parsed.version)
     );
     if (!isOpticSiteBackup) {
-        openAlert({ title: 'Wrong File', body: 'This does not look like an OpticSite save file.\nMake sure you selected the correct .json save file.' });
+        openAlert({ title: 'Wrong File', body: 'This does not look like an OpticSite backup file.\nMake sure you selected the correct .json backup.' });
         return;
     }
 
@@ -257,143 +304,42 @@ function _processImport(rawText) {
     // Build a warning string to show in the confirm modal if needed
     let warningLines = '';
     if (versionMismatch) {
-        warningLines += `\nWarning: Save file version (${parsed.version}) differs from current app version (${DATA_VERSION}). Restoring may cause minor issues.`;
+        warningLines += `\nWarning: Backup version (${parsed.version}) differs from current app version (${DATA_VERSION}). Restoring may cause minor issues.`;
     }
     if (missingKeys.length > 0) {
-        warningLines += `\nWarning: Save file is missing data for: ${missingKeys.join(', ')}. Those records will be empty after restore.`;
+        warningLines += `\nWarning: Backup is missing data for: ${missingKeys.join(', ')}. Those records will be empty after restore.`;
     }
 
     // ── 5. Typed confirm before overwriting ───────────────────────
     openModal({
-        title:        'Confirm Import',
-        body:         `This will overwrite ALL current data with the selected save file. This cannot be undone.${warningLines}\n\nType RESTORE to confirm.`,
+        title:        'Confirm Restore',
+        body:         `This will overwrite ALL current data with the selected backup. This cannot be undone.${warningLines}\n\nType RESTORE to confirm.`,
         confirmText:  'Restore',
         cancelText:   'Cancel',
         requireTyping: 'RESTORE',
-        onConfirm: () => {
+        onConfirm: async () => {
             // ── 6. Overwrite and persist ──────────────────────────
             _dataCache = parsed;
-            _persist();
+            if (_useBackend) {
+                await _bulkPersistBackend();
+            } else {
+                _persist();
+            }
 
             openAlert({
-                title: 'Import Complete',
-                body:  'Save file imported successfully!\nThe app will now reload.',
+                title: 'Restore Complete',
+                body:  'Backup restored successfully!\nThe app will now reload.',
                 onOk:  () => { window.location.reload(); }
             });
         }
     });
 }
 
-// Intro-only import — skips the overwrite confirm modal since there is
-// no existing data to protect on first launch. Still runs all file
-// validation checks (JSON, OpticSite format, version, missing keys).
-function _processIntroImport(rawText) {
-
-    // ── 1. Parse JSON ─────────────────────────────────────────────
-    let parsed;
-    try {
-        parsed = JSON.parse(rawText);
-    } catch (e) {
-        openAlert({ title: 'Invalid File', body: 'This file is not valid JSON.\nPlease select a valid OpticSite save file.' });
-        return;
-    }
-
-    // ── 2. Must be an OpticSite backup ────────────────────────────
-    const isOpticSiteBackup = (
-        typeof parsed === 'object' &&
-        parsed !== null &&
-        typeof parsed.version === 'string' &&
-        /^\d+\.\d+.*-emr$/.test(parsed.version)
-    );
-    if (!isOpticSiteBackup) {
-        openAlert({ title: 'Wrong File', body: 'This does not look like an OpticSite save file.\nMake sure you selected the correct .json save file.' });
-        return;
-    }
-
-    // ── 3. Version mismatch — warn but allow ──────────────────────
-    // ── 4. Missing key data — warn but allow ──────────────────────
-    const versionMismatch = parsed.version !== DATA_VERSION;
-    const missingKeys = [];
-    if (!parsed.patients)      missingKeys.push('patients');
-    if (!parsed.prescriptions) missingKeys.push('prescriptions');
-
-    let warningLines = '';
-    if (versionMismatch) {
-        warningLines += `\nNote: Save file version (${parsed.version}) differs from current app version (${DATA_VERSION}). Restoring may cause minor issues.`;
-    }
-    if (missingKeys.length > 0) {
-        warningLines += `\nNote: Save file is missing data for: ${missingKeys.join(', ')}. Those records will be empty after restore.`;
-    }
-
-    // ── 5. Restore directly — no overwrite guard needed on fresh state ──
-    _dataCache = parsed;
-    _persist();
-    openAlert({
-        title: 'Import Complete',
-        body:  `Save file imported successfully!${warningLines}\nThe app will now launch.`,
-        onOk:  () => { window.location.reload(); }
-    });
-}
-
-// Intro-path file picker — calls _processIntroImport instead of _processImport
-function importBackupIntro() {
-    if (_IS_TAURI) {
-        window.__TAURI__.dialog.open({
-            multiple: false,
-            filters: [{ name: 'JSON Save File', extensions: ['json'] }]
-        }).then(selectedPath => {
-            if (!selectedPath) return;
-            window.__TAURI__.fs.readTextFile(selectedPath)
-                .then(raw => _processIntroImport(raw))
-                .catch(err => openAlert({ title: 'Read Error', body: `Could not read the file:\n${err}` }));
-        });
-    } else {
-        let fileInput = document.getElementById('_introImportFileInput');
-        if (!fileInput) {
-            fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = '.json,application/json';
-            fileInput.id = '_introImportFileInput';
-            fileInput.style.display = 'none';
-            document.body.appendChild(fileInput);
-        }
-
-        fileInput.value = '';
-
-        fileInput.onchange = () => {
-            const file = fileInput.files[0];
-            if (!file) return;
-
-            if (!file.name.toLowerCase().endsWith('.json')) {
-                openAlert({ title: 'Wrong File Type', body: 'Please select a .json save file.' });
-                return;
-            }
-
-            const BROWSER_STORAGE_LIMIT = 5 * 1024 * 1024;
-            if (file.size > BROWSER_STORAGE_LIMIT) {
-                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                openAlert({
-                    title: 'File Too Large',
-                    body:  `This save file is ${sizeMB} MB, which exceeds the browser storage limit of 5 MB.\n\nUse the desktop app (.exe) to import large save files.`
-                });
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (e) => _processIntroImport(e.target.result);
-            reader.onerror = () => openAlert({ title: 'Read Error', body: 'Could not read the selected file.' });
-            reader.readAsText(file);
-        };
-
-        fileInput.click();
-    }
-}
-
 // Tauri path — native open dialog
 function _importBackupTauri() {
     window.__TAURI__.dialog.open({
         multiple: false,
-        filters: [{ name: 'JSON Save File', extensions: ['json'] }]
+        filters: [{ name: 'JSON Backup', extensions: ['json'] }]
     }).then(selectedPath => {
         if (!selectedPath) return; // user cancelled
         window.__TAURI__.fs.readTextFile(selectedPath)
@@ -423,20 +369,7 @@ function _importBackupBrowser() {
 
         // Extra guard: reject non-.json by name (browser accept isn't enforced everywhere)
         if (!file.name.toLowerCase().endsWith('.json')) {
-            openAlert({ title: 'Wrong File Type', body: 'Please select a .json save file.' });
-            return;
-        }
-
-        // Browser localStorage limit is ~5MB. Reject before reading if the
-        // file is already too large to fit — avoids a pointless FileReader
-        // load and a cryptic QuotaExceededError on write.
-        const BROWSER_STORAGE_LIMIT = 5 * 1024 * 1024; // 5MB in bytes
-        if (file.size > BROWSER_STORAGE_LIMIT) {
-            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-            openAlert({
-                title: 'File Too Large',
-                body:  `This save file is ${sizeMB} MB, which exceeds the browser storage limit of 5 MB.\n\nUse the desktop app (.exe) to import large save files.`
-            });
+            openAlert({ title: 'Wrong File Type', body: 'Please select a .json backup file.' });
             return;
         }
 
@@ -453,6 +386,5 @@ function _importBackupBrowser() {
 //  Expose globally
 // ================================================================
 
-window.Storage            = Storage;
-window.initStorage        = initStorage;
-window.importBackupIntro  = importBackupIntro;
+window.Storage     = Storage;
+window.initStorage = initStorage;
