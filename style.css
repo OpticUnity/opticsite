@@ -23,6 +23,8 @@
   --object-bg: #F3F4F6;
   --border-color: #555;
   --cancel-hover-bg: #ddd;
+  --so-group-border: #000;    /* item group box — deliberately max-contrast, separate from --border-color which every input/field already uses */
+  --so-row-divider: #e0e0e0;  /* plain row-to-row line — recedes in dark mode so it doesn't compete with the group box */
 }
 
 /* -------- Preload Guards -------- */
@@ -47,6 +49,8 @@ html.darkMode-preload {
   --object-bg: #222529;
   --border-color: #8a8f98;
   --cancel-hover-bg: #33383d;
+  --so-group-border: #f0f1f3; /* bright near-white — clearly brighter than --border-color and the dimmed divider below */
+  --so-row-divider: #2c3034;  /* barely above --object-bg, recedes instead of competing with the group box */
 }
 
 html.darkMode-preload body {
@@ -1298,8 +1302,13 @@ textarea[readonly] {
 
 /* --------- Other Function Mode and Styles ----- */
 
+/* !important is deliberate here — .hidden is a utility class whose only job is to
+   force an element invisible regardless of any other display rule on it. Without this,
+   a same-specificity single-class rule declared later in the file (e.g. .so-modal-gate
+   or .so-linked-summary, both display:flex) silently wins the tie by file position and
+   .hidden does nothing — which is exactly the bug this fixes. */
 .hidden{
-  display: none;
+  display: none !important;
 }
 
 .flex-column{
@@ -1489,6 +1498,7 @@ textarea[readonly] {
 .app-modal-actions .modal-cancel-btn {
   background: var(--object-bg);
   color: var(--text-color);
+  border: 1px solid var(--border-color);
 }
 
 .app-modal-actions .modal-cancel-btn:hover {
@@ -1599,7 +1609,7 @@ table.so-order-table th {
 
 table.so-order-table td {
   padding: 6px 6px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--so-row-divider);
   vertical-align: middle;
   text-align: center;
 }
@@ -1645,6 +1655,64 @@ table.so-order-table input[type="number"].so-qty-fixed:disabled {
   opacity: 1;
   color: var(--text-color);
   cursor: default;
+}
+
+/* Payment mode (items locked) — the whole table is frozen, but that's already flagged by
+   the Edit/Delete buttons being disabled (kept dim on purpose — see .so-action-btn:disabled).
+   No need to also mute every field on top of that; background included, not just
+   opacity/color. Price is readonly-only (never gets the :disabled attribute once confirmed —
+   see soSetRowLocked), so it needs the [readonly] half of this selector on its own to be
+   covered at all; Total is disabled AND readonly, so without the background half here it'd
+   still show the generic gray readonly background even with opacity already fixed. This
+   also reaches the Description/Promo Name/Patient/Rx sub-row, since those are readonly
+   inputs living in a sibling <tr> within the same table. */
+table.so-order-table.so-payment-mode select:disabled,
+table.so-order-table.so-payment-mode input[type="text"]:disabled,
+table.so-order-table.so-payment-mode input[type="number"]:disabled,
+table.so-order-table.so-payment-mode input[readonly] {
+  opacity: 1;
+  background: var(--ui-bg);
+  color: var(--text-color);
+  cursor: default;
+}
+
+/* ── Disc % / Disc ₱ symbol overlays — purely visual, the stored value/number input
+   underneath is untouched (keeps native up/down arrows, mobile numeric keypad, etc). ── */
+.so-input-suffix-wrap,
+.so-input-prefix-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.so-input-suffix-wrap input[type="number"] { padding-right: 20px; }
+.so-input-prefix-wrap input[type="number"] { padding-left: 18px; }
+
+.so-input-suffix,
+.so-input-prefix {
+  position: absolute;
+  font-size: 12px;
+  color: var(--text-color);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.so-input-suffix { right: 7px; }
+.so-input-prefix { left: 7px; }
+
+/* Remove native up/down spinner arrows on Disc % and Disc ₱ only — these are
+   discount adjustments typed directly, not counters meant to be clicked up/down. */
+.so-input-suffix-wrap input[type="number"]::-webkit-outer-spin-button,
+.so-input-suffix-wrap input[type="number"]::-webkit-inner-spin-button,
+.so-input-prefix-wrap input[type="number"]::-webkit-outer-spin-button,
+.so-input-prefix-wrap input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.so-input-suffix-wrap input[type="number"],
+.so-input-prefix-wrap input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 /* ── Row total display ── */
@@ -1693,6 +1761,11 @@ tr.so-row-locked td {
   pointer-events: none;
 }
 
+.so-action-btn i {
+  font-size: 13px;
+  pointer-events: none;
+}
+
 .so-action-btn:disabled {
   background: #ccc;
   cursor: default;
@@ -1701,6 +1774,29 @@ tr.so-row-locked td {
 
 .so-edit-item-btn:not(:disabled):hover   { background: var(--secondary-color); }
 .so-delete-row-btn:not(:disabled):hover  { background: #b91c1c; }
+
+/* ── Group box — wraps a confirmed item's main row + its detail row (description/
+   promo/patient/Rx) in one visible rectangle, so it's clear at a glance which detail
+   block belongs to which item. Built from cell borders, not a box on the <tr>/<tbody>
+   itself — border-collapse: collapse only renders borders set on cells, not rows or
+   row-groups, so a box has to be assembled from each edge cell's own border. Uses its
+   own --so-group-border variable (not --border-color, which every input/field already
+   uses) so it reads as a distinct card in both themes rather than blending into the
+   plain --so-row-divider row line. ── */
+tr.so-row-boxed-top td {
+  border-top: 1px solid var(--so-group-border);
+}
+tr.so-row-boxed-top td:first-child {
+  border-left: 1px solid var(--so-group-border);
+}
+tr.so-row-boxed-top td:last-child {
+  border-right: 1px solid var(--so-group-border);
+}
+tr.so-row-boxed-bottom td {
+  border-bottom: 1px solid var(--so-group-border);
+  border-left: 1px solid var(--so-group-border);
+  border-right: 1px solid var(--so-group-border);
+}
 
 /* ── Discount detail sub-row ── */
 tr.so-disc-detail-row td {
@@ -1711,6 +1807,7 @@ tr.so-disc-detail-row td {
 
 .so-disc-detail-content {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0; /* spacing handled inside each block instead, so block widths stay precise for alignment */
   font-size: 13px;
@@ -1738,6 +1835,37 @@ tr.so-disc-detail-row td {
   gap: 10px;
 }
 
+/* Lens/CL only. flex-basis:100% on a wrapped flex row always starts a new line,
+   regardless of how much horizontal room Description/Promo Name leave — this row is
+   deliberately always on its own line, not just an overflow fallback. Patient and Rx
+   then sit side by side *inside* this row, same 538/300 split as Description/Promo
+   Name above, so everything stays edge-to-edge aligned across every row. */
+.so-disc-patient-rx-row {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.so-disc-patient-block {
+  flex: 0 0 538px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 10px;
+}
+
+.so-disc-rx-block {
+  flex: 0 0 300px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .so-disc-detail-content label {
   font-weight: 500;
   white-space: nowrap;
@@ -1763,13 +1891,146 @@ tr.so-disc-detail-row td {
 }
 
 /* ── Payment Summary ── */
+.so-summary-row-wrapper {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.so-job-order-summary,
 .so-order-summary {
   background: var(--object-bg);
   border-radius: 8px;
   padding: 18px 20px;
-  margin-bottom: 20px;
-  max-width: 400px;
-  margin-left: auto;
+  flex: 1;
+  min-width: 0;
+}
+
+.so-job-order-summary h3 {
+  margin-bottom: 14px;
+}
+
+.so-job-order-stubs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.so-job-order-empty {
+  font-size: 13px;
+  color: var(--border-color);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+.so-job-order-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.so-job-order-btn-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 30px;
+  flex: 0 0 auto;
+}
+
+/* Nudges the unpaired +/Frame group down from center — a 2-line unpaired box centers it
+   much higher than the paired case's 4-line box does, so it looked misaligned next to
+   where "Frame" would sit if this job were already paired. */
+.so-job-order-btn-group-unpaired {
+  margin-top: 16px;
+}
+
+.so-job-order-btn-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+/* Invisible placeholder matching .so-job-order-btn-group's width, so a solo job (no
+   pairing needed — e.g. Contact Lens) still gets the same box width as paired/unpaired
+   ones, for visual uniformity across the whole panel. */
+.so-job-order-btn-spacer {
+  width: 30px;
+  flex: 0 0 auto;
+}
+
+.so-job-order-stub {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--ui-bg);
+  border: 1px solid var(--so-group-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  flex: 1;
+  max-width: 90%;
+  min-width: 0;
+}
+
+.so-job-order-header {
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.so-job-order-body {
+  color: var(--text-color);
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.so-job-order-body.so-job-order-body-empty {
+  color: var(--border-color);
+  font-style: italic;
+}
+
+.so-job-order-divider {
+  border: none;
+  border-top: 1px dashed var(--border-color);
+  margin: 4px 0;
+}
+
+.so-job-order-pair-btn,
+.so-job-order-unpair-btn {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: var(--primary-color);
+  color: var(--white);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.so-job-order-pair-btn:hover {
+  opacity: 0.85;
+}
+
+.so-job-order-unpair-btn:hover {
+  background: #dc3545;
+}
+
+.so-job-order-pair-btn:disabled,
+.so-job-order-unpair-btn:disabled {
+  background: var(--cancel-hover-bg);
+  color: var(--text-color);
+  cursor: default;
+  opacity: 0.5;
 }
 
 .so-summary-row {
@@ -1808,6 +2069,187 @@ tr.so-disc-detail-row td {
   font-weight: 700;
 }
 
+/* ── Payments (split tender) ── */
+.so-payments-block {
+  margin-bottom: 12px;
+}
+
+.so-payments-label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.so-payment-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.so-payments-empty {
+  font-size: 13px;
+  color: var(--text-color);
+  opacity: 0.6;
+  margin: 0 0 8px;
+}
+
+/* Read-only display of a confirmed payment — looks like a field but isn't editable inline */
+.so-payment-fields {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  gap: 8px;
+}
+
+input.so-payment-method-label,
+input.so-payment-amount-label {
+  height: 30px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 13px;
+  background: var(--ui-bg);
+  color: var(--text-color);
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis; /* safety net for unusually long "Method | Provider" combos */
+}
+
+/* Method now shows "Bank Transfer | Metrobank"-style combined text, so it gets more
+   room than Amount (just a number) — comfortably inside the card's 360px inner width
+   alongside the 62px action-button pair + 16px of gaps. */
+.so-payment-method-label { width: 150px; }
+.so-payment-amount-label { width: 100px; }
+
+/* Beats the global input[readonly] rule (same 0,1,1 specificity, but this comes later —
+   pinned here explicitly with the extra [readonly] qualifier so it wins regardless of
+   where either rule ends up in the file). */
+input.so-payment-method-label[readonly],
+input.so-payment-amount-label[readonly] {
+  background: var(--ui-bg);
+}
+
+/* Method is centered (short labels like "Cash"/"Card" read oddly left-pinned in a
+   150px box); Amount stays right-aligned to read as a number, matching every other
+   numeric field in this card. */
+.so-payment-method-label { justify-content: center;   text-align: center; }
+.so-payment-amount-label { justify-content: flex-end; text-align: right; }
+
+.so-payment-actions {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.so-edit-payment-btn,
+.so-remove-payment-btn {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: var(--primary-color);
+  color: var(--white);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.so-edit-payment-btn:hover,
+.so-remove-payment-btn:hover {
+  background: var(--secondary-color);
+}
+
+/* Auto-locked ₱0 Cash row on a free/full-discount order — no Edit/Remove, just a badge */
+.so-payment-row-locked .so-payment-method-label,
+.so-payment-row-locked .so-payment-amount-label {
+  opacity: 0.7;
+}
+
+.so-payment-auto-badge {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  height: 28px;
+  border: 1px dashed var(--border-color);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-color);
+  opacity: 0.65;
+  white-space: nowrap;
+}
+
+.so-add-payment-btn {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px dashed var(--border-color);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.so-add-payment-btn:hover {
+  background: var(--ui-bg);
+}
+
+.so-add-payment-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.so-change-row input {
+  color: #2e9e4f;
+  font-weight: 600;
+}
+
+/* ── Proceed to Payment (locks order items) — sits above the Payment Summary panel,
+   hidden entirely until an item is confirmed, so it's never shown in a disabled state ── */
+.so-proceed-payment-block {
+  max-width: 400px;
+  margin: 0 0 16px auto;
+}
+
+.so-proceed-payment-btn {
+  width: 100%;
+  height: 42px;
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+/* ── Edit Items (unlocks order items, resets payments) — standalone button above the
+   panel, same visual weight as Proceed to Payment, with an icon for clarity ── */
+.so-edit-items-block {
+  max-width: 400px;
+  margin: 0 0 16px auto;
+}
+
+.so-edit-items-btn {
+  width: 100%;
+  height: 42px;
+  font-size: 14px;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 /* ── Save button ── */
 .so-order-actions {
   text-align: center;
@@ -1837,6 +2279,12 @@ tr.so-disc-detail-row td {
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
 }
 
+/* Patient Link needs room for a 4-column table (ID, Name, Number, Action) — the
+   default 360px item-modal width is sized for a stacked field form, not a table. */
+.so-patient-link-modal {
+  width: 520px;
+}
+
 .so-item-modal-header {
   background: var(--primary-color);
   color: var(--white);
@@ -1859,6 +2307,15 @@ tr.so-disc-detail-row td {
   font-weight: 500;
   margin-bottom: 2px;
   display: block;
+}
+
+/* ── Forms wrapped in a single toggleable container (Lens/CL, gated by the
+   Rx wizard) aren't direct children of .so-item-modal-body, so its flex gap
+   doesn't reach them — restore the same spacing here. ── */
+.so-item-modal-subform {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .so-item-modal-body input,
@@ -1911,7 +2368,7 @@ tr.so-disc-detail-row td {
 }
 
 .so-modal-ok-btn     { background: var(--primary-color); color: var(--white); }
-.so-modal-cancel-btn { background: var(--object-bg); color: var(--text-color); }
+.so-item-modal-actions .so-modal-cancel-btn { background: var(--object-bg); color: var(--text-color); border: 1px solid var(--border-color); }
 .so-modal-cancel-btn:hover { background: var(--cancel-hover-bg); }
 
 /* ── Rx mini grid inside item modals ── */
@@ -1934,10 +2391,229 @@ tr.so-disc-detail-row td {
   margin-top: 4px;
 }
 
+/* ── Lens/CL wizard gates — the centered "Select Patient" / "Select Prescription"
+   stage screens shown one at a time via soUpdateLensClStage ── */
+.so-modal-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 8px;
+  gap: 4px;
+}
+
+.so-modal-gate-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.so-modal-gate-subtitle {
+  font-size: 13px;
+  color: var(--text-color);
+  opacity: 0.7;
+  margin: 0 0 18px;
+  max-width: 260px;
+}
+
+.so-modal-gate-btn {
+  width: 100%;
+  max-width: 240px;
+  height: 42px;
+  font-size: 14px;
+}
+
+/* "Enter Manually" (CL only) — secondary weight next to the primary black
+   "Select Prescription" button, same ghost treatment as Change/Clear buttons */
+.so-modal-gate-btn-secondary {
+  width: 100%;
+  max-width: 240px;
+  height: 38px;
+  font-size: 13px;
+  margin-top: 8px;
+  background: var(--ui-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.so-modal-gate-btn-secondary:hover {
+  background: var(--object-bg);
+}
+
+/* "Enter Manually" inside the Select Prescription picker (CL only) — the
+   escape hatch that soChangeLinkedRx()'s picker path was missing; margin-right:auto
+   pushes it to the opposite side from Cancel within the flex-end actions row.
+   Selector qualified with .so-item-modal-actions (like .so-modal-cancel-btn) —
+   a bare class here loses border:none to .so-item-modal-actions button's
+   higher specificity, same trap as before. Styling now matches Cancel exactly. */
+.so-item-modal-actions .so-modal-actions-manual-btn {
+  margin-right: auto;
+  background: var(--object-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.so-modal-actions-manual-btn:hover {
+  background: var(--cancel-hover-bg);
+}
+
+/* ── Persistent Patient/Rx summary — sits above whichever gate or the full form is
+   currently showing, so either link can be changed without restarting the wizard ── */
+.so-linked-summary {
+  background: var(--object-bg);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.so-linked-summary label {
+  text-align: center;
+}
+
+/* ── Patient/Rx summary rows inside Lens/CL modals — label above input, matching
+   every sibling field's layout, with a small square icon-only edit button beside the
+   readonly input instead of a full-width text button. ── */
+.so-linked-field-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.so-linked-field-row input[readonly] {
+  flex: 1;
+  min-width: 0; /* lets the input actually shrink instead of overflowing the modal */
+}
+
+.so-linked-edit-btn {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: var(--primary-color);
+  color: var(--white);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.so-linked-edit-btn:hover {
+  background: var(--secondary-color);
+}
+
+/* ── Locked Rx grade fields — visually distinct from an editable/manual-entry field.
+   input.so-rx-locked matches the same (class+type) specificity as the global
+   .so-item-modal-body input background rule, so it wins on source order without
+   needing !important. ── */
+input.so-rx-locked {
+  background: var(--object-bg);
+  color: var(--text-color);
+  cursor: default;
+}
+
+/* ── Patient Link sub-modal: suggestion cards ── */
+.so-patient-suggestions {
+  margin-bottom: 16px;
+}
+
+.so-patient-suggestions > label {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.so-patient-suggestion-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Possible Match cards — centered text stack (Name / Birthday / ID) with a separate
+   Select button below, rather than the whole card being clickable. Distinct from
+   .so-patient-suggestion-card (below), which the Rx picker still uses as a clickable
+   button — kept separate on purpose so this restyle doesn't touch that. */
+.so-patient-match-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--object-bg);
+  color: var(--text-color);
+  text-align: center;
+}
+
+.so-patient-match-card .select-patient-button {
+  margin-top: 6px;
+}
+
+/* ── Rx picker cards — unchanged, still a clickable button ── */
+.so-patient-suggestion-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--so-group-border);
+  border-radius: 6px;
+  background: var(--object-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  text-align: left;
+}
+
+.so-patient-suggestion-card:hover {
+  background: var(--ui-bg);
+  border-color: var(--primary-color);
+}
+
+.so-patient-suggestion-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.so-patient-suggestion-meta {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+/* ── "Looking for different patient?" prompt, between suggestions and the search table ── */
+.so-patient-search-prompt {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.so-patient-search-prompt h4 {
+  font-size: 14px;
+  margin: 0 0 2px;
+}
+
+.so-patient-search-prompt p {
+  font-size: 12px;
+  opacity: 0.7;
+  margin: 0;
+}
+
 /* ── Inline "(optional)" label tag ── */
 .so-optional-tag {
   font-weight: 400;
   font-size: 12px;
   color: #888;
   font-style: italic;
+}
+
+.so-final-rx-label {
+  text-align: center;
 }

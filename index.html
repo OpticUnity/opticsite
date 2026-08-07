@@ -78,7 +78,7 @@
           <!-- Darkmode Button -->
           <div class="dark-mode-btn" title="Dark Mode">
             <!-- Data Color : Hex  0-White 1-text-color 2-primary-color 3-secondary-color 4---object-bg -->
-            <i class="btn fas fa-moon" data-color="#fff #e4e6eb #272B2F #1D2124 #171A1D #222529 #8a8f98 #33383d"></i>
+            <i class="btn fas fa-moon" data-color="#fff #e4e6eb #272B2F #1D2124 #171A1D #222529 #8a8f98 #33383d #f0f1f3 #2c3034"></i>
           </div>
 
         </div>
@@ -560,7 +560,7 @@
           <a href="#salesNewOrder">New Order</a>
           <a href="#salesPendingJobs">Pending Jobs</a>
           <a href="#salesPendingOrders">Pending Orders</a>
-          <a href="#salesSalesHistory">Sales History</a>
+          <a href="#salesSalesHistory" id="salesHistoryNavLink">Sales History</a>
         </div>
       </section>
 
@@ -688,56 +688,79 @@
             </table>
           </div>
 
-          <!-- ── Payment Summary ── -->
-          <div class="so-order-summary">
-            <h3>Payment Summary</h3>
+          <!-- ── Proceed to Payment — appears once an item is confirmed; locks order items,
+               reveals Payment Summary. Hidden entirely (not just disabled) until then.
+               Sits in the same slot as Edit Items below — the two swap in place once
+               items are locked, so nothing above/below the panel has to shift. ── -->
+          <div class="so-proceed-payment-block hidden" id="proceedPaymentBlock">
+            <button type="button" class="so-proceed-payment-btn" id="proceedPaymentBtn">
+              Proceed to Payment →
+            </button>
+          </div>
 
-            <div class="so-summary-row">
-              <label>Gross Total :</label>
-              <input id="summaryGrossTotal" type="text" readonly value="0.00">
-            </div>
-            <div class="so-summary-row">
-              <label>Discount :</label>
-              <input id="summaryDiscount" type="text" readonly value="0.00">
-            </div>
-            <div class="so-summary-row">
-              <label>Subtotal :</label>
-              <input id="summarySubtotal" type="text" readonly value="0.00">
-            </div>
+          <!-- ── Edit Items — appears once items are locked, standalone above the panel ── -->
+          <div class="so-edit-items-block hidden" id="editItemsBlock">
+            <button type="button" class="so-edit-items-btn" id="editItemsBtn">Edit Items</button>
+          </div>
 
-            <hr class="so-summary-divider">
-
-            <div class="so-summary-row so-summary-total-row">
-              <label>Total :</label>
-              <input id="summaryTotal" type="text" readonly value="0.00">
-            </div>
-            <div class="so-summary-row">
-              <label>Deposit :</label>
-              <input id="summaryDeposit" type="number" min="0" value="0" placeholder="0.00">
-            </div>
-            <div class="so-summary-row">
-              <label>Balance :</label>
-              <input id="summaryBalance" type="text" readonly value="0.00">
+          <div class="so-summary-row-wrapper">
+            <!-- ── Job Order Summary ── -->
+            <div class="so-job-order-summary">
+              <h3>Job Order Summary</h3>
+              <div id="jobOrderStubs" class="so-job-order-stubs">
+                <div class="so-job-order-empty">No job orders yet... add a Lens, Contact Lens, Lens Transfer, or Frame Repair item to see it here.</div>
+              </div>
             </div>
 
-            <hr class="so-summary-divider">
+            <!-- ── Payment Summary ── -->
+            <div class="so-order-summary">
+              <h3>Payment Summary</h3>
 
-            <div class="so-summary-row">
-              <label>Payment Method :</label>
-              <select id="paymentMethod">
-                <option value="">-- Select --</option>
-                <option value="cash">Cash</option>
-                <option value="gcash">GCash</option>
-                <option value="maya">Maya</option>
-                <option value="card">Card</option>
-                <option value="bank">Bank Transfer</option>
-              </select>
+              <div class="so-summary-row">
+                <label>Gross Total :</label>
+                <input id="summaryGrossTotal" type="text" readonly value="0.00">
+              </div>
+              <div class="so-summary-row">
+                <label>Discount :</label>
+                <input id="summaryDiscount" type="text" readonly value="0.00">
+              </div>
+
+              <hr class="so-summary-divider">
+
+              <div class="so-summary-row so-summary-total-row">
+                <label>Total :</label>
+                <input id="summaryTotal" type="text" readonly value="0.00">
+              </div>
+
+              <!-- ── Payments — locked until items are confirmed and finalized ── -->
+              <div class="so-payments-locked-section hidden" id="paymentLockedSection">
+                <hr class="so-summary-divider">
+
+                <div class="so-payments-block">
+                  <label class="so-payments-label">Payments :</label>
+                  <div id="paymentRowsContainer"><!-- rows injected by JS --></div>
+                  <button type="button" class="so-add-payment-btn" id="addPaymentBtn">+ Add Payment</button>
+                </div>
+
+                <div class="so-summary-row">
+                  <label>Amount Paid :</label>
+                  <input id="summaryAmountPaid" type="text" readonly value="0.00">
+                </div>
+                <div class="so-summary-row so-change-row hidden" id="summaryChangeRow">
+                  <label>Change Due :</label>
+                  <input id="summaryChangeDue" type="text" readonly value="0.00">
+                </div>
+                <div class="so-summary-row">
+                  <label>Balance :</label>
+                  <input id="summaryBalance" type="text" readonly value="0.00">
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- ── Save Order Button ── -->
           <div class="so-order-actions">
-            <button class="save-btn" id="saveOrderBtn">Save Order</button>
+            <button class="save-btn" id="saveOrderBtn" disabled>Save Order</button>
           </div>
         </div>
 
@@ -750,53 +773,92 @@
           <div class="so-item-modal">
             <div class="so-item-modal-header">Lens Details</div>
             <div class="so-item-modal-body">
-              <p class="so-future-tag">★ Rx auto-fill from prescription records — future implementation</p>
-              <label>Lens Brand</label>
-              <select id="lensBrand" onchange="soOnLensBrandChange(this)">
-                <option value="">-- Select --</option>
-                <option value="Homebrand">Homebrand</option>
-                <option value="__custom__">Custom...</option>
-              </select>
-              <input type="text" id="lensBrandCustom" class="hidden" placeholder="Enter lab / brand name...">
-              <label>Lens Type</label>
-              <select id="lensType" onchange="soOnLensTypeChange(this)">
-                <option value="">-- Select --</option>
-                <option>Single Vision (Dist.)</option>
-                <option>Single Vision (Near)</option>
-                <option>Kryptok</option>
-                <option>Flattop</option>
-                <option>Progressive</option>
-                <option value="__other__">Other</option>
-              </select>
-              <input type="text" id="lensTypeOther" class="hidden" placeholder="Specify lens type...">
-              <label>Coating</label>
-              <input type="text" id="lensCoating" placeholder="Uncoated, Multicoated, Photochromic...">
-              <label>Index <span class="so-optional-tag">(optional)</span></label>
-              <input type="text" id="lensIndex" placeholder="e.g. 1.56, 1.61, 1.67...">
-              <label>Rx (OD / OS)</label>
-              <div class="so-rx-grid">
-                <div></div>
-                <div class="so-rx-header">SPH</div>
-                <div class="so-rx-header">CYL</div>
-                <div class="so-rx-header">AXIS</div>
-                <div class="so-rx-header">ADD</div>
-                <div class="so-rx-eye">OD</div>
-                <input type="text" id="lensOdSph"  placeholder="SPH">
-                <input type="text" id="lensOdCyl"  placeholder="CYL">
-                <input type="text" id="lensOdAxis" placeholder="AXIS">
-                <input type="text" id="lensOdAdd"  placeholder="ADD">
-                <div class="so-rx-eye">OS</div>
-                <input type="text" id="lensOsSph"  placeholder="SPH">
-                <input type="text" id="lensOsCyl"  placeholder="CYL">
-                <input type="text" id="lensOsAxis" placeholder="AXIS">
-                <input type="text" id="lensOsAdd"  placeholder="ADD">
+
+              <!-- ── Persistent summary — grows as Patient/Rx get resolved, stays visible
+                   across every stage (including the full form) so either can be changed
+                   without restarting the wizard ── -->
+              <div id="lensSummaryBlock" class="so-linked-summary hidden">
+                <label>Patient</label>
+                <div class="so-linked-field-row">
+                  <input type="text" id="lensPatientDisplay" class="uppercase" readonly>
+                  <button type="button" class="so-linked-edit-btn" onclick="soChangeLinkedPatient('lens')" title="Change Patient"><i class="fa-solid fa-pen-to-square"></i></button>
+                </div>
+                <div id="lensRxSummaryRow" class="hidden">
+                  <label>Prescription ID</label>
+                  <div class="so-linked-field-row">
+                    <input type="text" id="lensRxDisplay" readonly>
+                    <button type="button" class="so-linked-edit-btn" onclick="soChangeLinkedRx('lens')" title="Change Prescription"><i class="fa-solid fa-pen-to-square"></i></button>
+                  </div>
+                </div>
               </div>
-              <label>Notes</label>
-              <textarea id="lensNotes" placeholder="Additional notes..."></textarea>
+
+              <!-- ── Gate 1: shown alone on fresh open, until a patient is linked ── -->
+              <div id="lensGatePatient" class="so-modal-gate">
+                <h4 class="so-modal-gate-title">Select Patient</h4>
+                <p class="so-modal-gate-subtitle">Select a patient for the lens order</p>
+                <button type="button" class="so-modal-gate-btn" onclick="soOpenPatientLinkModal('lens')">Select Patient</button>
+              </div>
+
+              <!-- ── Gate 2: shown once a patient is linked, until a prescription is chosen.
+                   Lens has no manual-entry escape hatch — grades are Rx-locked only. ── -->
+              <div id="lensGateRx" class="so-modal-gate hidden">
+                <h4 class="so-modal-gate-title">Select Prescription</h4>
+                <p class="so-modal-gate-subtitle">Select a prescription that will be used for the lens</p>
+                <button type="button" class="so-modal-gate-btn" onclick="soOpenRxSelectModal('lens')">Select Prescription</button>
+              </div>
+
+              <!-- ── Full form: shown once both gates are cleared ── -->
+              <div id="lensFormFields" class="so-item-modal-subform hidden">
+                <label class="so-final-rx-label">Final Prescription</label>
+                <div class="so-rx-grid">
+                  <div></div>
+                  <div class="so-rx-header">SPH</div>
+                  <div class="so-rx-header">CYL</div>
+                  <div class="so-rx-header">AXIS</div>
+                  <div class="so-rx-header">ADD</div>
+                  <div class="so-rx-eye">OD</div>
+                  <input type="text" id="lensOdSph"  placeholder="SPH">
+                  <input type="text" id="lensOdCyl"  placeholder="CYL">
+                  <input type="text" id="lensOdAxis" placeholder="AXIS">
+                  <input type="text" id="lensOdAdd"  placeholder="ADD">
+                  <div class="so-rx-eye">OS</div>
+                  <input type="text" id="lensOsSph"  placeholder="SPH">
+                  <input type="text" id="lensOsCyl"  placeholder="CYL">
+                  <input type="text" id="lensOsAxis" placeholder="AXIS">
+                  <input type="text" id="lensOsAdd"  placeholder="ADD">
+                </div>
+                <label>Lens Brand</label>
+                <select id="lensBrand" onchange="soOnLensBrandChange(this)">
+                  <option value="">-- Select --</option>
+                  <option value="Homebrand">Homebrand</option>
+                  <option value="__custom__">Custom...</option>
+                </select>
+                <input type="text" id="lensBrandCustom" class="hidden" maxlength="60" placeholder="Enter Lab / Brand name...">
+                <label>Lens Type</label>
+                <select id="lensType" onchange="soOnLensTypeChange(this)">
+                  <option value="">-- Select --</option>
+                  <option value="Single Vision (Dist.)">Single Vision (Dist.)</option>
+                  <option value="Single Vision (Near)">Single Vision (Near)</option>
+                  <option value="Kryptok">Kryptok</option>
+                  <option value="Flattop">Flattop</option>
+                  <option value="Progressive">Progressive</option>
+                  <option value="__other__">Other</option>
+                </select>
+                <input type="text" id="lensTypeOther" class="hidden" maxlength="60" placeholder="Specify lens type...">
+                <label>Coating</label>
+                <input type="text" id="lensCoating" maxlength="40" placeholder="Uncoated, Multicoated, Photochromic...">
+                <label>Index <span class="so-optional-tag">(optional)</span></label>
+                <input type="text" id="lensIndex" placeholder="e.g. 1.56, 1.61, 1.67...">
+                <label>Price</label>
+                <input type="number" id="lensPrice" min="0" max="999999.99" step="0.01" placeholder="0.00">
+                <label>Notes</label>
+                <textarea id="lensNotes" maxlength="1000" placeholder="Additional notes..."></textarea>
+              </div>
+
             </div>
             <div class="so-item-modal-actions">
               <button class="so-modal-cancel-btn" onclick="cancelModal('modalLens')">Cancel</button>
-              <button class="so-modal-ok-btn"     onclick="confirmModal('modalLens', 'lens')">Confirm</button>
+              <button class="so-modal-ok-btn hidden" onclick="confirmModal('modalLens', 'lens')">Confirm</button>
             </div>
           </div>
         </div>
@@ -809,14 +871,26 @@
               <label>Frame Source</label>
               <div class="so-radio-group">
                 <label class="so-radio-option">
-                  <input type="radio" id="frameSourceClinic" name="frameSource" value="clinic" checked>
+                  <input type="radio" id="frameSourceClinic" name="frameSource" value="clinic" checked
+                    onchange="soOnFrameSourceChange()">
                   Clinic's Frame
                 </label>
                 <label class="so-radio-option">
-                  <input type="radio" id="frameSourceOwn" name="frameSource" value="own">
+                  <input type="radio" id="frameSourceOwn" name="frameSource" value="own"
+                    onchange="soOnFrameSourceChange()">
                   Customer's Frame
                 </label>
               </div>
+              <label>Brand / Model / Code</label>
+              <input type="text" id="frameBrandModel" maxlength="40" placeholder="e.g. Ray-Ban / RB2140...">
+              <label>Material</label>
+              <select id="frameMaterial" onchange="soOnFrameMaterialChange(this)">
+                <option value="">-- Select --</option>
+                <option value="Metal">Metal</option>
+                <option value="Plastic">Plastic</option>
+                <option value="__other__">Others</option>
+              </select>
+              <input type="text" id="frameMaterialOther" class="hidden" maxlength="60" placeholder="Specify material...">
               <label>Type</label>
               <select id="frameType" onchange="soOnFrameTypeChange(this)">
                 <option value="">-- Select --</option>
@@ -825,23 +899,17 @@
                 <option value="Rimless">Rimless</option>
                 <option value="__other__">Others</option>
               </select>
-              <input type="text" id="frameTypeOther" class="hidden" placeholder="Specify frame type...">
-              <label>Material</label>
-              <select id="frameMaterial" onchange="soOnFrameMaterialChange(this)">
-                <option value="">-- Select --</option>
-                <option value="Metal">Metal</option>
-                <option value="Plastic">Plastic</option>
-                <option value="__other__">Others</option>
-              </select>
-              <input type="text" id="frameMaterialOther" class="hidden" placeholder="Specify material...">
-              <label>Brand / Model / Code</label>
-              <input type="text" id="frameBrandModel" placeholder="e.g. Ray-Ban / RB2140...">
-              <label>Color</label>
-              <input type="text" id="frameColor" placeholder="e.g. Black, Brown...">
+              <input type="text" id="frameTypeOther" class="hidden" maxlength="60" placeholder="Specify frame type...">
               <label>Shape</label>
-              <input type="text" id="frameShape" placeholder="e.g. Round, Aviator, Square...">
+              <input type="text" id="frameShape" maxlength="40" placeholder="e.g. Round, Aviator, Square...">
+              <label>Color</label>
+              <input type="text" id="frameColor" maxlength="40" placeholder="e.g. Black, Brown...">
+              <label>Parameters</label>
+              <input type="text" id="frameParameters" maxlength="60" placeholder="Frame size, BVH, etc.">
+              <label>Price</label>
+              <input type="number" id="framePrice" min="0" max="999999.99" step="0.01" placeholder="0.00">
               <label>Notes</label>
-              <textarea id="frameNotes" placeholder="Additional notes..."></textarea>
+              <textarea id="frameNotes" maxlength="1000" placeholder="Additional notes..."></textarea>
             </div>
             <div class="so-item-modal-actions">
               <button class="so-modal-cancel-btn" onclick="cancelModal('modalFrame')">Cancel</button>
@@ -855,38 +923,106 @@
           <div class="so-item-modal">
             <div class="so-item-modal-header">Contact Lens Details</div>
             <div class="so-item-modal-body">
-              <label>Brand</label>
-              <input type="text" id="clBrand" placeholder="e.g. Acuvue, Bausch & Lomb...">
-              <label>Type</label>
-              <select id="clType">
-                <option value="">-- Select --</option>
-                <option>Daily</option>
-                <option>Monthly</option>
-                <option>Yearly</option>
-                <option>Colored</option>
-                <option>Toric</option>
-              </select>
-              <label>Grade (OD / OS)</label>
-              <div class="so-rx-grid" style="grid-template-columns: 36px repeat(3, 1fr);">
-                <div></div>
-                <div class="so-rx-header">SPH</div>
-                <div class="so-rx-header">BC</div>
-                <div class="so-rx-header">DIA</div>
-                <div class="so-rx-eye">OD</div>
-                <input type="text" id="clOdSph" placeholder="SPH">
-                <input type="text" id="clOdBc"  placeholder="BC">
-                <input type="text" id="clOdDia" placeholder="DIA">
-                <div class="so-rx-eye">OS</div>
-                <input type="text" id="clOsSph" placeholder="SPH">
-                <input type="text" id="clOsBc"  placeholder="BC">
-                <input type="text" id="clOsDia" placeholder="DIA">
+
+              <div id="clSummaryBlock" class="so-linked-summary hidden">
+                <label>Patient</label>
+                <div class="so-linked-field-row">
+                  <input type="text" id="clPatientDisplay" class="uppercase" readonly>
+                  <button type="button" class="so-linked-edit-btn" onclick="soChangeLinkedPatient('cl')" title="Change Patient"><i class="fa-solid fa-pen-to-square"></i></button>
+                </div>
+                <div id="clRxSummaryRow" class="hidden">
+                  <label>Prescription ID</label>
+                  <div class="so-linked-field-row">
+                    <input type="text" id="clRxDisplay" readonly>
+                    <button type="button" class="so-linked-edit-btn" onclick="soChangeLinkedRx('cl')" title="Change Prescription"><i class="fa-solid fa-pen-to-square"></i></button>
+                  </div>
+                </div>
               </div>
-              <label>Notes</label>
-              <textarea id="clNotes" placeholder="Additional notes..."></textarea>
+
+              <div id="clGatePatient" class="so-modal-gate">
+                <h4 class="so-modal-gate-title">Select Patient</h4>
+                <p class="so-modal-gate-subtitle">Select a patient for the contact lens order</p>
+                <button type="button" class="so-modal-gate-btn" onclick="soOpenPatientLinkModal('cl')">Select Patient</button>
+              </div>
+
+              <!-- CL allows either a prescription on file OR manual entry — unlike Lens,
+                   which is Rx-locked only. -->
+              <div id="clGateRx" class="so-modal-gate hidden">
+                <h4 class="so-modal-gate-title">Select Prescription</h4>
+                <p class="so-modal-gate-subtitle">Select a prescription on file, or enter the grade manually</p>
+                <button type="button" class="so-modal-gate-btn" onclick="soOpenRxSelectModal('cl')">Select Prescription</button>
+                <button type="button" class="so-modal-gate-btn-secondary" onclick="soEnterRxManually('cl')">Enter Manually</button>
+              </div>
+
+              <div id="clFormFields" class="so-item-modal-subform hidden">
+                <label class="so-final-rx-label">Contact Lens Grade</label>
+                <div id="clGradeGrid" class="so-rx-grid" style="grid-template-columns: 36px repeat(3, 1fr);">
+                  <div></div>
+                  <div class="so-rx-header">SPH</div>
+                  <div class="so-rx-header cl-cyl-axis">CYL</div>
+                  <div class="so-rx-header cl-cyl-axis">AXIS</div>
+                  <div class="so-rx-header cl-add-field hidden">ADD</div>
+                  <div class="so-rx-eye" id="clGradeOdEye">OD</div>
+                  <input type="text" id="clOdSph"  placeholder="SPH">
+                  <input type="text" id="clOdCyl"  placeholder="CYL" class="cl-cyl-axis">
+                  <input type="text" id="clOdAxis" placeholder="AXIS" class="cl-cyl-axis">
+                  <input type="text" id="clOdAdd"  placeholder="ADD" class="cl-add-field hidden">
+                  <div class="so-rx-eye" id="clGradeOsEye">OS</div>
+                  <input type="text" id="clOsSph"  placeholder="SPH">
+                  <input type="text" id="clOsCyl"  placeholder="CYL" class="cl-cyl-axis">
+                  <input type="text" id="clOsAxis" placeholder="AXIS" class="cl-cyl-axis">
+                  <input type="text" id="clOsAdd"  placeholder="ADD" class="cl-add-field hidden">
+                </div>
+                <div id="clParamsBlock" class="so-item-modal-subform">
+                  <label class="so-final-rx-label">Parameters</label>
+                  <div id="clParamsGrid" class="so-rx-grid" style="grid-template-columns: 36px repeat(2, 1fr);">
+                    <div></div>
+                    <div class="so-rx-header" id="clBcHeader">BC</div>
+                    <div class="so-rx-header" id="clDiaHeader">DIA</div>
+                    <div class="so-rx-eye" id="clParamsOdEye">OD</div>
+                    <input type="text" id="clOdBc"  placeholder="BC">
+                    <input type="text" id="clOdDia" placeholder="DIA">
+                    <div class="so-rx-eye" id="clParamsOsEye">OS</div>
+                    <input type="text" id="clOsBc"  placeholder="BC">
+                    <input type="text" id="clOsDia" placeholder="DIA">
+                  </div>
+                </div>
+                <label>Brand</label>
+                <select id="clBrand" onchange="soOnClBrandChange(this)">
+                  <option value="">-- Select --</option>
+                  <option value="Homebrand">Homebrand</option>
+                  <option value="__custom__">Custom...</option>
+                </select>
+                <input type="text" id="clBrandCustom" class="hidden" maxlength="60" placeholder="Enter Brand name...">
+                <label>Material</label>
+                <select id="clMaterial" onchange="soOnClMaterialChange(this)">
+                  <option value="">-- Select --</option>
+                  <option value="Soft">Soft</option>
+                  <option value="RGP">RGP</option>
+                  <option value="__other__">Others</option>
+                </select>
+                <input type="text" id="clMaterialOther" class="hidden" maxlength="60" placeholder="Specify material...">
+                <label>Optical Design</label>
+                <select id="clDesign" onchange="soOnClDesignChange(this)">
+                  <option value="">-- Select --</option>
+                  <option value="Spherical">Spherical</option>
+                  <option value="Toric">Toric</option>
+                  <option value="Multifocal">Multifocal</option>
+                  <option value="__other__">Others</option>
+                </select>
+                <input type="text" id="clDesignOther" class="hidden" maxlength="60" placeholder="Specify optical design...">
+                <label>Modality</label>
+                <input type="text" id="clModality" maxlength="40" placeholder="e.g. Daily, Monthly, Yearly...">
+                <label>Price</label>
+                <input type="number" id="clPrice" min="0" max="999999.99" step="0.01" placeholder="0.00">
+                <label>Notes</label>
+                <textarea id="clNotes" maxlength="1000" placeholder="Additional notes..."></textarea>
+              </div>
+
             </div>
             <div class="so-item-modal-actions">
               <button class="so-modal-cancel-btn" onclick="cancelModal('modalCL')">Cancel</button>
-              <button class="so-modal-ok-btn"     onclick="confirmModal('modalCL', 'cl')">Confirm</button>
+              <button class="so-modal-ok-btn hidden" onclick="confirmModal('modalCL', 'cl')">Confirm</button>
             </div>
           </div>
         </div>
@@ -897,16 +1033,19 @@
             <div class="so-item-modal-header">Service Details</div>
             <div class="so-item-modal-body">
               <label>Service Type</label>
-              <select id="serviceType">
+              <select id="serviceType" onchange="soOnServiceTypeChange(this)">
                 <option value="">-- Select --</option>
                 <option>Eye Checkup</option>
                 <option>Lens Transfer</option>
                 <option>Frame Repair</option>
-                <option>Lens Replacement</option>
                 <option>Others</option>
               </select>
+              <label id="serviceFrameDescriptionLabel" class="hidden">Frame Description</label>
+              <input type="text" id="serviceFrameDescription" class="hidden" maxlength="80" placeholder="Brand, Type, Shape, Color, Etc.">
+              <label>Price</label>
+              <input type="number" id="servicePrice" min="0" max="999999.99" step="0.01" placeholder="0.00">
               <label>Notes</label>
-              <textarea id="serviceNotes" placeholder="Details about the service..."></textarea>
+              <textarea id="serviceNotes" maxlength="1000" placeholder="Details about the service..."></textarea>
             </div>
             <div class="so-item-modal-actions">
               <button class="so-modal-cancel-btn" onclick="cancelModal('modalService')">Cancel</button>
@@ -915,27 +1054,128 @@
           </div>
         </div>
 
+        <!-- Patient Link Modal — links a patient record to a Lens/CL row for future Rx
+             reference. Opens on top of (and returns to) whichever of modalLens/modalCL
+             called it, tracked via _soPatientLinkForType. ── -->
+        <div class="so-item-modal-overlay" id="patientLinkModal">
+          <div class="so-item-modal so-patient-link-modal">
+            <div class="so-item-modal-header">Link Patient Record</div>
+            <div class="so-item-modal-body">
+              <div class="so-patient-search-prompt">
+                <h4>Select Patient</h4>
+                <p>Select a patient below</p>
+              </div>
+
+              <div id="patientLinkSuggestions" class="so-patient-suggestions hidden">
+                <label>Possible Match Record</label>
+                <div id="patientLinkSuggestionCards" class="so-patient-suggestion-cards"></div>
+              </div>
+
+              <div class="select-patient-search-area flex-column">
+                <label>Search : </label>
+                <input id="patientLinkSearchInput" placeholder="Search ID, Name, Number...">
+              </div>
+              <div class="select-patient-main-table-new-rx">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Patient ID</th>
+                      <th>Name</th>
+                      <th>Number</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="patientLinkTableBody">
+                    <tr><td colspan="4">Empty</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div id="patientLinkPagination" class="pagination-controls new-rx-pagination-controls"></div>
+            </div>
+            <div class="so-item-modal-actions">
+              <button class="so-modal-cancel-btn" onclick="soCancelPatientLinkModal()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rx Picker Modal — shown only when the linked patient has more than one
+             qualifying prescription on file (exactly one auto-selects with no picker,
+             zero shows an alert instead of opening this). ── -->
+        <div class="so-item-modal-overlay" id="rxPickerModal">
+          <div class="so-item-modal so-patient-link-modal">
+            <div class="so-item-modal-header">Select Prescription</div>
+            <div class="so-item-modal-body">
+              <div id="rxPickerCards" class="so-patient-suggestion-cards"></div>
+            </div>
+            <div class="so-item-modal-actions">
+              <button type="button" class="so-modal-actions-manual-btn hidden" id="rxPickerManualBtn" onclick="soEnterRxManuallyFromPicker()">Enter Manually</button>
+              <button class="so-modal-cancel-btn" onclick="soCancelRxPickerModal()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Frame Pair Modal -->
+        <div class="so-item-modal-overlay" id="framePairModal">
+          <div class="so-item-modal so-patient-link-modal">
+            <div class="so-item-modal-header">Select Frame</div>
+            <div class="so-item-modal-body">
+              <div id="framePairCards" class="so-patient-suggestion-cards"></div>
+            </div>
+            <div class="so-item-modal-actions">
+              <button class="so-modal-cancel-btn" onclick="soCancelFramePairModal()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Item Modal -->
         <div class="so-item-modal-overlay" id="modalItem">
           <div class="so-item-modal">
-            <div class="so-item-modal-header">Item Details</div>
+            <div class="so-item-modal-header">Product Details</div>
             <div class="so-item-modal-body">
-              <label>Category</label>
-              <select id="itemCategory">
+              <label>Type</label>
+              <select id="itemCategory" onchange="soOnItemCategoryChange(this)">
                 <option value="">-- Select --</option>
-                <option>Readymade Glasses</option>
+                <option>Specialized Eyewear</option>
                 <option>Contact Lens Solution</option>
+                <option>Eye Drops</option>
                 <option>Accessories</option>
                 <option>Others</option>
               </select>
-              <label>Brand / Name</label>
-              <input type="text" id="itemName" placeholder="Product name or brand...">
+              <label>Description</label>
+              <input type="text" id="itemName" maxlength="80" placeholder="Product description...">
+              <label>Price</label>
+              <input type="number" id="itemPrice" min="0" max="999999.99" step="0.01" placeholder="0.00">
               <label>Notes</label>
-              <textarea id="itemNotes" placeholder="Additional notes..."></textarea>
+              <textarea id="itemNotes" maxlength="1000" placeholder="Additional notes..."></textarea>
             </div>
             <div class="so-item-modal-actions">
               <button class="so-modal-cancel-btn" onclick="cancelModal('modalItem')">Cancel</button>
               <button class="so-modal-ok-btn"     onclick="confirmModal('modalItem', 'item')">Confirm</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Modal -->
+        <div class="so-item-modal-overlay" id="paymentModal">
+          <div class="so-item-modal">
+            <div class="so-item-modal-header" id="paymentModalHeader">Add Payment</div>
+            <div class="so-item-modal-body">
+              <label>Method</label>
+              <select id="paymentModalMethod" onchange="soOnPaymentMethodChange()">
+                <option value="">-- Select --</option>
+                <option value="cash">Cash</option>
+                <option value="ewallet">E-Wallet</option>
+                <option value="bank">Bank Transfer</option>
+                <option value="card">Card</option>
+              </select>
+              <label class="hidden" id="paymentModalProviderLabel">Provider Name</label>
+              <input type="text" id="paymentModalProvider" class="hidden" maxlength="60" placeholder="">
+              <label>Amount</label>
+              <input type="number" id="paymentModalAmount" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="so-item-modal-actions">
+              <button class="so-modal-cancel-btn" onclick="soCancelPaymentModal()">Cancel</button>
+              <button class="so-modal-ok-btn"     onclick="soConfirmPaymentModal()">Save</button>
             </div>
           </div>
         </div>
@@ -953,7 +1193,32 @@
       </section>
 
       <section class="page-content" id="salesSalesHistory" data-parent="#salesPage">
+        <h2><i class="fa-solid fa-clock-rotate-left"></i> Sales History</h2>
 
+        <div class="select-customer-search-area flex-column">
+          <label for="salesHistorySearchBarInput">Search : </label>
+          <input id="salesHistorySearchBarInput" placeholder="Search Order ID, Job ID, Customer...">
+        </div>
+
+        <div class="select-customer-main-table-new-order">
+          <table id="salesHistoryTable" class="so-history-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Job Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="salesHistoryPagination" class="pagination-controls"></div>
+
+        <a href="#salesPage" class="back-btn-link new-order-back-btn-link">Back</a>
       </section>
 
       <!-------- Settings Page ---------->
@@ -1065,12 +1330,14 @@
 </body>
 
 <!-- scripts -->
-<script src="scripts/lock.js"></script>
+<!-- <script src="scripts/lock.js"></script> -->
 <script src="scripts/storage.js"></script>
 <script src="scripts/forms.js"></script>
 <script src="scripts/form-logic.js"></script>
 <script src="scripts/sales-form-logic.js"></script>
 <script src="scripts/order-form-logic.js"></script>
+<script src="scripts/order-payment-logic.js"></script>
+<script src="scripts/order-patient-rx-logic.js"></script>
 <script src="scripts/validation.js"></script>
 <script src="scripts/prescription-logic.js"></script>
 <script src="scripts/ui-and-navigation.js"></script>

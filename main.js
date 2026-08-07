@@ -118,6 +118,7 @@ initStorage().then(() => {
     if (typeof initSalesFormLogic      === 'function') initSalesFormLogic();
     if (typeof initOrderFormLogic      === 'function') initOrderFormLogic();
     if (typeof initViewRecordsNav      === 'function') initViewRecordsNav();
+    if (typeof initSalesHistoryNav     === 'function') initSalesHistoryNav();
     if (typeof initEditPatientProfile  === 'function') initEditPatientProfile();
     if (typeof generateID              === 'function') { generateID('patient'); generateID('customer'); }
     if (typeof setDateCreated          === 'function') { setDateCreated('patient'); setDateCreated('customer'); }
