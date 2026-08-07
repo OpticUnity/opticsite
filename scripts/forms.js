@@ -122,7 +122,7 @@ function buildHrxBlock() {
         </div>
         <div class="prescription-format-notes">
             <label for="hrxNotes" class="prescription-format-notes-label">Notes : </label>
-            <textarea id="hrxNotes"></textarea>
+            <textarea id="hrxNotes" maxlength="1000"></textarea>
         </div>`;
     return wrapper;
 }
@@ -139,7 +139,7 @@ function buildVt7Block() {
         </div>
         <div class="prescription-format-notes">
             <label for="vt7Notes" class="prescription-format-notes-label">Notes : </label>
-            <textarea id="vt7Notes"></textarea>
+            <textarea id="vt7Notes" maxlength="1000"></textarea>
         </div>`;
     return wrapper;
 }
@@ -160,7 +160,7 @@ function buildFrxForm() {
             </div>
             <div class="prescription-format-notes flex-column">
                 <label for="frxNotes" class="prescription-format-notes-label">Notes :</label>
-                <textarea id="frxNotes"></textarea>
+                <textarea id="frxNotes" maxlength="1000"></textarea>
             </div>
         </div>
 
@@ -191,7 +191,7 @@ function buildFrxForm() {
             <p>(Above are converted contact lens power from the final prescription)</p>
             <div class="prescription-format-notes flex-column">
                 <label for="frxClNotes" class="prescription-format-notes-label">Notes :</label>
-                <textarea id="frxClNotes"></textarea>
+                <textarea id="frxClNotes" maxlength="1000"></textarea>
             </div>
         </div>`;
 
@@ -212,7 +212,7 @@ function buildCopyRxSpecsForm() {
         </div>
         <div class="prescription-format-notes">
             <label for="copyRxNotes" class="prescription-format-notes-label">Notes : </label>
-            <textarea id="copyRxNotes"></textarea>
+            <textarea id="copyRxNotes" maxlength="1000"></textarea>
         </div>`;
 
     return form;
@@ -240,7 +240,7 @@ function buildCopyRxClForm() {
         </div>
         <div class="prescription-format-notes copy-rx-cl-notes-container flex-column">
             <label for="copyRxClNotes" class="prescription-format-notes-label">Notes :</label>
-            <textarea id="copyRxClNotes"></textarea>
+            <textarea id="copyRxClNotes" maxlength="1000"></textarea>
         </div>`;
 
     return form;
@@ -278,7 +278,7 @@ function buildArClpBlock() {
             </div>
             <div class="ar-form-notes">
                 <label for="arNotes">Notes : </label>
-                <textarea id="arNotes"></textarea>
+                <textarea id="arNotes" maxlength="1000"></textarea>
             </div>
         </div>
 
@@ -308,7 +308,7 @@ function buildArClpBlock() {
             </div>
             <div class="clp-form-notes">
                 <label for="clParametersNotes">Notes : </label>
-                <textarea id="clParametersNotes"></textarea>
+                <textarea id="clParametersNotes" maxlength="1000"></textarea>
             </div>
         </div>`;
 
@@ -324,7 +324,12 @@ function buildEditRxUI(rx) {
     const isCopyRx   = rx.rxMethod === 'copyPrescription';
     const isCopyRxCl = rx.rxMethod === 'copyPrescriptionCl';
 
-    function pf(val) { return val || ''; }
+    // Escaped here, not at each of this function's ~48 call sites — some are attribute
+    // values (grade fields, already-validated numeric strings, low risk on their own)
+    // but several are raw content between <textarea> tags (the Notes fields), where an
+    // unescaped saved value containing "</textarea>" could break out of the field
+    // entirely. One fix here covers both contexts and every call site at once.
+    function pf(val) { return escapeHtml(val || ''); }
 
     function prefilledSpecsEye(eyeLabel, prefix, data) {
         const d = data || {};
@@ -440,7 +445,7 @@ function buildEditRxUI(rx) {
                     </div>
                     <div class="prescription-format-notes">
                         <label class="prescription-format-notes-label">Notes : </label>
-                        <textarea id="erx_hrxNotes">${pf(hrx.notes)}</textarea>
+                        <textarea id="erx_hrxNotes" maxlength="1000">${pf(hrx.notes)}</textarea>
                     </div>
                 </div>
             </div>
@@ -474,7 +479,7 @@ function buildEditRxUI(rx) {
                         </div>
                         <div class="ar-form-notes">
                             <label>Notes : </label>
-                            <textarea id="erx_arNotes">${pf(ar.notes)}</textarea>
+                            <textarea id="erx_arNotes" maxlength="1000">${pf(ar.notes)}</textarea>
                         </div>
                     </div>
                     <div class="v-line-ar-clp"></div>
@@ -499,7 +504,7 @@ function buildEditRxUI(rx) {
                         </div>
                         <div class="clp-form-notes">
                             <label>Notes : </label>
-                            <textarea id="erx_clParametersNotes">${pf(rx.clParameters?.notes)}</textarea>
+                            <textarea id="erx_clParametersNotes" maxlength="1000">${pf(rx.clParameters?.notes)}</textarea>
                         </div>
                     </div>
                 </div>
@@ -514,7 +519,7 @@ function buildEditRxUI(rx) {
                 </div>
                 <div class="prescription-format-notes">
                     <label class="prescription-format-notes-label">Notes : </label>
-                    <textarea id="erx_vt7Notes">${pf(vt7.notes)}</textarea>
+                    <textarea id="erx_vt7Notes" maxlength="1000">${pf(vt7.notes)}</textarea>
                 </div>
             </div>
 
@@ -528,7 +533,7 @@ function buildEditRxUI(rx) {
                 </div>
                 <div class="prescription-format-notes flex-column">
                     <label class="prescription-format-notes-label">Notes :</label>
-                    <textarea id="erx_frxNotes">${pf(frx.notes)}</textarea>
+                    <textarea id="erx_frxNotes" maxlength="1000">${pf(frx.notes)}</textarea>
                 </div>
             </div>
 
@@ -556,7 +561,7 @@ function buildEditRxUI(rx) {
                 </div>
                 <div class="prescription-format-notes flex-column">
                     <label class="prescription-format-notes-label">Notes :</label>
-                    <textarea id="erx_frxClNotes">${pf(cl?.notes)}</textarea>
+                    <textarea id="erx_frxClNotes" maxlength="1000">${pf(cl?.notes)}</textarea>
                 </div>
             </div>`;
     }
@@ -571,7 +576,7 @@ function buildEditRxUI(rx) {
             </div>
             <div class="prescription-format-notes">
                 <label class="prescription-format-notes-label">Notes : </label>
-                <textarea id="erx_copyRxNotes">${pf(frx.notes)}</textarea>
+                <textarea id="erx_copyRxNotes" maxlength="1000">${pf(frx.notes)}</textarea>
             </div>`;
     }
 
@@ -589,7 +594,7 @@ function buildEditRxUI(rx) {
             </div>
             <div class="prescription-format-notes copy-rx-cl-notes-container flex-column">
                 <label class="prescription-format-notes-label">Notes :</label>
-                <textarea id="erx_copyRxClNotes">${pf(cl.notes)}</textarea>
+                <textarea id="erx_copyRxClNotes" maxlength="1000">${pf(cl.notes)}</textarea>
             </div>`;
     }
 

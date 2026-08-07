@@ -14,7 +14,9 @@ const defaultLightModeColors = [
   "#fff",       // --ui-bg
   "#F3F4F6",    // --object-bg
   "#555",       // --border-color
-  "#ddd"        // --cancel-hover-bg
+  "#ddd",       // --cancel-hover-bg
+  "#000",       // --so-group-border
+  "#e0e0e0"     // --so-row-divider
 ];
 
 // Function to apply theme colors
@@ -27,6 +29,8 @@ function applyThemeColors(colors) {
   root.style.setProperty("--object-bg", colors[5]);
   root.style.setProperty("--border-color", colors[6]);
   root.style.setProperty("--cancel-hover-bg", colors[7]);
+  root.style.setProperty("--so-group-border", colors[8]);
+  root.style.setProperty("--so-row-divider", colors[9]);
 }
 
 // Function to toggle dark mode classes

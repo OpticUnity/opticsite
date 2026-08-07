@@ -57,7 +57,9 @@ function openModal(options = {}) {
     confirmBtn.textContent = confirmText;
     cancelBtn.textContent  = cancelText;
 
-    // Build body — support \n as line breaks, render as <p> tags
+    // Build body — support \n as line breaks, render as <p> tags. NOT escaped here —
+    // some callers (e.g. printRx's output-type picker) deliberately embed real HTML
+    // (a <select>) in body. Free-text values get escaped at their own call sites instead.
     bodyEl.innerHTML = body
         .split('\n')
         .filter(line => line.trim() !== '')

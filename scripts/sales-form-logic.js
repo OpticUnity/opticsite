@@ -54,9 +54,9 @@ function renderSelectCustomerTable(filter = "", page = 1) {
         const row = document.createElement("tr");
         if (isDeleted) row.classList.add('record-deleted');
         row.innerHTML = `
-            <td>${customer.id}</td>
-            <td class="uppercase">${isDeleted ? '[DELETED]' : customer.name}</td>
-            <td>${isDeleted ? '—' : customer.number}</td>
+            <td>${escapeHtml(customer.id)}</td>
+            <td class="uppercase">${isDeleted ? '[DELETED]' : escapeHtml(customer.name)}</td>
+            <td>${isDeleted ? '—' : escapeHtml(customer.number)}</td>
             <td>${isDeleted
                 ? '<span class="deleted-label">Deleted</span>'
                 : '<button class="select-patient-button">Select</button>'

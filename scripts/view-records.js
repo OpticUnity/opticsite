@@ -16,6 +16,175 @@ function initViewRecordsNav() {
     });
 }
 
+// ================================================================
+//  Sales History — pure archive/reprint list of every saved order,
+//  regardless of payment/job status (Marc's call: nothing gets
+//  hidden here, a status badge just flags what's still open —
+//  see /areas/opticsite.md for the reasoning). Mirrors
+//  renderSelectCustomerTable's search/pagination shape and the Rx
+//  toggle-row/inner-table expand pattern above for the detail view.
+// ================================================================
+
+function initSalesHistoryNav() {
+    document.getElementById('salesHistoryNavLink')?.addEventListener('click', () => {
+        renderSalesHistoryTable();
+    });
+
+    document.getElementById('salesHistorySearchBarInput')?.addEventListener('input', (e) => {
+        renderSalesHistoryTable(e.target.value);
+    });
+}
+
+// ── Job status rollup for the list row — full per-job breakdown lives in the
+// expanded detail row, this is just an at-a-glance summary. ──
+function _soOrderJobStatusSummary(order) {
+    const jobs = (order.items || []).filter(i => i.jobId);
+    if (jobs.length === 0) return { label: '—', cls: 'none' };
+    if (jobs.some(j => j.jobStatus === 'pending')) return { label: 'Pending', cls: 'pending' };
+    if (jobs.some(j => j.jobStatus === 'ready'))   return { label: 'Ready for Pickup', cls: 'ready' };
+    return { label: 'Claimed', cls: 'claimed' };
+}
+
+const SO_PAYMENT_STATUS_LABELS = { unpaid: 'Unpaid', partial: 'Partial', paid: 'Paid' };
+const SO_JOB_STATUS_LABELS     = { pending: 'Pending', ready: 'Ready for Pickup', claimed: 'Claimed' };
+
+function renderSalesHistoryTable(filter = "", page = 1) {
+    const tableBody = document.querySelector('#salesHistoryTable tbody');
+    if (!tableBody) return;
+
+    const rowsPerPage = 10;
+    const orders    = JSON.parse(Storage.getItem('salesOrders') || '[]');
+    const customers = JSON.parse(Storage.getItem('customers')   || '[]');
+
+    if (orders.length === 0) {
+        tableBody.innerHTML = `
+            <tr><td colspan="7" style="color:gray;font-style:italic;padding:20px;text-align:center;">
+                No orders yet
+            </td></tr>`;
+        document.getElementById('salesHistoryPagination').innerHTML = '';
+        return;
+    }
+
+    const search = filter.toLowerCase();
+    const filtered = orders
+        .filter(o => {
+            const customer     = customers.find(c => c.id === o.customerId);
+            const customerName = o.isWalkIn ? 'walk-in' : (customer?.name || '').toLowerCase();
+            const jobIds        = (o.items || []).map(i => (i.jobId || '').toLowerCase());
+            return o.id.toLowerCase().includes(search)
+                || customerName.includes(search)
+                || jobIds.some(j => j.includes(search));
+        })
+        .reverse();
+
+    tableBody.innerHTML = '';
+
+    if (filtered.length === 0) {
+        tableBody.innerHTML = `
+            <tr><td colspan="7" style="color:gray;font-style:italic;padding:20px;text-align:center;">
+                No Match Found
+            </td></tr>`;
+        document.getElementById('salesHistoryPagination').innerHTML = '';
+        return;
+    }
+
+    const start     = (page - 1) * rowsPerPage;
+    const pageItems = filtered.slice(start, start + rowsPerPage);
+
+    pageItems.forEach(order => {
+        tableBody.appendChild(createOrderRow(order, customers));
+    });
+
+    createPagination(
+        'salesHistoryPagination',
+        filtered,
+        page,
+        rowsPerPage,
+        (newPage) => renderSalesHistoryTable(filter, newPage)
+    );
+}
+
+function createOrderRow(order, customers) {
+    const row = document.createElement('tr');
+
+    const customer     = customers.find(c => c.id === order.customerId);
+    const customerName = order.isWalkIn ? 'Walk-in' : (customer?.name || '—');
+    const payStatus     = SO_PAYMENT_STATUS_LABELS[order.paymentStatus] || order.paymentStatus;
+    const jobSummary     = _soOrderJobStatusSummary(order);
+
+    row.innerHTML = `
+        <td>${escapeHtml(order.id)}</td>
+        <td>${escapeHtml(order.dateCreated)}</td>
+        <td class="uppercase">${escapeHtml(customerName)}</td>
+        <td>${_soMoney(order.total)}</td>
+        <td><span class="so-status-badge so-status-${order.paymentStatus}">${escapeHtml(payStatus)}</span></td>
+        <td><span class="so-status-badge so-status-${jobSummary.cls}">${escapeHtml(jobSummary.label)}</span></td>
+        <td>
+            <button class="toggle-btn" title="View">▼</button>
+            <button class="toggle-btn print-order-btn" title="Print"><i class="fa-solid fa-print"></i></button>
+        </td>
+    `;
+
+    row.querySelector('.print-order-btn').addEventListener('click', () => {
+        _soShowPrintPromptModal(order, {
+            title:   'Reprint',
+            message: `Print documents for order ${order.id}.`,
+            onDone:  () => {}
+        });
+    });
+
+    row.querySelector('.toggle-btn:not(.print-order-btn)').addEventListener('click', (e) => {
+        const next = row.nextElementSibling;
+        if (next && next.classList.contains('details-row')) {
+            next.remove();
+            e.target.textContent = '▼';
+            return;
+        }
+        row.after(createOrderDetailRow(order));
+        e.target.textContent = '▲';
+    });
+
+    return row;
+}
+
+function createOrderDetailRow(order) {
+    const detailRow = document.createElement('tr');
+    detailRow.classList.add('details-row');
+
+    const itemRows = (order.items || []).map(item => `
+        <tr>
+            <td style="text-align:left;">${escapeHtml(item.description || item.type)}</td>
+            <td>${item.qty}</td>
+            <td>${_soMoney(item.price)}</td>
+            <td>${item.discVal > 0 ? '-' + _soMoney(item.discVal) : '—'}</td>
+            <td>${_soMoney(item.total)}</td>
+            <td>${escapeHtml(item.jobId || '—')}</td>
+            <td>${item.jobStatus ? escapeHtml(SO_JOB_STATUS_LABELS[item.jobStatus] || item.jobStatus) : '—'}</td>
+        </tr>`).join('');
+
+    const paymentRows = (order.payments || []).map(p => `
+        <tr><td colspan="4" style="text-align:left;">${escapeHtml(soFormatPaymentLabel(p))}</td><td colspan="3">${_soMoney(p.amount)}</td></tr>`
+    ).join('');
+
+    detailRow.innerHTML = `
+        <td colspan="7">
+            <table class="inner-table">
+                <thead>
+                    <tr>
+                        <th>Item</th><th>Qty</th><th>Price</th><th>Disc.</th><th>Total</th><th>Job ID</th><th>Job Status</th>
+                    </tr>
+                </thead>
+                <tbody>${itemRows}</tbody>
+            </table>
+            <table class="inner-table">
+                <thead><tr><th colspan="4">Payments</th><th colspan="3">Amount</th></tr></thead>
+                <tbody>${paymentRows || '<tr><td colspan="7" style="color:gray;font-style:italic;">No payments recorded</td></tr>'}</tbody>
+            </table>
+        </td>`;
+
+    return detailRow;
+}
+
 // ---- Render Patient Select Table ----
 function renderViewPatientTable(filter = "", page = 1) {
     const tableBody = document.querySelector('#viewPatientTable tbody');
@@ -63,9 +232,9 @@ function renderViewPatientTable(filter = "", page = 1) {
         const row = document.createElement('tr');
         if (isDeleted) row.classList.add('record-deleted');
         row.innerHTML = `
-            <td>${patient.id}</td>
-            <td class="uppercase">${isDeleted ? '[DELETED]' : patient.name}</td>
-            <td>${isDeleted ? '—' : patient.number}</td>
+            <td>${escapeHtml(patient.id)}</td>
+            <td class="uppercase">${isDeleted ? '[DELETED]' : escapeHtml(patient.name)}</td>
+            <td>${isDeleted ? '—' : escapeHtml(patient.number)}</td>
             <td>${isDeleted
                 ? '<span class="deleted-label">Deleted</span>'
                 : '<button class="select-patient-button view-select-btn">Select</button>'
@@ -152,8 +321,8 @@ function createRxMainRow(rx) {
     if (isDeleted) {
         row.classList.add('record-deleted');
         row.innerHTML = `
-            <td>${rx.id}</td>
-            <td>${rx.dateCreated}</td>
+            <td>${escapeHtml(rx.id)}</td>
+            <td>${escapeHtml(rx.dateCreated)}</td>
             <td><span class="deleted-label">[DELETED]</span></td>
             <td>—</td>
         `;
@@ -169,9 +338,9 @@ function createRxMainRow(rx) {
     const methodText = methodLabels[rx.rxMethod] || rx.rxMethod;
 
     row.innerHTML = `
-        <td>${rx.id}</td>
-        <td>${rx.dateCreated}</td>
-        <td>${methodText}</td>
+        <td>${escapeHtml(rx.id)}</td>
+        <td>${escapeHtml(rx.dateCreated)}</td>
+        <td>${escapeHtml(methodText)}</td>
         <td>
             <button class="toggle-btn" title="Quick View">▼</button>
             ${rx.rxMethod === 'eyeExam' ? `<button class="toggle-btn print-rx-btn" title="Generate Medical Certificate"><i class="fa-solid fa-file-medical"></i></button>` : ''}
@@ -276,7 +445,7 @@ function createRxDetailRow(rx) {
                     <tr>
                         <td><strong>Notes</strong></td>
                         <td colspan="6" style="text-align:left;">
-                            ${frx.notes || '-'}
+                            ${escapeHtml(frx.notes) || '-'}
                         </td>
                         <td>${cl ? `<button class="toggle-btn cl-toggle-btn">CL ▼</button>` : '-'}</td>
                     </tr>
@@ -337,7 +506,7 @@ function createRxDetailRow(rx) {
                                 <tr>
                                     <td><strong>Notes</strong></td>
                                     <td colspan="6" style="text-align:left;">
-                                        ${cl.notes || '-'}
+                                        ${escapeHtml(cl.notes) || '-'}
                                     </td>
                                 </tr>
                             </tbody>
@@ -394,7 +563,7 @@ function createRxDetailRow(rx) {
                     <tr>
                         <td><strong>Notes</strong></td>
                         <td colspan="7" style="text-align:left; max-width:300px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
-                            ${frx.notes || '-'}
+                            ${escapeHtml(frx.notes) || '-'}
                         </td>
                     </tr>
                 </tbody>
@@ -440,7 +609,7 @@ function createRxDetailRow(rx) {
                     <tr>
                         <td><strong>Notes</strong></td>
                         <td colspan="6" style="text-align:left; max-width:300px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
-                            ${cl.notes || '-'}
+                            ${escapeHtml(cl.notes) || '-'}
                         </td>
                     </tr>
                 </tbody>
@@ -561,6 +730,13 @@ function openEditRxUI(rx) {
     }
 
     ['erx_clpOdBc', 'erx_clpOdHvid', 'erx_clpOdDia', 'erx_clpOsBc', 'erx_clpOsHvid', 'erx_clpOsDia'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', liveFilterBc);
+    });
+
+    // KR — same loose, shape-only treatment as new-entry (digits + one dot, no range
+    // check); was missing here even though initEditRxValidation covers everything else.
+    ['erx_arOdKr', 'erx_arOsKr'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', liveFilterBc);
     });
@@ -1204,7 +1380,7 @@ function initEditPatientProfile() {
         const patientName = document.getElementById('viewPatientName').value.trim() || patientId;
         openModal({
             title: 'Delete Patient Record',
-            body: `You are about to delete ${patientName}.\nAll associated prescriptions will also be permanently wiped.\nType DELETE to confirm.`,
+            body: `You are about to delete ${escapeHtml(patientName)}.\nAll associated prescriptions will also be permanently wiped.\nType DELETE to confirm.`,
             confirmText: 'Delete',
             cancelText: 'Cancel',
             requireTyping: 'DELETE',

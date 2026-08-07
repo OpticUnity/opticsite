@@ -150,11 +150,11 @@ function _buildClTable(od, os) {
 function _buildPrintDocument(rx, patient, paperSize) {
     const settings = JSON.parse(Storage.getItem('clinicSettings') || '{}');
 
-    const clinicName    = settings.clinicName    || 'Optical Clinic';
-    const clinicAddress = settings.clinicAddress || '';
-    const clinicContact = settings.clinicContact || '';
-    const doctorName    = settings.doctorName    || '[Name]';
-    const prcNumber     = settings.prcNumber     || '___________________';
+    const clinicName    = escapeHtml(settings.clinicName)    || 'Optical Clinic';
+    const clinicAddress = escapeHtml(settings.clinicAddress) || '';
+    const clinicContact = escapeHtml(settings.clinicContact) || '';
+    const doctorName    = escapeHtml(settings.doctorName)    || '[Name]';
+    const prcNumber     = escapeHtml(settings.prcNumber)     || '___________________';
 
     const specs = rx.frxSpecs;
     const cl    = rx.frxCl;
@@ -226,7 +226,7 @@ function _buildPrintDocument(rx, patient, paperSize) {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Medical Certificate — ${patient.name || 'Patient'} — ${rx.dateCreated}</title>
+    <title>Medical Certificate — ${escapeHtml(patient.name) || 'Patient'} — ${rx.dateCreated}</title>
     <style>
         @page { size: ${paperSize}; margin: 20mm 20mm 15mm 20mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
@@ -265,9 +265,9 @@ function _buildPrintDocument(rx, patient, paperSize) {
     <div class="cert-body">
         <p>To Whom It May Concern:</p>
         <br>
-        <p>This is to certify that patient <strong>${patient.name || '—'}</strong>,
-        <strong>${patient.age || '—'}</strong> years old, residing at
-        <strong>${patient.address || '—'}</strong>, has undergone a comprehensive
+        <p>This is to certify that patient <strong>${escapeHtml(patient.name) || '—'}</strong>,
+        <strong>${escapeHtml(patient.age) || '—'}</strong> years old, residing at
+        <strong>${escapeHtml(patient.address) || '—'}</strong>, has undergone a comprehensive
         eye examination at our clinic today.</p>
         <br>
         <p>Clinical findings are as follows:</p>
@@ -490,4 +490,189 @@ function _triggerPrint(rx, patient, paperSize) {
         // in Safari's print preview on Mac — WebKit handles @media print slightly differently.
         iframe.contentWindow.print();
     };
+}
+
+// ================================================================
+//  Sales Order Printing — Claim Stub + Job Order Stub(s)
+//  Receipt-printer width (80mm), not A4/Letter — a deliberately
+//  different template from the Rx printer above, not a variant of
+//  it. Shares only the iframe + window.print() trigger mechanic.
+// ================================================================
+
+function _soMoney(n) {
+    return `₱${(n || 0).toFixed(2)}`;
+}
+
+// Saved order.items no longer live in soOrderRows once you've left the New Order page —
+// this is the print-time equivalent of soFindRowById(), operating on the persisted array.
+function _soFindItemByRowId(items, rowId) {
+    return items.find(i => i.rowId === rowId) || null;
+}
+
+// ── Shared 80mm receipt shell — every stub (Claim or Job Order) is wrapped in this.
+// Monospace + dashed dividers read cleanly at receipt width; a real spec/price table
+// (like the Rx printer's) won't fit 72mm cleanly, so this is a single-column stacked
+// layout throughout instead. ──
+function _buildReceiptShellHTML(title, bodyHTML) {
+    return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>${escapeHtml(title)}</title>
+<style>
+  @page { size: 80mm auto; margin: 4mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 72mm;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #000;
+  }
+  .stub { page-break-after: always; padding-bottom: 4mm; }
+  .stub:last-child { page-break-after: auto; }
+  .stub-center { text-align: center; }
+  .stub-clinic-name { font-size: 13px; font-weight: 700; }
+  .stub-clinic-sub { font-size: 10px; }
+  .stub-title { font-size: 12px; font-weight: 700; margin-top: 4px; }
+  .stub-divider { border: none; border-top: 1px dashed #000; margin: 5px 0; }
+  .stub-row { display: flex; justify-content: space-between; gap: 6px; }
+  .stub-row .label { font-weight: 700; white-space: nowrap; }
+  .stub-item { margin-bottom: 5px; }
+  .stub-item-desc { padding-left: 4px; }
+  .stub-total-row { font-weight: 700; font-size: 12px; }
+  .stub-footer { text-align: center; margin-top: 8px; font-size: 10px; }
+</style>
+</head>
+<body>${bodyHTML}</body>
+</html>`;
+}
+
+function _soTriggerReceiptPrint(html) {
+    let iframe = document.getElementById('soReceiptPrintFrame');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'soReceiptPrintFrame';
+        iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;';
+        document.body.appendChild(iframe);
+    }
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    iframe.onload = () => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+    };
+}
+
+// ── Claim Stub — one per order, customer-facing. Pricing + payments, no job/lab detail. ──
+function printClaimStub(order) {
+    const settings   = JSON.parse(Storage.getItem('clinicSettings') || '{}');
+    const clinicName = escapeHtml(settings.clinicName)    || 'Optical Clinic';
+    const clinicAddr = escapeHtml(settings.clinicAddress) || '';
+    const clinicTel  = escapeHtml(settings.clinicContact) || '';
+
+    let customerName = 'Walk-in';
+    if (!order.isWalkIn && order.customerId) {
+        const customers = JSON.parse(Storage.getItem('customers') || '[]');
+        const customer  = customers.find(c => c.id === order.customerId);
+        if (customer) customerName = customer.name;
+    }
+
+    const itemsHTML = (order.items || []).map(item => {
+        const discLine = item.discVal > 0
+            ? `<div class="stub-row"><span>${escapeHtml(item.discName ? `Promo: ${item.discName}` : 'Discount')}</span><span>-${_soMoney(item.discVal)}</span></div>`
+            : '';
+        return `
+            <div class="stub-item">
+                <div>${item.qty}x ${escapeHtml(item.description || item.type)}</div>
+                <div class="stub-row stub-item-desc"><span>@ ${_soMoney(item.price)}</span><span>${_soMoney(item.total)}</span></div>
+                ${discLine}
+            </div>`;
+    }).join('');
+
+    const paymentsHTML = (order.payments || []).map(p =>
+        `<div class="stub-row"><span>${escapeHtml(soFormatPaymentLabel(p))}</span><span>${_soMoney(p.amount)}</span></div>`
+    ).join('');
+
+    const body = `
+        <div class="stub">
+            <div class="stub-center">
+                <div class="stub-clinic-name">${clinicName}</div>
+                ${clinicAddr ? `<div class="stub-clinic-sub">${clinicAddr}</div>` : ''}
+                ${clinicTel  ? `<div class="stub-clinic-sub">${clinicTel}</div>`  : ''}
+                <div class="stub-title">CLAIM STUB</div>
+            </div>
+            <hr class="stub-divider">
+            <div class="stub-row"><span class="label">Order ID:</span><span>${escapeHtml(order.id)}</span></div>
+            <div class="stub-row"><span class="label">Date:</span><span>${escapeHtml(order.dateCreated)}</span></div>
+            <div class="stub-row"><span class="label">Customer:</span><span>${escapeHtml(customerName)}</span></div>
+            <hr class="stub-divider">
+            ${itemsHTML}
+            <hr class="stub-divider">
+            <div class="stub-row"><span>Gross Total</span><span>${_soMoney(order.grossTotal)}</span></div>
+            <div class="stub-row"><span>Discount</span><span>-${_soMoney(order.discount)}</span></div>
+            <div class="stub-row stub-total-row"><span>TOTAL</span><span>${_soMoney(order.total)}</span></div>
+            <hr class="stub-divider">
+            ${paymentsHTML}
+            <div class="stub-row"><span>Amount Paid</span><span>${_soMoney(order.amountPaid)}</span></div>
+            <div class="stub-row"><span>Balance</span><span>${_soMoney(order.balance)}</span></div>
+            ${order.changeDue > 0 ? `<div class="stub-row"><span>Change Due</span><span>${_soMoney(order.changeDue)}</span></div>` : ''}
+            <div class="stub-footer">Thank you!</div>
+        </div>`;
+
+    _soTriggerReceiptPrint(_buildReceiptShellHTML(`Claim Stub — ${order.id}`, body));
+}
+
+// ── Job Order Stub(s) — one stub per job (Lens+paired Frame / CL / Frame Repair), each
+// its own page via .stub's page-break-after so a multi-job order still prints as one
+// window.print() call (one dialog) instead of stacking several — see the reasoning in
+// _soShowPrintPromptModal. Reuses soRowGetsJobStub/soRowNeedsFramePairing/
+// soGetJobOrderHeaderAndBody from order-form-logic.js unchanged — same eligibility and
+// header/body logic as the on-screen Job Order Summary panel, just fed from the saved
+// items array via _soFindItemByRowId instead of soFindRowById/soOrderRows. ──
+function printJobOrderStubs(order) {
+    const items = order.items || [];
+    const stubRows = items.filter(soRowGetsJobStub);
+
+    if (stubRows.length === 0) return; // button is disabled in this case, but guard anyway
+
+    const settings   = JSON.parse(Storage.getItem('clinicSettings') || '{}');
+    const clinicName = escapeHtml(settings.clinicName) || 'Optical Clinic';
+
+    const stubsHTML = stubRows.map(row => {
+        const ownBlock = soRenderJobOrderBlock(row);
+        const frame = soRowNeedsFramePairing(row) && row.pairedWith
+            ? _soFindItemByRowId(items, row.pairedWith)
+            : null;
+        const frameBlock = frame ? `<hr class="stub-divider">${soRenderJobOrderBlock(frame)}` : '';
+
+        const patientLine = row.linkedPatient
+            ? `<div class="stub-row"><span class="label">Patient:</span><span>${escapeHtml(row.linkedPatient.name)}</span></div>`
+            : '';
+        const rxLine = row.linkedRx
+            ? `<div class="stub-row"><span class="label">Rx ID:</span><span>${escapeHtml(row.linkedRx.id)}</span></div>`
+            : '';
+
+        return `
+            <div class="stub">
+                <div class="stub-center">
+                    <div class="stub-clinic-name">${clinicName}</div>
+                    <div class="stub-title">JOB ORDER</div>
+                </div>
+                <hr class="stub-divider">
+                <div class="stub-row"><span class="label">Order ID:</span><span>${escapeHtml(order.id)}</span></div>
+                <div class="stub-row"><span class="label">Date:</span><span>${escapeHtml(order.dateCreated)}</span></div>
+                ${patientLine}
+                ${rxLine}
+                <hr class="stub-divider">
+                ${ownBlock}
+                ${frameBlock}
+            </div>`;
+    }).join('');
+
+    _soTriggerReceiptPrint(_buildReceiptShellHTML(`Job Order Stubs — ${order.id}`, stubsHTML));
 }

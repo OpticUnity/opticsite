@@ -67,6 +67,28 @@ function liveFilterDia(e) {
     input.value = val;
 }
 
+// Lens Index — digits and one dot, 2 decimal places (same shape as BC)
+function liveFilterIndex(e) {
+    const input = e.target;
+    let val = input.value.replace(/[^\d.]/g, '');
+    const parts = val.split('.');
+    if (parts.length > 2) val = parts[0] + '.' + parts[1];
+    if (parts[1] && parts[1].length > 2) val = parts[0] + '.' + parts[1].slice(0, 2);
+    input.value = val;
+}
+
+// PRICE — digits and one dot, 2 decimal places. Also strips '+' and scientific-notation
+// 'e', both of which native type="number" inputs otherwise accept as valid typed
+// characters (e.g. "1e6" parses to 1000000) — same class of gap that motivated this pass.
+function liveFilterPrice(e) {
+    const input = e.target;
+    let val = input.value.replace(/[^\d.]/g, '');
+    const parts = val.split('.');
+    if (parts.length > 2) val = parts[0] + '.' + parts[1];
+    if (parts[1] && parts[1].length > 2) val = parts[0] + '.' + parts[1].slice(0, 2);
+    input.value = val;
+}
+
 // VA / UVA / PH — auto uppercase
 function liveFilterUppercase(e) {
     const input = e.target;
@@ -168,6 +190,38 @@ function blurDia(e) {
     input.value = val.toFixed(1);
 }
 
+// Lens Index — 1.30 to 2.00. Out-of-range rejects to blank (like BC/DIA), not a soft
+// clamp like Price — an out-of-range index is more likely a genuine typo than a
+// fat-finger extra zero.
+function blurIndex(e) {
+    const input = e.target;
+    const val = parseFloat(input.value.trim());
+    if (isNaN(val) || val < 1.30 || val > 2.00) {
+        input.value = '';
+        return;
+    }
+    input.value = val.toFixed(2);
+}
+
+// PRICE — 0 up to 999,999.99. A fat-finger extra zero gets capped at the ceiling
+// rather than wiped — the cashier keeps their typed value, just trimmed to the max,
+// instead of having to retype from a blank field.
+function blurPrice(e) {
+    const input = e.target;
+    const val = input.value.trim();
+    if (val === '' || val === '.') {
+        input.value = '';
+        return;
+    }
+    let num = parseFloat(val);
+    if (isNaN(num) || num < 0) {
+        input.value = '';
+        return;
+    }
+    if (num > 999999.99) num = 999999.99;
+    input.value = num.toFixed(2);
+}
+
 // ---- Date Part Blur Validators ----
 // Clamp MM, DD, YYYY on blur. Zero-pads MM and DD.
 // Leaves empty fields alone — required check handles those at submit.
@@ -245,7 +299,7 @@ function checkAxisRequired(cylInputId, axisInputId) {
 
 // ---- Attach Validators to a Set of Fields ----
 // Pass an array of field config objects to wire up live + blur validation
-// fieldType: 'sph' | 'cyl' | 'add' | 'axis' | 'pd' | 'bc' | 'dia' | 'va'
+// fieldType: 'sph' | 'cyl' | 'add' | 'axis' | 'pd' | 'bc' | 'dia' | 'va' | 'price' | 'index'
 // pairedAxisId: only needed for cyl fields
 
 function attachValidator(inputId, fieldType, pairedAxisId = null) {
@@ -271,6 +325,12 @@ function attachValidator(inputId, fieldType, pairedAxisId = null) {
         case 'dia':
             input.addEventListener('input', liveFilterDia);
             break;
+        case 'index':
+            input.addEventListener('input', liveFilterIndex);
+            break;
+        case 'price':
+            input.addEventListener('input', liveFilterPrice);
+            break;
         case 'va':
             input.addEventListener('input', liveFilterUppercase);
             break;
@@ -288,6 +348,8 @@ function attachValidator(inputId, fieldType, pairedAxisId = null) {
         case 'pd': input.addEventListener('blur', blurPd); break;
         case 'bc': input.addEventListener('blur', blurBc); break;
         case 'dia': input.addEventListener('blur', blurDia); break;
+        case 'index': input.addEventListener('blur', blurIndex); break;
+        case 'price': input.addEventListener('blur', blurPrice); break;
         case 'va': break;
     }
 }
@@ -403,12 +465,6 @@ function initValidation() {
         if (el) el.addEventListener('input', liveFilterBc);
     });
 
-    // -- Edit Rx CL Parameters --
-    ['erx_clpOdBc', 'erx_clpOdHvid', 'erx_clpOdDia', 'erx_clpOsBc', 'erx_clpOsHvid', 'erx_clpOsDia'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', liveFilterBc);
-    });
-
     // -- Copy Rx OD --
     attachValidator('copyRxOdDistanceSph', 'sph');
     attachValidator('copyRxOdDistanceCyl', 'cyl', 'copyRxOdDistanceAxis');
@@ -471,6 +527,42 @@ function initValidation() {
     attachDatePartValidators('customer');
     attachDatePartValidators('patient');
     attachDatePartValidators('prescription');
+
+    // -- Sales Order Form — CL Grade (manual-entry scenario) --
+    // clOdSph/clOdBc/clOdDia etc. also serve the Rx-pulled path, but those stay
+    // readonly-locked (soFillAndLockRxFields) so live/blur listeners just sit inert
+    // there — this is what actually activates once "Enter Manually" unlocks them.
+    // CYL/AXIS intentionally NOT wired: manual CL entry is sphere-only by design,
+    // those fields are hidden and cleared in that mode (soSetClFieldMode).
+    attachValidator('clOdSph', 'sph');
+    attachValidator('clOdBc',  'bc');
+    attachValidator('clOdDia', 'dia');
+    attachValidator('clOsSph', 'sph');
+    attachValidator('clOsBc',  'bc');
+    attachValidator('clOsDia', 'dia');
+
+    // -- Sales Order Form — Price (all five item types) --
+    attachValidator('lensPrice',    'price');
+    attachValidator('framePrice',   'price');
+    attachValidator('clPrice',      'price');
+    attachValidator('servicePrice', 'price');
+    attachValidator('itemPrice',    'price');
+
+    // -- Sales Order Form — Lens Index --
+    attachValidator('lensIndex', 'index');
+
+    // -- Sales Order Form — CL Add (Multifocal/Others) — uses 'va', not 'add': some labs
+    // specify multifocal add power as LO/MED/HI rather than a numeric value, so it needs
+    // to accept letters (force-uppercased, no restriction), same as VA fields elsewhere.
+    // The Confirm-time "required for Multifocal" check (order-form-logic.js) just checks
+    // for non-blank, so it works the same regardless of whether the value is numeric or text.
+    attachValidator('clOdAdd', 'va');
+    attachValidator('clOsAdd', 'va');
+
+    // -- Sales Order Form — Payment Amount (reuses 'price': same peso-value shape and
+    // sanity ceiling as item Price; layers under the existing non-cash remaining-balance
+    // clamp in soConfirmPaymentModal, doesn't replace it) --
+    attachValidator('paymentModalAmount', 'price');
 }
 
 // initValidation is called from main.js after mountForms()
