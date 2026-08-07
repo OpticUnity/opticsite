@@ -513,7 +513,22 @@ function _soFindItemByRowId(items, rowId) {
 // Monospace + dashed dividers read cleanly at receipt width; a real spec/price table
 // (like the Rx printer's) won't fit 72mm cleanly, so this is a single-column stacked
 // layout throughout instead. ──
+// ── Sanitizes typographic characters (em/en dash, curly quotes) that thermal
+// printer fonts commonly lack a glyph for — they print as blank gaps instead of
+// erroring, which is exactly what happened to every "—" in the item descriptions
+// (built elsewhere, e.g. soBuildDescription's " — " joins) once they hit an actual
+// printer. Applied once here, not at every string-building call site, since it's
+// safe to run on the whole assembled body — nothing else in this template uses
+// these characters. ──
+function _soReceiptSafeText(html) {
+    return html
+        .replace(/[\u2014\u2013]/g, '-')  // em dash, en dash → plain hyphen
+        .replace(/[\u2018\u2019]/g, "'")  // curly single quotes → straight
+        .replace(/[\u201C\u201D]/g, '"'); // curly double quotes → straight
+}
+
 function _buildReceiptShellHTML(title, bodyHTML) {
+    bodyHTML = _soReceiptSafeText(bodyHTML);
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -525,8 +540,9 @@ function _buildReceiptShellHTML(title, bodyHTML) {
   body {
     width: 72mm;
     font-family: 'Courier New', Courier, monospace;
-    font-size: 11px;
-    line-height: 1.4;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.45;
     color: #000;
   }
   .stub { page-break-after: always; padding-bottom: 4mm; }
@@ -664,6 +680,7 @@ function printJobOrderStubs(order) {
                     <div class="stub-title">JOB ORDER</div>
                 </div>
                 <hr class="stub-divider">
+                <div class="stub-row"><span class="label">Job ID:</span><span>${escapeHtml(row.jobId || '—')}</span></div>
                 <div class="stub-row"><span class="label">Order ID:</span><span>${escapeHtml(order.id)}</span></div>
                 <div class="stub-row"><span class="label">Date:</span><span>${escapeHtml(order.dateCreated)}</span></div>
                 ${patientLine}
