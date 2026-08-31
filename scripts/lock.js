@@ -21,7 +21,7 @@
         <p>Room number of former clinicians' classroom, now a coffee shop</p>
         <p style="margin:0; opacity:0.6; font-size:0.9rem;">Enter access code to continue</p>
         <input id="lockInput" type="password" placeholder="example : CDL312"
-            style="padding:8px 12px; font-size:1rem; border:1px solid #ccc; border-radius:6px; width:220px; text-align:center; text-transform:uppercase;"" />
+            style="padding:8px 12px; font-size:1rem; border:1px solid #ccc; border-radius:6px; width:220px; text-align:center; text-transform:uppercase;" />
         <button id="lockSubmitBtn"
             style="padding:8px 24px; font-size:1rem; border-radius:6px; cursor:pointer;">Unlock</button>
         <p id="lockError" style="color:red; font-size:0.85rem; min-height:1em;"></p>
@@ -45,5 +45,3 @@
         if (e.key === "Enter") tryUnlock();
     });
 })();
-
-const _gateKey = atob("R0RMU0MxMDU=");
