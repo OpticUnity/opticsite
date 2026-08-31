@@ -113,13 +113,15 @@ initStorage().then(() => {
     if (typeof mountForms              === 'function') mountForms();
     if (typeof initValidation          === 'function') initValidation();
     if (typeof initNearAddSync         === 'function') initNearAddSync();
-    if (typeof initNearPdSync          === 'function') initNearPdSync();
     if (typeof initFormLogic           === 'function') initFormLogic();
     if (typeof initSalesFormLogic      === 'function') initSalesFormLogic();
     if (typeof initOrderFormLogic      === 'function') initOrderFormLogic();
     if (typeof initViewRecordsNav      === 'function') initViewRecordsNav();
     if (typeof initSalesHistoryNav     === 'function') initSalesHistoryNav();
+    if (typeof initJobOrdersNav        === 'function') initJobOrdersNav();
+    if (typeof initPendingOrdersNav    === 'function') initPendingOrdersNav();
     if (typeof initEditPatientProfile  === 'function') initEditPatientProfile();
+    if (typeof initEditCustomerProfile === 'function') initEditCustomerProfile();
     if (typeof generateID              === 'function') { generateID('patient'); generateID('customer'); }
     if (typeof setDateCreated          === 'function') { setDateCreated('patient'); setDateCreated('customer'); }
 

@@ -242,7 +242,7 @@
         <p>Export and Import of clinic saved data (cross-platform available)</p>
         <p class="paragraph-spacing"> </p>
         <h3>Features still on development:</h3>
-        <p>CRM Pending Order and Job Order Sections (UI and Logic)</p>
+        <p>A downloadable offline Windows Version</p>
         <p>Additional EMR features (Graph for AR and VT7, for progression reference; UI polishing)</p>
         <p class="paragraph-spacing"> </p>
         <h3>System Flow</h3>
@@ -255,20 +255,22 @@
         <p class="paragraph-spacing"> </p>
         <!-- FOR BROWSER BLOCK ONLY -->
         <div id="windowsDownloadSection" style="display: none; flex-direction: column; align-items: center;">
-            <h3>Windows Version:</h3>
+            <!-- <h3>Windows Version:</h3>
             <p>For a more reliable experience, download the Windows version.</p>
             <p>No internet connection required after installation.</p>
             <a href="https://github.com/OpticUnity/opticsite/releases/download/v0.2.1/OpticSite_0.2.1_x64-setup.exe" target="_blank" style="margin-bottom: 10px;">
                 Download <i class="fa-brands fa-windows"></i>
             </a>
             <p>After the download, run the installer to install the main program (.exe)</p>
-          <p class="paragraph-spacing"> </p>
+          <p class="paragraph-spacing"> </p> -->
+          <!-- UNCOMMENT ONCE WINDOWS BECOMES AVAILABLE-->
         </div>   
         <h3>Where are the data stored?</h3>
         <p>For Web Browser - It's locally saved in your web browser</p>
         <p>Be careful on clearing your web browser's cache as it will permanently delete all records.</p>
-        <p>For Windows (Downloaded Version) - It's stored by default in this path:</p>
-        <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticunity.opticsite\</p>
+        <!-- <p>For Windows (Downloaded Version) - It's stored by default in this path:</p>
+        <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticunity.opticsite\</p> -->
+        <!-- UNCOMMENT ONCE WINDOWS BECOMES AVAILABLE-->
         <p class="paragraph-spacing"> </p>
         <a href="#homePage">Back</a>
       </section>
@@ -324,8 +326,6 @@
             </div>
             <div id="selectPatientPagination" class="pagination-controls new-rx-pagination-controls"></div>
           </div>
-          <button type="button" id="patientSampleBtn">Add 10 Samples</button>
-          <!----- DEBUG | TO DELETE ON FINAL PRODUCT ------>
         </div>
 
         <div id="patientProfileForm" class="patient-profile-section hidden">
@@ -401,6 +401,10 @@
           <div class="eye-examination-form flex-column">
             <h4 class="preliminary-header">Preliminary</h4>
 
+            <label for="eyeExamVisitNotes">Visit Notes : </label>
+            <textarea id="eyeExamVisitNotes" class="patient-profile-textarea" maxlength="1000"
+              placeholder="Presenting concern, hours of sleep, other notes for this visit"></textarea>
+
             <!-- Preliminary Block (UVA + PH) — built and mounted by forms.js -->
             <div id="preliminaryMount"></div>
 
@@ -445,10 +449,110 @@
           </div>
         </div>
 
-        <!-- View Customer Menu (stub for now) -->
+        <!-- View Customer Menu -->
         <div id="viewRecordsCustomerMenu" class="view-records-selection-menu hidden">
           <h2>Customer Records</h2>
-          <button id="viewRecordsCtmBackBtn" class="view-records-back-btn">Back</button>
+
+          <!-- Select Customer Table -->
+          <div id="viewCustomerSelectMenu" class="view-patient-menu">
+            <h3>Select Customer</h3>
+            <p>Select a customer you wish to view.</p>
+            <div class="select-patient-search-area flex-column">
+              <label for="viewCustomerSearchBarInput">Search : </label><input id="viewCustomerSearchBarInput" placeholder="Search ID, Name, Number...">
+            </div>
+            <div class="select-patient-main-table">
+              <table id="viewCustomerTable">
+                <thead>
+                  <tr>
+                    <th>Customer ID</th>
+                    <th>Name</th>
+                    <th>Number</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div id="viewCustomerPagination" class="pagination-controls"></div>
+            <button id="viewRecordsCtmBackBtn" class="view-records-back-btn">Back</button>
+          </div>
+
+          <!-- Viewed Customer Profile -->
+          <div id="viewCustomerProfileMenu" class="view-patient-container hidden">
+
+            <!-- Customer Profile Display -->
+            <div class="patient-profile-section">
+              <h3 class="patient-profile-section-header">Customer Profile</h3>
+              <label class="patient-profile-name">Name : </label>
+              <input id="viewCustomerName" readonly class="uppercase">
+              <div class="patient-profile-container flex-row">
+                <div class="patient-profile-container-division-1 flex-column">
+                  <label>Customer ID : </label><input id="viewCustomerIdNumber" readonly>
+                  <label>Contact Number : </label><input id="viewCustomerNumber" maxlength="11" readonly>
+                  <label>Email : </label><input id="viewCustomerEmail" maxlength="40" class="lowercase" readonly>
+                  <label>Birthday : </label><input id="viewCustomerBirthday" readonly>
+                </div>
+                <div class="patient-profile-container-division-2 flex-column">
+                  <label>Date Created : </label><input id="viewCustomerDateCreated" readonly>
+                  <label>Sex : </label><input id="viewCustomerSex" readonly>
+                  <label>Address : </label><input id="viewCustomerAddress" readonly>
+
+                  <label>Age : </label><input id="viewCustomerAge" readonly>
+                </div>
+              </div>
+            </div>
+
+            <!-- View Customer Action Buttons -->
+            <div id="viewCustomerMainBtnContainer" class="view-patient-action-btn-container">
+              <div class="view-patient-action-btn-item">
+                <h4>Customer Selection</h4>
+                <button id="viewCustomerToSelectionBackBtn">Back</button>
+              </div>
+              <div class="view-patient-action-btn-item">
+                <h4>Edit Customer Profile</h4>
+                <button id="editCustomerProfileBtn">Edit</button>
+              </div>
+              <div class="view-patient-action-btn-item">
+                <h4>Delete Record</h4>
+                <button id="deleteCustomerBtn">Delete</button>
+              </div>
+            </div>
+
+
+            <!-- Edit Mode Actions -->
+            <div id="editCustomerActionBtns" class="view-patient-action-btn-container hidden">
+              <div class="view-patient-action-btn-item">
+                <h4>Cancel Edit</h4>
+                <button id="cancelEditCustomerBtn">Cancel</button>
+              </div>
+              <div class="view-patient-action-btn-item">
+                <h4>Save Changes</h4>
+                <button id="saveEditCustomerBtn">Save</button>
+              </div>
+            </div>
+
+            <!-- Order History — read-only. Click a row to jump into Sales History
+                 filtered to that order; no edit/reprint/expand here, that detail
+                 already lives in Sales History. -->
+            <div class="patient-profile-section">
+              <h3 class="patient-profile-section-header">Order History</h3>
+              <div class="select-customer-main-table-new-order">
+                <table id="customerOrderHistoryTable" class="so-history-table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Date</th>
+                      <th>Total</th>
+                      <th>Payment</th>
+                      <th>Job Status</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
         </div>
 
         <!-- View Patient Menu -->
@@ -569,8 +673,8 @@
         <h2><i class="fa-solid fa-coins"></i> Sales</h2>
         <div class="nav-menu-links">
           <a href="#salesNewOrder">New Order</a>
-          <a href="#salesPendingJobs">Pending Jobs</a>
-          <a href="#salesPendingOrders">Pending Orders</a>
+          <a href="#salesPendingJobs" id="jobOrdersNavLink">Job Orders</a>
+          <a href="#salesPendingOrders" id="pendingOrdersNavLink">Order Status</a>
           <a href="#salesSalesHistory" id="salesHistoryNavLink">Sales History</a>
         </div>
       </section>
@@ -609,8 +713,6 @@
             </div>
             <div id="selectCustomerPagination" class="pagination-controls new-order-pagination-controls"></div>
           </div>
-          <button type="button" id="customerSampleBtn">Add 10 Samples</button>
-          <!----- DEBUG | TO DELETE ON FINAL PRODUCT ------>
         </div>
 
         <div id="changeCustomerContainer" class="change-customer-container hidden">
@@ -769,9 +871,10 @@
             </div>
           </div>
 
-          <!-- ── Save Order Button ── -->
-          <div class="so-order-actions">
-            <button class="save-btn" id="saveOrderBtn" disabled>Save Order</button>
+          <!-- ── Confirm Order Button — hidden until Payment Mode (soLockOrderItems), same
+               convention as proceedPaymentBlock/editItemsBlock/paymentLockedSection above ── -->
+          <div class="so-order-actions hidden" id="saveOrderBlock">
+            <button class="save-btn" id="saveOrderBtn" disabled>Confirm Order</button>
           </div>
         </div>
 
@@ -827,16 +930,19 @@
                   <div class="so-rx-header">CYL</div>
                   <div class="so-rx-header">AXIS</div>
                   <div class="so-rx-header">ADD</div>
+                  <div class="so-rx-header">PD</div>
                   <div class="so-rx-eye">OD</div>
                   <input type="text" id="lensOdSph"  placeholder="SPH">
                   <input type="text" id="lensOdCyl"  placeholder="CYL">
                   <input type="text" id="lensOdAxis" placeholder="AXIS">
                   <input type="text" id="lensOdAdd"  placeholder="ADD">
+                  <input type="text" id="lensOdPd"   placeholder="PD">
                   <div class="so-rx-eye">OS</div>
                   <input type="text" id="lensOsSph"  placeholder="SPH">
                   <input type="text" id="lensOsCyl"  placeholder="CYL">
                   <input type="text" id="lensOsAxis" placeholder="AXIS">
                   <input type="text" id="lensOsAdd"  placeholder="ADD">
+                  <input type="text" id="lensOsPd"   placeholder="PD">
                 </div>
                 <label>Lens Brand</label>
                 <select id="lensBrand" onchange="soOnLensBrandChange(this)">
@@ -1195,15 +1301,96 @@
 
       </section>
 
-      <section class="page-content" id="salesPendingJobs" data-parent="#salesPage">
+      <section class="page-content" id="salesPendingJobs" data-parent="#salesPage" data-on-entry="renderJobOrdersTable">
+        <h2><i class="fa-solid fa-glasses"></i> Job Orders</h2>
 
+        <div class="so-job-orders-tabs">
+          <button type="button" class="so-job-orders-tab active-page" data-status="pending"    onclick="setJobOrdersTab('pending')">Pending</button>
+          <button type="button" class="so-job-orders-tab"              data-status="processing" onclick="setJobOrdersTab('processing')">Processing</button>
+          <button type="button" class="so-job-orders-tab"              data-status="done"       onclick="setJobOrdersTab('done')">Done</button>
+        </div>
+
+        <div class="select-customer-search-area flex-column">
+          <label for="jobOrdersSearchBarInput">Search : </label>
+          <input id="jobOrdersSearchBarInput" placeholder="Search Job ID, Order ID, Customer...">
+        </div>
+
+        <div class="select-customer-main-table-new-order">
+          <table id="jobOrdersTable" class="so-history-table">
+            <thead>
+              <tr>
+                <th>Job ID</th>
+                <th>Order ID</th>
+                <th>Item</th>
+                <th>Customer</th>
+                <th>Started</th>
+                <th>Done</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="jobOrdersPagination" class="pagination-controls"></div>
+
+        <a href="#salesPage" class="back-btn-link new-order-back-btn-link">Back</a>
       </section>
 
-      <section class="page-content" id="salesPendingOrders" data-parent="#salesPage">
+      <section class="page-content" id="salesPendingOrders" data-parent="#salesPage" data-on-entry="renderPendingOrdersTable">
+        <h2><i class="fa-solid fa-hourglass-half"></i> Order Status</h2>
 
+        <div class="select-customer-search-area flex-column">
+          <label for="pendingOrdersSearchBarInput">Search : </label>
+          <input id="pendingOrdersSearchBarInput" placeholder="Search Order ID, Job ID, Customer...">
+        </div>
+
+        <div class="select-customer-main-table-new-order">
+          <table id="pendingOrdersTable" class="so-history-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Balance</th>
+                <th>Payment</th>
+                <th>Job Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="pendingOrdersPagination" class="pagination-controls"></div>
+
+        <!-- Pay Balance Modal -->
+        <div class="so-item-modal-overlay" id="payBalanceModal">
+          <div class="so-item-modal">
+            <div class="so-item-modal-header" id="payBalanceModalHeader">Pay Balance</div>
+            <div class="so-item-modal-body">
+              <p id="payBalanceModalDue" class="so-payments-empty">Balance due: 0.00</p>
+              <label>Method</label>
+              <select id="payBalanceModalMethod">
+                <option value="">-- Select --</option>
+                <option value="cash">Cash</option>
+                <option value="ewallet">E-Wallet</option>
+                <option value="bank">Bank Transfer</option>
+                <option value="card">Card</option>
+              </select>
+              <label class="hidden" id="payBalanceModalProviderLabel">Provider Name</label>
+              <input type="text" id="payBalanceModalProvider" class="hidden" maxlength="60" placeholder="">
+              <label>Amount</label>
+              <input type="number" id="payBalanceModalAmount" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="so-item-modal-actions">
+              <button class="so-modal-cancel-btn" onclick="poCancelPayBalanceModal()">Cancel</button>
+              <button class="so-modal-ok-btn"     onclick="poConfirmPayBalance()">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <a href="#salesPage" class="back-btn-link new-order-back-btn-link">Back</a>
       </section>
 
-      <section class="page-content" id="salesSalesHistory" data-parent="#salesPage">
+      <section class="page-content" id="salesSalesHistory" data-parent="#salesPage" data-on-entry="renderSalesHistoryTable">
         <h2><i class="fa-solid fa-clock-rotate-left"></i> Sales History</h2>
 
         <div class="select-customer-search-area flex-column">
@@ -1353,6 +1540,8 @@
 <script src="scripts/prescription-logic.js"></script>
 <script src="scripts/ui-and-navigation.js"></script>
 <script src="scripts/view-records.js"></script>
+<script src="scripts/job-orders-logic.js"></script>
+<script src="scripts/pending-orders-logic.js"></script>
 <script src="scripts/modal.js"></script>
 <script src="scripts/print.js"></script>
 <script src="main.js"></script>

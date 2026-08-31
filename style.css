@@ -687,12 +687,14 @@ textarea[readonly] {
 }
 
 .patient-profile-textarea{
+  margin-top: 10px;
   padding: 8px;
   width: 450px;
   height: 150px;
   outline: none;
   vertical-align: top;
   resize: none;
+  margin-bottom: 20px;
 }
 
 .patient-profile-container-division-1, .patient-profile-container-division-2{
@@ -774,6 +776,8 @@ textarea[readonly] {
   margin-top: 30px;
   margin-bottom: 15px;
 }
+
+
 
 .eye-examination-form input, .eye-examination-form-preliminary input{
   width: 70px;
@@ -1146,6 +1150,18 @@ textarea[readonly] {
   margin: 0;
 }
 
+/* Row action buttons (advance/view + print) forced into one row regardless of the
+   Action column's auto-computed width — that width shrinks whenever a sibling row in
+   the same table has wide content (long item descriptions on Job Orders' Pending tab,
+   or Sales History's expanded detail row with its own 8-column inner table), which
+   otherwise wraps these onto separate lines by coincidence rather than by design.
+   Shared by Job Orders (job-orders-logic.js) and Sales History (view-records.js). */
+.so-row-actions {
+  display: inline-flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 /* -------------- Sales Page Style -------------- */
 .new-order-select-customer-menu{
   display: flex;
@@ -1171,6 +1187,13 @@ textarea[readonly] {
   align-items: center;
   gap: 5px;
   margin-bottom: 25px;
+}
+
+/* Extra gap between "Pending Orders" and its search bar — scoped to this page only,
+   since .select-customer-search-area is shared with Sales History, Job Orders, and
+   New Order's Select Customer, which don't need the same top spacing. */
+#salesPendingOrders .select-customer-search-area {
+  margin-top: 20px;
 }
 
 .select-customer-search-area input{
@@ -1424,6 +1447,61 @@ textarea[readonly] {
   font-size: 13px;
 }
 
+/* -------- Sales History status badges -------- */
+.so-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.so-status-paid,
+.so-status-claimed,
+.so-status-done         { background: #d4edda; color: #1e7e34; }
+.so-status-partial,
+.so-status-processing   { background: #fff3cd; color: #856404; }
+.so-status-unpaid,
+.so-status-pending      { background: #f8d7da; color: #a71d2a; }
+.so-status-ready        { background: #cfe2ff; color: #084298; }
+.so-status-none {
+  background: var(--object-bg);
+  color: var(--text-color);
+  opacity: 0.6;
+}
+
+/* -------- Job Orders tabs -------- */
+.so-job-orders-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.so-job-orders-tab {
+  width: auto;
+  height: 38px;
+  padding: 0 20px;
+  margin: 0;
+  font-size: 14px;
+  background: var(--object-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.so-job-orders-tab:hover {
+  background: var(--cancel-hover-bg);
+}
+
+.so-job-orders-tab.active-page {
+  background: var(--primary-color);
+  color: var(--white);
+  border-color: var(--primary-color);
+  pointer-events: none;
+}
+
 /* -------- Reusable Modal -------- */
 .app-modal {
   display: none;
@@ -1508,6 +1586,33 @@ textarea[readonly] {
 .app-modal-actions .modal-confirm-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ── Print-prompt modal (Order Saved / Reprint) — 3 independent actions, so it
+   gets its own wider content width + vertically stacked full-width buttons
+   instead of the standard 2-button horizontal Confirm/Cancel layout. Scoped
+   to these classes only — the regular openModal()/openAlert() confirm/cancel
+   modals are unaffected. Buttons intentionally shorter than the app default —
+   three of them stacked at full button height read as oversized. ── */
+.so-print-prompt-content {
+  width: 420px;
+}
+
+.so-print-prompt-content .app-modal-body {
+  text-align: center;
+}
+
+.so-print-prompt-actions {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 20px;
+}
+
+.so-print-prompt-actions button {
+  width: 50%;
+  height: 44px;
+  padding: 0 18px;
 }
 
 /* -------- Edit Rx UI -------- */
@@ -2213,6 +2318,20 @@ input.so-payment-amount-label[readonly] {
   cursor: default;
 }
 
+/* Pay Balance — same minimalist dashed-outline style as the shared .so-add-payment-btn,
+   just recolored so it reads as "pay here" at a glance. Amber matches the "Partial"
+   status badge and the tester-file button — reusing the app's existing "needs
+   attention" color rather than introducing a new one. Explicit hex, not a theme var, so
+   it reads the same in light and dark mode. */
+.po-pay-balance-btn {
+  border-color: #d97706;
+  color: #d97706;
+}
+
+.po-pay-balance-btn:hover {
+  background: rgba(217, 119, 6, 0.1);
+}
+
 .so-change-row input {
   color: #2e9e4f;
   font-weight: 600;
@@ -2374,7 +2493,7 @@ input.so-payment-amount-label[readonly] {
 /* ── Rx mini grid inside item modals ── */
 .so-rx-grid {
   display: grid;
-  grid-template-columns: 36px repeat(4, 1fr);
+  grid-template-columns: 36px repeat(5, 1fr);
   gap: 4px;
   font-size: 12px;
   margin-top: 4px;
