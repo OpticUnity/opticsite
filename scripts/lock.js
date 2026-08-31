@@ -1,6 +1,4 @@
 (function () {
-    if (window.__TAURI__) return; // Desktop app — skip entirely
-
     const _gateKey = atob("R0RMU0MxMDU=");
     const _storageKey = "opticsite_unlocked";
 
