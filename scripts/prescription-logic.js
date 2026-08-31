@@ -19,6 +19,7 @@ function collectPatientNotes() {
 // -- Collect Eye Exam Data (FIXED) --
 function collectEyeExamData() {
     return {
+        visitNotes: val('eyeExamVisitNotes'),
         uva: {
             odDist: val('uvaOdDist'), odNear: val('uvaOdNear'),
             osDist: val('uvaOsDist'), osNear: val('uvaOsNear'),
@@ -181,12 +182,9 @@ function collectCopyRxClData() {
 }
 
 // -- Main Save Handler --
-function handleAddPrescription() {
+async function handleAddPrescription() {
     const rxMethod = document.getElementById('rxSelect').value;
     const patientId = document.getElementById('patientProfileIdNumber').value.trim();
-
-    // ── Collision guard: re-check prescription ID is still free at save time ──
-    const prescriptionId = _resolveUniquePrescriptionID();
 
     if (rxMethod === 'eyeExam') {
         const odValid = isEyeValid('frxOdDistanceSph', 'frxOdDistanceCyl', 'frxOdDistanceAxis');
@@ -225,38 +223,48 @@ function handleAddPrescription() {
         rxData = collectCopyRxClData();
     }
 
-    const prescription = {
-        id: prescriptionId,
-        patientId: patientId,
-        dateCreated: `${rxYYYY}-${rxMM}-${rxDD}`,
-        rxMethod: rxMethod,
-        ...rxData
-    };
+    // ── Critical section: ID collision-check + record write, locked so no other tab/window
+    // can read or write 'prescriptions' while this is in flight — see soWithStorageLock in
+    // storage.js. ID generation moved here (from before validation) so a bounced save
+    // (invalid Rx/date) never burns/holds an ID it didn't end up using. ──
+    const prescription = await soWithStorageLock('prescriptions', async () => {
+        const prescriptionId = _resolveUniquePrescriptionID();
+        const record = {
+            id: prescriptionId,
+            patientId: patientId,
+            dateCreated: `${rxYYYY}-${rxMM}-${rxDD}`,
+            rxMethod: rxMethod,
+            ...rxData
+        };
 
-    // Re-read fresh immediately before push — another tab may have saved
-    // between form open / selectPatient and this save click.
-    const freshPrescriptions = JSON.parse(Storage.getItem('prescriptions') || '[]');
-    freshPrescriptions.push(prescription);
-    Storage.setItem('prescriptions', JSON.stringify(freshPrescriptions));
+        const freshPrescriptions = JSON.parse(Storage.getItem('prescriptions') || '[]');
+        freshPrescriptions.push(record);
+        Storage.setItem('prescriptions', JSON.stringify(freshPrescriptions));
 
-    // Update patient record — re-read fresh here too
-    const freshPatients = JSON.parse(Storage.getItem('patients') || '[]');
-    const patientIndex = freshPatients.findIndex(p => p.id === patientId);
-    if (patientIndex !== -1) {
-        if (!freshPatients[patientIndex].prescriptions) freshPatients[patientIndex].prescriptions = [];
-        if (!freshPatients[patientIndex].prescriptions.includes(prescriptionId)) {
-            freshPatients[patientIndex].prescriptions.push(prescriptionId);
+        return record;
+    });
+
+    // Update patient record — separate storage key, own lock. Sequential (not nested)
+    // with the lock above, so only one lock is ever held at a time — no deadlock risk.
+    await soWithStorageLock('patients', async () => {
+        const freshPatients = JSON.parse(Storage.getItem('patients') || '[]');
+        const patientIndex = freshPatients.findIndex(p => p.id === patientId);
+        if (patientIndex !== -1) {
+            if (!freshPatients[patientIndex].prescriptions) freshPatients[patientIndex].prescriptions = [];
+            if (!freshPatients[patientIndex].prescriptions.includes(prescription.id)) {
+                freshPatients[patientIndex].prescriptions.push(prescription.id);
+            }
+
+            const notes = collectPatientNotes();
+            freshPatients[patientIndex].patientNotes = notes.patientNotes;
+            freshPatients[patientIndex].genHealthHx  = notes.genHealthHx;
+            freshPatients[patientIndex].ocuHx        = notes.ocuHx;
+
+            Storage.setItem('patients', JSON.stringify(freshPatients));
         }
+    });
 
-        const notes = collectPatientNotes();
-        freshPatients[patientIndex].patientNotes = notes.patientNotes;
-        freshPatients[patientIndex].genHealthHx  = notes.genHealthHx;
-        freshPatients[patientIndex].ocuHx        = notes.ocuHx;
-
-        Storage.setItem('patients', JSON.stringify(freshPatients));
-    }
-
-    openAlert({ title: 'Saved', body: `Prescription ${prescriptionId} saved successfully!` });
+    openAlert({ title: 'Saved', body: `Prescription ${prescription.id} saved successfully!` });
 
     // Clear form
     const newRxPage = document.getElementById('newPrescriptionMenu');

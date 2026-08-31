@@ -493,7 +493,7 @@ function _triggerPrint(rx, patient, paperSize) {
 }
 
 // ================================================================
-//  Sales Order Printing — Claim Stub + Job Order Stub(s)
+//  Sales Order Printing — Receipt + Job Order Stub(s)
 //  Receipt-printer width (80mm), not A4/Letter — a deliberately
 //  different template from the Rx printer above, not a variant of
 //  it. Shares only the iframe + window.print() trigger mechanic.
@@ -513,22 +513,7 @@ function _soFindItemByRowId(items, rowId) {
 // Monospace + dashed dividers read cleanly at receipt width; a real spec/price table
 // (like the Rx printer's) won't fit 72mm cleanly, so this is a single-column stacked
 // layout throughout instead. ──
-// ── Sanitizes typographic characters (em/en dash, curly quotes) that thermal
-// printer fonts commonly lack a glyph for — they print as blank gaps instead of
-// erroring, which is exactly what happened to every "—" in the item descriptions
-// (built elsewhere, e.g. soBuildDescription's " — " joins) once they hit an actual
-// printer. Applied once here, not at every string-building call site, since it's
-// safe to run on the whole assembled body — nothing else in this template uses
-// these characters. ──
-function _soReceiptSafeText(html) {
-    return html
-        .replace(/[\u2014\u2013]/g, '-')  // em dash, en dash → plain hyphen
-        .replace(/[\u2018\u2019]/g, "'")  // curly single quotes → straight
-        .replace(/[\u201C\u201D]/g, '"'); // curly double quotes → straight
-}
-
 function _buildReceiptShellHTML(title, bodyHTML) {
-    bodyHTML = _soReceiptSafeText(bodyHTML);
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -540,9 +525,8 @@ function _buildReceiptShellHTML(title, bodyHTML) {
   body {
     width: 72mm;
     font-family: 'Courier New', Courier, monospace;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1.45;
+    font-size: 11px;
+    line-height: 1.4;
     color: #000;
   }
   .stub { page-break-after: always; padding-bottom: 4mm; }
@@ -558,6 +542,10 @@ function _buildReceiptShellHTML(title, bodyHTML) {
   .stub-item-desc { padding-left: 4px; }
   .stub-total-row { font-weight: 700; font-size: 12px; }
   .stub-footer { text-align: center; margin-top: 8px; font-size: 10px; }
+  .stub-grade-title { font-weight: 700; font-size: 10px; margin-top: 4px; }
+  .stub-grade-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 10px; margin-top: 2px; }
+  .stub-grade-table th, .stub-grade-table td { text-align: right; padding: 1px 2px; }
+  .stub-grade-table th:first-child, .stub-grade-table td:first-child { text-align: left; font-weight: 700; }
 </style>
 </head>
 <body>${bodyHTML}</body>
@@ -584,8 +572,10 @@ function _soTriggerReceiptPrint(html) {
     };
 }
 
-// ── Claim Stub — one per order, customer-facing. Pricing + payments, no job/lab detail. ──
-function printClaimStub(order) {
+// ── Receipt — one per order, customer-facing. Pricing + payments, no job/lab detail.
+// Renamed from "Claim Stub" — customers already read a receipt as their claim proof,
+// so a separate "Claim Stub" label was redundant terminology. ──
+function printReceipt(order) {
     const settings   = JSON.parse(Storage.getItem('clinicSettings') || '{}');
     const clinicName = escapeHtml(settings.clinicName)    || 'Optical Clinic';
     const clinicAddr = escapeHtml(settings.clinicAddress) || '';
@@ -620,7 +610,7 @@ function printClaimStub(order) {
                 <div class="stub-clinic-name">${clinicName}</div>
                 ${clinicAddr ? `<div class="stub-clinic-sub">${clinicAddr}</div>` : ''}
                 ${clinicTel  ? `<div class="stub-clinic-sub">${clinicTel}</div>`  : ''}
-                <div class="stub-title">CLAIM STUB</div>
+                <div class="stub-title">RECEIPT</div>
             </div>
             <hr class="stub-divider">
             <div class="stub-row"><span class="label">Order ID:</span><span>${escapeHtml(order.id)}</span></div>
@@ -640,7 +630,95 @@ function printClaimStub(order) {
             <div class="stub-footer">Thank you!</div>
         </div>`;
 
-    _soTriggerReceiptPrint(_buildReceiptShellHTML(`Claim Stub — ${order.id}`, body));
+    _soTriggerReceiptPrint(_buildReceiptShellHTML(`Receipt — ${order.id}`, body));
+}
+
+// ── Grade cell helper — plain hyphen for missing values (not em-dash; keeps this
+// table's rendering independent of any em-dash/thermal-font question elsewhere). ──
+function _soGradeCell(val) {
+    return val ? escapeHtml(val) : '-';
+}
+
+// ── Job Order Stub grade tables — Lens/CL only, Frame/Service rows return ''. Reads
+// straight from row.itemData, which already holds the grade regardless of whether it
+// came from a linked Rx or was typed manually (soCaptureModalFields captures every
+// SO_MODAL_FIELDS id generically) — no dependency on linkedRx being present. Print-only:
+// deliberately not folded into soRenderJobOrderBlock, which is shared with the on-screen
+// Job Order Summary panel — this only affects the printed stub. ──
+function soRenderJobOrderGrade(row) {
+    const d = row.itemData || {};
+
+    if (row.type === 'lens') {
+        return `
+            <div class="stub-grade-title">Prescription</div>
+            <table class="stub-grade-table">
+                <tr><th></th><th>SPH</th><th>CYL</th><th>AXIS</th><th>ADD</th><th>PD</th></tr>
+                <tr><td>OD</td><td>${_soGradeCell(d.lensOdSph)}</td><td>${_soGradeCell(d.lensOdCyl)}</td><td>${_soGradeCell(d.lensOdAxis)}</td><td>${_soGradeCell(d.lensOdAdd)}</td><td>${_soGradeCell(d.lensOdPd)}</td></tr>
+                <tr><td>OS</td><td>${_soGradeCell(d.lensOsSph)}</td><td>${_soGradeCell(d.lensOsCyl)}</td><td>${_soGradeCell(d.lensOsAxis)}</td><td>${_soGradeCell(d.lensOsAdd)}</td><td>${_soGradeCell(d.lensOsPd)}</td></tr>
+            </table>`;
+    }
+
+    if (row.type === 'cl') {
+        // ADD is a rare multifocal-CL case — only added as a column when at least one
+        // eye actually has it, rather than always reserving the space (unlike Lens,
+        // where ADD/PD are common enough to always show for table-shape consistency).
+        const hasAdd    = !!(d.clOdAdd || d.clOsAdd);
+        const addHeader = hasAdd ? '<th>ADD</th>' : '';
+        const addOdCell = hasAdd ? `<td>${_soGradeCell(d.clOdAdd)}</td>` : '';
+        const addOsCell = hasAdd ? `<td>${_soGradeCell(d.clOsAdd)}</td>` : '';
+
+        return `
+            <div class="stub-grade-title">Prescription</div>
+            <table class="stub-grade-table">
+                <tr><th></th><th>SPH</th><th>CYL</th><th>AXIS</th>${addHeader}</tr>
+                <tr><td>OD</td><td>${_soGradeCell(d.clOdSph)}</td><td>${_soGradeCell(d.clOdCyl)}</td><td>${_soGradeCell(d.clOdAxis)}</td>${addOdCell}</tr>
+                <tr><td>OS</td><td>${_soGradeCell(d.clOsSph)}</td><td>${_soGradeCell(d.clOsCyl)}</td><td>${_soGradeCell(d.clOsAxis)}</td>${addOsCell}</tr>
+            </table>
+            <div class="stub-grade-title">Parameters</div>
+            <table class="stub-grade-table">
+                <tr><th></th><th>BC</th><th>DIA</th></tr>
+                <tr><td>OD</td><td>${_soGradeCell(d.clOdBc)}</td><td>${_soGradeCell(d.clOdDia)}</td></tr>
+                <tr><td>OS</td><td>${_soGradeCell(d.clOsBc)}</td><td>${_soGradeCell(d.clOsDia)}</td></tr>
+            </table>`;
+    }
+
+    return '';
+}
+
+// ── Builds one .stub div's HTML for a single job-stub-eligible row — shared by
+// printJobOrderStubs() (all jobs in an order) and printSingleJobOrderStub() (one job
+// only), so the stub template lives in exactly one place. ──
+function _soBuildJobOrderStubHTML(row, items, order, clinicName) {
+    const ownBlock = soRenderJobOrderBlock(row);
+    const gradeBlock = soRenderJobOrderGrade(row);
+    const frame = soRowNeedsFramePairing(row) && row.pairedWith
+        ? _soFindItemByRowId(items, row.pairedWith)
+        : null;
+    const frameBlock = frame ? `<hr class="stub-divider">${soRenderJobOrderBlock(frame)}` : '';
+
+    const patientLine = row.linkedPatient
+        ? `<div class="stub-row"><span class="label">Patient:</span><span>${escapeHtml(row.linkedPatient.name)}</span></div>`
+        : '';
+    const rxLine = row.linkedRx
+        ? `<div class="stub-row"><span class="label">Rx ID:</span><span>${escapeHtml(row.linkedRx.id)}</span></div>`
+        : '';
+
+    return `
+        <div class="stub">
+            <div class="stub-center">
+                <div class="stub-clinic-name">${clinicName}</div>
+                <div class="stub-title">JOB ORDER</div>
+            </div>
+            <hr class="stub-divider">
+            <div class="stub-row"><span class="label">Order ID:</span><span>${escapeHtml(order.id)}</span></div>
+            <div class="stub-row"><span class="label">Date:</span><span>${escapeHtml(order.dateCreated)}</span></div>
+            ${patientLine}
+            ${rxLine}
+            <hr class="stub-divider">
+            ${ownBlock}
+            ${gradeBlock}
+            ${frameBlock}
+        </div>`;
 }
 
 // ── Job Order Stub(s) — one stub per job (Lens+paired Frame / CL / Frame Repair), each
@@ -659,37 +737,37 @@ function printJobOrderStubs(order) {
     const settings   = JSON.parse(Storage.getItem('clinicSettings') || '{}');
     const clinicName = escapeHtml(settings.clinicName) || 'Optical Clinic';
 
-    const stubsHTML = stubRows.map(row => {
-        const ownBlock = soRenderJobOrderBlock(row);
-        const frame = soRowNeedsFramePairing(row) && row.pairedWith
-            ? _soFindItemByRowId(items, row.pairedWith)
-            : null;
-        const frameBlock = frame ? `<hr class="stub-divider">${soRenderJobOrderBlock(frame)}` : '';
-
-        const patientLine = row.linkedPatient
-            ? `<div class="stub-row"><span class="label">Patient:</span><span>${escapeHtml(row.linkedPatient.name)}</span></div>`
-            : '';
-        const rxLine = row.linkedRx
-            ? `<div class="stub-row"><span class="label">Rx ID:</span><span>${escapeHtml(row.linkedRx.id)}</span></div>`
-            : '';
-
-        return `
-            <div class="stub">
-                <div class="stub-center">
-                    <div class="stub-clinic-name">${clinicName}</div>
-                    <div class="stub-title">JOB ORDER</div>
-                </div>
-                <hr class="stub-divider">
-                <div class="stub-row"><span class="label">Job ID:</span><span>${escapeHtml(row.jobId || '—')}</span></div>
-                <div class="stub-row"><span class="label">Order ID:</span><span>${escapeHtml(order.id)}</span></div>
-                <div class="stub-row"><span class="label">Date:</span><span>${escapeHtml(order.dateCreated)}</span></div>
-                ${patientLine}
-                ${rxLine}
-                <hr class="stub-divider">
-                ${ownBlock}
-                ${frameBlock}
-            </div>`;
-    }).join('');
+    const stubsHTML = stubRows.map(row => _soBuildJobOrderStubHTML(row, items, order, clinicName)).join('');
 
     _soTriggerReceiptPrint(_buildReceiptShellHTML(`Job Order Stubs — ${order.id}`, stubsHTML));
+}
+
+// ── Single Job Order Stub — reprint for exactly one job, by orderId + jobId. Used by the
+// Job Orders page's per-row Print button (all three tabs — see job-orders-logic.js), which
+// operates at job granularity, not order granularity. Deliberately does NOT reuse
+// printJobOrderStubs(order) as-is, since that always prints every eligible job in the
+// order — clicking Print on one row in Job Orders shouldn't also print sibling jobs that
+// may be in a different status or already claimed. Looks the order up fresh from Storage
+// (job-orders-logic.js's flattened job list doesn't carry the full order/items array
+// needed for frame-pairing). ──
+function printSingleJobOrderStub(orderId, jobId) {
+    const orders = JSON.parse(Storage.getItem('salesOrders') || '[]');
+    const order  = orders.find(o => o.id === orderId);
+    if (!order) {
+        openAlert({ title: 'Not Found', body: `Order ${orderId} could not be found.` });
+        return;
+    }
+
+    const items = order.items || [];
+    const row = items.find(i => i.jobId === jobId);
+    if (!row) {
+        openAlert({ title: 'Not Found', body: `Job ${jobId} could not be found in order ${orderId}.` });
+        return;
+    }
+
+    const settings   = JSON.parse(Storage.getItem('clinicSettings') || '{}');
+    const clinicName = escapeHtml(settings.clinicName) || 'Optical Clinic';
+
+    const stubHTML = _soBuildJobOrderStubHTML(row, items, order, clinicName);
+    _soTriggerReceiptPrint(_buildReceiptShellHTML(`Job Order Stub — ${jobId}`, stubHTML));
 }

@@ -44,8 +44,8 @@ const SO_TYPE_TO_PRICE_FIELD = {
 // Field IDs captured/prefilled per item type — single source of truth
 const SO_MODAL_FIELDS = {
     lens:    ['lensBrand', 'lensBrandCustom', 'lensType', 'lensTypeOther', 'lensCoating', 'lensIndex',
-              'lensOdSph', 'lensOdCyl', 'lensOdAxis', 'lensOdAdd',
-              'lensOsSph', 'lensOsCyl', 'lensOsAxis', 'lensOsAdd',
+              'lensOdSph', 'lensOdCyl', 'lensOdAxis', 'lensOdAdd', 'lensOdPd',
+              'lensOsSph', 'lensOsCyl', 'lensOsAxis', 'lensOsAdd', 'lensOsPd',
               'lensNotes'],
     frame:   ['frameBrandModel', 'frameMaterial', 'frameMaterialOther', 'frameType', 'frameTypeOther',
               'frameShape', 'frameColor', 'frameParameters', 'frameNotes'],
@@ -960,6 +960,20 @@ function confirmModal(modalId, type) {
         soOrderRows[index].qty = 1;
     }
 
+    // Other Products (the only type that DOES allow per-item qty splitting) — just seeds
+    // the field with a starting default of 1 instead of leaving it blank after confirm, so
+    // the cashier increases from a real number rather than typing into an empty box. Left
+    // enabled/editable on purpose, unlike the qty-locked types above. Gated on
+    // !_soIsEditingRow — this same function also runs when RE-confirming an already-saved
+    // row (soEditRowItem), and without this guard a cashier who'd already bumped qty to,
+    // say, 5 would have it silently reset back to 1 just by re-editing the price or
+    // description and confirming again.
+    if (type === 'item' && !_soIsEditingRow) {
+        const qtyEl = document.getElementById(`so-qty-${index}`);
+        if (qtyEl) qtyEl.value = 1;
+        soOrderRows[index].qty = 1;
+    }
+
     // Price is now always set programmatically (never typed inline), for every type —
     // so this recalc has to run unconditionally here instead of per-type as before.
     soRecalcRow(index);
@@ -1071,6 +1085,10 @@ function soOnLensTypeChange(selectEl) {
         otherInput.classList.add('hidden');
         otherInput.value = '';
     }
+    // Lens Type determines which PD (Distance vs Near) is correct — re-derive it every
+    // time the type changes, not just at Rx-pull time. No-op if no Rx is linked yet, or
+    // if the row is in manual mode (PD stays plain-editable there).
+    if (typeof soApplyLensPdFromRx === 'function') soApplyLensPdFromRx();
 }
 
 // ── Lens Type options that require an ADD (near/multifocal designs) only make sense if
@@ -1281,12 +1299,21 @@ function soEditRowItem(index) {
 
     // soPrefillModalFields above already restored the grade values (they were captured
     // into itemData at confirm time same as everything else) — this just reapplies the
-    // lock, since prefill only sets .value, not the readOnly state.
+    // lock, since prefill only sets .value, not the readOnly state. Lens PD included
+    // separately since (like soUnlockRxFields) it sits outside SO_RX_FIELD_MAP's 1:1 map —
+    // its value is already correct from the prefill above, this only restores the
+    // visual lock to match.
     if ((row.type === 'lens' || row.type === 'cl') && _soPendingLinkedRx && !_soPendingLinkedRx.manual) {
         SO_RX_FIELD_MAP[row.type].ids.forEach(id => {
             const el = document.getElementById(id);
             if (el) { el.readOnly = true; el.classList.add('so-rx-locked'); }
         });
+        if (row.type === 'lens') {
+            ['lensOdPd', 'lensOsPd'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.readOnly = true; el.classList.add('so-rx-locked'); }
+            });
+        }
     }
 
     // Restore the CL grade layout (rx-pulled split vs merged manual row) to match
@@ -1764,7 +1791,7 @@ function soLockOrderItems() {
     // entry at ₱0.00. It can't be edited or removed, and Add Payment stays disabled —
     // there's nothing left to add. This still gives the order a payment record for
     // receipt/history purposes and resolves Payment Status to 'paid' (see soPaymentStatus). ──
-    soPayments = (soLockedTotal === 0) ? [{ method: 'cash', amount: 0, locked: true }] : [];
+    soPayments = (soLockedTotal === 0) ? [{ method: 'cash', amount: 0, locked: true, timestamp: new Date().toISOString() }] : [];
 
     soUpdateRowLocks();
     soOrderRows.forEach((_, i) => soSetActionsState(i));
@@ -1774,6 +1801,7 @@ function soLockOrderItems() {
     document.getElementById('proceedPaymentBlock')?.classList.add('hidden');
     document.getElementById('editItemsBlock')?.classList.remove('hidden');
     document.getElementById('paymentLockedSection')?.classList.remove('hidden');
+    document.getElementById('saveOrderBlock')?.classList.remove('hidden');
     document.getElementById('saveOrderBtn').disabled = false;
 
     soRenderPaymentRows();
@@ -1805,6 +1833,7 @@ function soUnlockOrderItemsForEditing() {
             document.getElementById('paymentLockedSection')?.classList.add('hidden');
             document.getElementById('editItemsBlock')?.classList.add('hidden');
             document.getElementById('proceedPaymentBlock')?.classList.remove('hidden');
+            document.getElementById('saveOrderBlock')?.classList.add('hidden');
             document.getElementById('saveOrderBtn').disabled = true;
 
             soUpdateRowLocks();
@@ -1817,7 +1846,7 @@ function soUnlockOrderItemsForEditing() {
 }
 
 // ── Save Order ──
-function handleSaveOrder() {
+async function handleSaveOrder() {
     // Save is only reachable once items are locked and the payment phase has started
     if (!soItemsLocked) {
         openAlert({ title: 'Items Not Finalized', body: 'Please click "Proceed to Payment" before saving the order.' });
@@ -1842,7 +1871,6 @@ function handleSaveOrder() {
     }
 
     const dateCreated = `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
-    const orderId    = _resolveUniqueOrderID();
     const customerId = document.getElementById('customerProfileIdNumber')?.value.trim() || '';
 
     const grossTotal = soOrderRows.reduce((sum, r) => sum + ((r.qty || 0) * (r.price || 0)), 0);
@@ -1852,12 +1880,34 @@ function handleSaveOrder() {
     // amount > 0 covers real tendered payments; `locked` lets the auto ₱0 Cash record
     // from a free/full-discount order through too, so the saved order keeps a payment
     // entry for receipt/history purposes instead of an empty payments array.
-    const validPayments = soPayments.filter(p => p.method && (p.amount > 0 || p.locked));
+    // amount >= 0 (not > 0) — a manually-entered ₱0 Cash row is a deliberate, valid record
+    // now (see soConfirmPaymentModal), not something to silently drop. This also already
+    // covers the auto-locked free-order entry (also amount:0), so the old separate
+    // `|| p.locked` clause is redundant and removed.
+    const validPayments = soPayments.filter(p => p.method && p.amount >= 0);
     const tendered  = validPayments.reduce((sum, p) => sum + p.amount, 0);
     const hasCash   = validPayments.some(p => p.method === 'cash');
     const amountPaid = Math.min(tendered, total);
     const changeDue  = (tendered > total && hasCash) ? +(tendered - total).toFixed(2) : 0;
     const balance    = Math.max(0, +(total - amountPaid).toFixed(2));
+
+    // Nothing recorded in Payments at all — never allowed through, walk-in or not. A
+    // free/full-discount order (total===0) always has at least the auto-locked ₱0 Cash
+    // entry from soLockOrderItems by this point, so this only ever fires when the cashier
+    // genuinely never touched Add Payment on an order that has a real balance due.
+    //
+    // Message branches on soIsWalkIn — the "add ₱0 Cash to record zero downpayment" advice
+    // only makes sense for a registered customer (who's allowed to leave with a balance
+    // owed). Suggesting it to a walk-in would be actively misleading: they'd add the ₱0
+    // row, click Confirm again, and immediately hit the walk-in-must-pay-in-full check
+    // right below this one anyway — so walk-ins get told the real requirement instead.
+    if (validPayments.length === 0) {
+        const body = soIsWalkIn
+            ? 'Please add a payment covering the full total — walk-in orders must be paid in full before confirming.'
+            : 'Please add at least one payment. If planning to proceed with zero downpayment, add cash with ₱0 as its value.';
+        openAlert({ title: 'No Payment Recorded', body });
+        return;
+    }
 
     // Walk-ins have no customer record to follow up with later, so unlike a registered
     // customer's order, they can't be allowed to leave with a balance owed — there's no
@@ -1866,71 +1916,118 @@ function handleSaveOrder() {
     if (soIsWalkIn && balance > 0) {
         openAlert({
             title: 'Full Payment Required',
-            body:  `Walk-in orders must be paid in full — there's no customer record to collect a remaining balance from later. Remaining: ₱${balance.toFixed(2)}.`
+            body:  `Walk-in orders must be paid in full. Remaining: ₱${balance.toFixed(2)}.`
         });
         return;
     }
 
-    // Only save rows that have content. rowId/pairedWith/linkedPatient/linkedRx are
-    // persisted (not just live in soOrderRows) so a saved order can be reprinted later
-    // from Records/History with its Lens⇄Frame pairing and Patient/Rx links intact —
-    // see printJobOrderStubs() in print.js, which reconstructs the Job Order Summary
-    // panel's logic from these same fields off the saved array instead of soOrderRows.
-    const itemsToSave = soOrderRows
-        .filter((r, i) => soIsRowValid(i))
-        .map(r => ({
-            rowId:         r.rowId,
-            type:          r.type,
-            description:   r.description,
-            qty:           r.qty,
-            price:         r.price,
-            discType:      r.discType,
-            discPct:       r.discPct,
-            discVal:       r.discVal,
-            discName:      r.discName,
-            total:         r.total,
-            itemData:      r.itemData,
-            pairedWith:    r.pairedWith,
-            linkedPatient: r.linkedPatient || null,
-            linkedRx:      r.linkedRx || null
-        }));
+    // ── Critical section: Order ID + Job ID generation, record build, and the Storage
+    // write all happen inside ONE lock, in that order — not just the ID checks alone.
+    // Splitting "check ID" from "write" would still leave a gap for another tab to sneak
+    // in between them; this way nothing about salesOrders can be read OR written by any
+    // other tab/window while this is in flight. Everything above this point (validation,
+    // alerts) deliberately stays outside the lock — it never touches shared storage and
+    // shouldn't make another tab queue behind a user reading a dialog. See soWithStorageLock
+    // in storage.js for what this actually guarantees vs. the old check-then-write pattern. ──
+    const order = await soWithStorageLock('salesOrders', async () => {
+        const orderId = _resolveUniqueOrderID();
 
-    const order = {
-        id:            orderId,
-        customerId:    customerId,
-        isWalkIn:      soIsWalkIn,
-        dateCreated:   dateCreated,
-        items:         itemsToSave,
-        grossTotal:    +grossTotal.toFixed(2),
-        discount:      +discount.toFixed(2),
-        total:         +total.toFixed(2),
-        payments:      validPayments,
-        amountPaid:    +amountPaid.toFixed(2),
-        changeDue:     changeDue,
-        balance:       balance,
-        paymentStatus: soPaymentStatus(amountPaid, total), // 'unpaid' | 'partial' | 'paid'
-        status:        'pending' // order fulfillment status — separate from paymentStatus
-    };
+        // Only save rows that have content. rowId/pairedWith/linkedPatient/linkedRx are
+        // persisted (not just live in soOrderRows) so a saved order can be reprinted later
+        // from Records/History with its Lens⇄Frame pairing and Patient/Rx links intact —
+        // see printJobOrderStubs() in print.js, which reconstructs the Job Order Summary
+        // panel's logic from these same fields off the saved array instead of soOrderRows.
+        //
+        // jobId/jobStatus: one Job ID minted per soRowGetsJobStub-eligible row (a paired
+        // Lens+Frame is ONE job/ONE id, matching printJobOrderStubs' grouping — the paired
+        // Frame row itself gets jobId:null, its details are folded into the Lens's stub).
+        //
+        // jobStatus is lab/production state ONLY: 'pending' → 'processing' → 'done'. Claim
+        // (customer pickup) is deliberately a SEPARATE boolean+timestamp, not a 4th status
+        // value — a job can be 'done' for days before anyone claims it, and claiming is
+        // gated on its own rule (done && parent order's balance is ₱0) that has nothing to
+        // do with lab progress. Keeping them orthogonal is what makes the Job Orders page
+        // (pure lab status, no payment awareness) and the future Pending Orders Claim
+        // button (payment-gated, per-job) each simple on their own instead of one field
+        // trying to encode two different lifecycles. processingStartedAt/doneAt/claimedAt
+        // all start null — this is the data-model foundation the Job Orders page reads
+        // from and writes into (Job Orders / Claim flow built starting this session).
+        const validRows  = soOrderRows.filter((r, i) => soIsRowValid(i));
+        const jobIdQueue = _soMakeJobIdSequence(validRows.filter(soRowGetsJobStub).length);
+        let jobIdCursor  = 0;
 
-    const orders = JSON.parse(Storage.getItem('salesOrders') || '[]');
-    orders.push(order);
-    Storage.setItem('salesOrders', JSON.stringify(orders));
+        const itemsToSave = validRows.map(r => {
+            const isJob = soRowGetsJobStub(r);
+            return {
+                rowId:               r.rowId,
+                type:                r.type,
+                description:         r.description,
+                qty:                 r.qty,
+                price:               r.price,
+                discType:            r.discType,
+                discPct:             r.discPct,
+                discVal:             r.discVal,
+                discName:            r.discName,
+                total:               r.total,
+                itemData:            r.itemData,
+                pairedWith:          r.pairedWith,
+                linkedPatient:       r.linkedPatient || null,
+                linkedRx:            r.linkedRx || null,
+                jobId:               isJob ? jobIdQueue[jobIdCursor++] : null,
+                jobStatus:           isJob ? 'pending' : null, // 'pending' | 'processing' | 'done'
+                processingStartedAt: null, // set when Pending → Processing
+                doneAt:              null, // set when Processing → Done
+                claimed:             isJob ? false : null,
+                claimedAt:           null  // set when claimed — gated on done && order.balance===0
+            };
+        });
+
+        const newOrder = {
+            id:            orderId,
+            customerId:    customerId,
+            isWalkIn:      soIsWalkIn,
+            dateCreated:   dateCreated,
+            items:         itemsToSave,
+            grossTotal:    +grossTotal.toFixed(2),
+            discount:      +discount.toFixed(2),
+            total:         +total.toFixed(2),
+            payments:      validPayments,
+            amountPaid:    +amountPaid.toFixed(2),
+            changeDue:     changeDue,
+            balance:       balance,
+            paymentStatus: soPaymentStatus(amountPaid, total), // 'unpaid' | 'partial' | 'paid'
+            status:        'pending' // order fulfillment status — separate from paymentStatus
+        };
+
+        const orders = JSON.parse(Storage.getItem('salesOrders') || '[]');
+        orders.push(newOrder);
+        Storage.setItem('salesOrders', JSON.stringify(orders));
+
+        return newOrder;
+    });
 
     // Belt-and-suspenders: soResetOrderForm() (fired via onEnterNewOrder on the next visit)
     // already clears this, but resetting it here too means the lock never dangles in a
     // "saved but still locked" state even if that entry hook ever fails to fire.
     soItemsLocked = false;
 
+    // Mark the page "clean" the instant the order is safely persisted — the dirtyGuardPages
+    // '#salesNewOrder' check keys off orderIdBlock's visibility, and without this it would
+    // still read as visible (only onEnterNewOrder hides it, which doesn't run until the next
+    // arrival) and incorrectly warn "Unsaved Changes" the moment Done navigates away from an
+    // order that was, in fact, just successfully saved.
+    document.getElementById('orderIdBlock')?.classList.add('hidden');
+
     _soShowPrintPromptModal(order, {
         title: 'Order Saved',
-        message: `Order ${orderId} saved successfully!`,
+        message: `Order ${order.id} saved successfully!`,
         onDone: () => { window.location.hash = '#salesPage'; }
     });
 }
 
 // ── Post-save / reprint print prompt — deliberately its own small overlay rather than
 // going through modal.js's openModal()/openAlert(). Those only support a single
-// Confirm + Cancel pair; this needs three independent actions (Print Claim Stub / Print
+// Confirm + Cancel pair; this needs three independent actions (Print Receipt / Print
 // Job Order Stub(s) / Done) that don't close the modal on click (so the cashier can print
 // one, then the other, then Done) — a shape neither existing helper covers. Reuses the
 // same .app-modal-* classes for visual consistency, just with its own overlay element
@@ -1945,24 +2042,32 @@ function handleSaveOrder() {
 function _soShowPrintPromptModal(order, { title, message, onDone }) {
     const hasJobStub = (order.items || []).some(soRowGetsJobStub);
 
+    // Job-less orders (pure accessory/service sales — nothing soRowGetsJobStub-eligible)
+    // don't get a "Print Job Order(s)" slot at all, rather than a disabled button sitting
+    // there with nothing to do — there's no job stub concept for these orders to begin
+    // with, so a disabled button just raised "why is this here?" without an answer.
+    const jobBtn = hasJobStub
+        ? `<button type="button" id="_soPrintJobBtn">Print Job Order(s)</button>`
+        : '';
+
     const overlay = document.createElement('div');
     overlay.className = 'app-modal active';
     overlay.innerHTML = `
-        <div class="app-modal-content">
+        <div class="app-modal-content so-print-prompt-content">
             <div class="app-modal-header">${escapeHtml(title)}</div>
             <div class="app-modal-body"><p>${escapeHtml(message)}</p></div>
-            <div class="app-modal-actions">
-                <button type="button" class="modal-cancel-btn" id="_soPrintClaimBtn">Print Claim Stub</button>
-                <button type="button" class="modal-cancel-btn" id="_soPrintJobBtn" ${hasJobStub ? '' : 'disabled'}>Print Job Order Stub(s)</button>
-                <button type="button" class="modal-confirm-btn" id="_soPrintDoneBtn">Done</button>
+            <div class="app-modal-actions so-print-prompt-actions">
+                <button type="button" id="_soPrintReceiptBtn">Print Receipt</button>
+                ${jobBtn}
+                <button type="button" id="_soPrintDoneBtn">Done</button>
             </div>
         </div>`;
     document.body.appendChild(overlay);
 
     const close = () => { overlay.remove(); onDone(); };
 
-    document.getElementById('_soPrintClaimBtn').addEventListener('click', () => printClaimStub(order));
-    document.getElementById('_soPrintJobBtn').addEventListener('click', () => printJobOrderStubs(order));
+    document.getElementById('_soPrintReceiptBtn').addEventListener('click', () => printReceipt(order));
+    document.getElementById('_soPrintJobBtn')?.addEventListener('click', () => printJobOrderStubs(order));
     document.getElementById('_soPrintDoneBtn').addEventListener('click', close);
 
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
@@ -1996,6 +2101,7 @@ function soResetOrderForm() {
     document.getElementById('orderTable')?.classList.remove('so-payment-mode');
     const saveBtn = document.getElementById('saveOrderBtn');
     if (saveBtn) saveBtn.disabled = true;
+    document.getElementById('saveOrderBlock')?.classList.add('hidden');
     soUpdateProceedButtonState();
 }
 
@@ -2050,4 +2156,4 @@ function initOrderFormLogic() {
 
     // Build the initial table
     soInitTable();
-}   
+}

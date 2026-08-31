@@ -296,57 +296,6 @@ function renderSelectPatientTable(filter = "", page = 1) {
     );
 }
 
-//--------------- DEBUG: Add 10 Sample Patients --------------- DELETE BEFORE FINAL PRODUCT -------------
-
-function addSamplePatients() {
-    const firstNames = ["Maria", "Jose", "Ana", "Juan", "Rosa", "Carlo", "Lena", "Marco", "Nina", "Diego"];
-    const lastNames = ["Santos", "Reyes", "Cruz", "Bautista", "Garcia", "Mendoza", "Torres", "Flores", "Ramos", "Dela Cruz"];
-    const sexes = ["Male", "Female"];
-    const streets = ["123 Rizal St", "456 Mabini Ave", "789 Bonifacio Blvd", "321 Luna St", "654 Aguinaldo Rd"];
-    const cities = ["Quezon City", "Manila", "Makati", "Pasig", "Caloocan"];
-
-    for (let i = 0; i < 10; i++) {
-        const patients = JSON.parse(Storage.getItem('patients') || '[]');
-
-        // Random details
-        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-        const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-        const name = `${firstName} ${lastName}`.toUpperCase();
-        const sex = sexes[Math.floor(Math.random() * sexes.length)];
-        const address = `${streets[Math.floor(Math.random() * streets.length)]}, ${cities[Math.floor(Math.random() * cities.length)]}`;
-
-        // Random birthday (age 10 - 80)
-        const age = Math.floor(Math.random() * 70) + 10;
-        const birthYear = new Date().getFullYear() - age;
-        const birthMonth = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
-        const birthDay = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
-        const birthday = `${birthYear}-${birthMonth}-${birthDay}`;
-
-        // Random contact number (PH format)
-        const number = `09${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
-
-        // Random email
-        const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${Math.floor(Math.random() * 99)}@email.com`;
-
-        // Date created = today
-        const now = new Date();
-        const dateCreated = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-        // Generate ID using existing function (obeys ID rules)
-        const id = generateID('patient');
-
-        const newPatient = { id, dateCreated, name, number, email, sex, address, birthday, age: String(age) };
-        patients.push(newPatient);
-
-        // Save after each push so generateID reads the latest list next iteration
-        Storage.setItem('patients', JSON.stringify(patients));
-    }
-
-    openAlert({ title: 'Done', body: '10 sample patients added!' });
-    renderSelectPatientTable();
-    generateID('patient'); // Refresh the ID field to next available
-}
-
 //--------------- Unified Save & Clear Logic ---------------
 
 // ── ID Collision Guard ────────────────────────────────────────────
@@ -389,7 +338,7 @@ function _resolveUniquePrescriptionID() {
 }
 
 // 6. Unified Save Logic
-function handleFormSubmit(event) {
+async function handleFormSubmit(event) {
     event.preventDefault();
     
     const form = event.target;
@@ -441,26 +390,31 @@ function handleFormSubmit(event) {
         return;
     }
 
-    // ── Collision guard: re-check ID is still free at save time ──
-    const safeID = _resolveUniqueID(isPatient ? 'patient' : 'customer');
+    // ── Critical section: ID collision-check + record write, locked per-storage-key so
+    // no other tab/window can read or write this same array while this is in flight. See
+    // soWithStorageLock in storage.js. Duplicate-name check above stays outside the lock —
+    // it's a business-rule check, not an ID-collision concern. ──
+    const newData = await soWithStorageLock(storageKey, async () => {
+        const safeID = _resolveUniqueID(isPatient ? 'patient' : 'customer');
 
-    const newData = {
-        id: safeID,
-        dateCreated: `${document.getElementById(`${prefix}DateCreatedYYYY`).value}-${document.getElementById(`${prefix}DateCreatedMM`).value}-${document.getElementById(`${prefix}DateCreatedDD`).value}`,
-        name: name,
-        number: number,
-        email: document.getElementById(`${prefix}InputEmail`).value,
-        sex: document.getElementById(`${prefix}InputSex`).value,
-        address: document.getElementById(`${prefix}InputAddress`).value,
-        birthday: birthday,
-        age: document.getElementById(`${prefix}InputAge`).value
-    };
+        const record = {
+            id: safeID,
+            dateCreated: `${document.getElementById(`${prefix}DateCreatedYYYY`).value}-${document.getElementById(`${prefix}DateCreatedMM`).value}-${document.getElementById(`${prefix}DateCreatedDD`).value}`,
+            name: name,
+            number: number,
+            email: document.getElementById(`${prefix}InputEmail`).value,
+            sex: document.getElementById(`${prefix}InputSex`).value,
+            address: document.getElementById(`${prefix}InputAddress`).value,
+            birthday: birthday,
+            age: document.getElementById(`${prefix}InputAge`).value
+        };
 
-    // Re-read fresh immediately before push — another tab may have saved
-    // between the duplicate check above and this write.
-    const freshRecords = JSON.parse(Storage.getItem(storageKey) || '[]');
-    freshRecords.push(newData);
-    Storage.setItem(storageKey, JSON.stringify(freshRecords));
+        const freshRecords = JSON.parse(Storage.getItem(storageKey) || '[]');
+        freshRecords.push(record);
+        Storage.setItem(storageKey, JSON.stringify(freshRecords));
+
+        return record;
+    });
 
     const savedId = newData.id;
 
@@ -487,14 +441,16 @@ function handleFormSubmit(event) {
                 body: `Create a Patient record for this customer?`,
                 confirmText: 'Yes, Create',
                 cancelText: 'No Thanks',
-                onConfirm: () => {
+                onConfirm: async () => {
                     // generateID writes to input; then guard double-checks freshness
                     generateID('patient');
-                    const newPatientID = _resolveUniqueID('patient');
-                    // Re-read fresh — modal interaction may have let another tab save
-                    const freshPatientRecords = JSON.parse(Storage.getItem('patients') || '[]');
-                    freshPatientRecords.push({ ...newData, id: newPatientID });
-                    Storage.setItem('patients', JSON.stringify(freshPatientRecords));
+                    const newPatientID = await soWithStorageLock('patients', async () => {
+                        const patientId = _resolveUniqueID('patient');
+                        const freshPatientRecords = JSON.parse(Storage.getItem('patients') || '[]');
+                        freshPatientRecords.push({ ...newData, id: patientId });
+                        Storage.setItem('patients', JSON.stringify(freshPatientRecords));
+                        return patientId;
+                    });
                     openAlert({ title: 'Saved', body: `Customer ${savedId} and Patient ${newPatientID} successfully created.`, onOk: afterSave });
                 },
                 onCancel: () => {
@@ -706,7 +662,6 @@ function initFormLogic() {
         });
     }
     document.getElementById('clearDataBtn')?.addEventListener('click', clearAllData);
-    document.getElementById('patientSampleBtn')?.addEventListener('click', addSamplePatients);
     document.getElementById('selectDifferentPatientBtn')?.addEventListener('click', () => {
         const orig = window._originalPatientNotes || {};
         const notesDirty =
@@ -993,36 +948,18 @@ function generateSphereCl() {
 
 //--------------- Copy Rx Validation ---------------
 
-function isEyeValidCopyRx(sphId, cylId, axisId) {
-    const sph = document.getElementById(sphId).value.trim();
-    const cyl = document.getElementById(cylId).value.trim();
-    const axis = document.getElementById(axisId).value.trim();
-    const axisInput = document.getElementById(axisId);
-
-    const hasSph = sph !== '';
-    const hasCyl = cyl !== '';
-    const hasAxis = axis !== '';
-
-    if (hasCyl && !hasAxis) {
-        axisInput.classList.add('input-error');
-        return false;
-    }
-    if (hasAxis && !hasCyl) {
-        axisInput.classList.add('input-error');
-        return false;
-    }
-
-    axisInput.classList.remove('input-error');
-    return hasSph || (hasCyl && hasAxis);
-}
-
+// -- Distance-only gate, same rule as New Rx Eye Exam and Edit Rx Copy Rx: Near/ADD is
+// never required to save — a user must be able to save a distance-only Rx. Was
+// previously also gating on odNearValid/osNearValid via a duplicate isEyeValidCopyRx()
+// (byte-identical to isEyeValid() above), which forced Near to be filled before save
+// would succeed at all. Deduped onto the shared isEyeValid() and dropped the Near
+// checks so New Rx Copy Rx matches the Near-is-optional rule already followed
+// everywhere else in the app. --
 function validateCopyRx() {
-    const odValid     = isEyeValidCopyRx('copyRxOdDistanceSph', 'copyRxOdDistanceCyl', 'copyRxOdDistanceAxis');
-    const osValid     = isEyeValidCopyRx('copyRxOsDistanceSph', 'copyRxOsDistanceCyl', 'copyRxOsDistanceAxis');
-    const odNearValid = isEyeValidCopyRx('copyRxOdNearSph',     'copyRxOdNearCyl',     'copyRxOdNearAxis');
-    const osNearValid = isEyeValidCopyRx('copyRxOsNearSph',     'copyRxOsNearCyl',     'copyRxOsNearAxis');
-    if (!odValid || !osValid || !odNearValid || !osNearValid) {
-        openAlert({ title: 'Invalid Rx', body: 'Minimum required per eye: SPH alone, or CYL + AXIS together. Applies to both Distance and Near rows.' });
+    const odValid = isEyeValid('copyRxOdDistanceSph', 'copyRxOdDistanceCyl', 'copyRxOdDistanceAxis');
+    const osValid = isEyeValid('copyRxOsDistanceSph', 'copyRxOsDistanceCyl', 'copyRxOsDistanceAxis');
+    if (!odValid || !osValid) {
+        openAlert({ title: 'Invalid Rx', body: 'Minimum required per eye in Distance: SPH alone, or CYL + AXIS together.' });
         return false;
     }
     return true;

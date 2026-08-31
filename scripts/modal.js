@@ -35,6 +35,27 @@ function _getModal() {
     return _modal;
 }
 
+// ── Reset confirm/cancel buttons to a clean, listener-free state before wiring new
+// handlers. openModal and openAlert both reuse the SAME singleton overlay/buttons (see
+// _getModal) — every call used to attach a fresh { once: true } listener without ever
+// removing a PRIOR invocation's listener that never fired (e.g. the confirm-button
+// listener from a modal the user cancelled via the cancel button). { once: true } only
+// self-removes the listener that actually fires — it does nothing for its sibling on
+// the other button. Left unattended, that stale listener stays armed and fires again
+// — alongside whatever the next unrelated modal's confirm button is actually supposed
+// to do — the next time literally any modal's confirm gets clicked. Cloning the
+// buttons strips every listener atomically, which is more reliable here than tracking
+// exact function references across two different call sites (openModal vs openAlert). ──
+function _resetModalButtons(overlay) {
+    const oldConfirm = overlay.querySelector('.modal-confirm-btn');
+    const oldCancel  = overlay.querySelector('.modal-cancel-btn');
+    const confirmBtn = oldConfirm.cloneNode(true);
+    const cancelBtn  = oldCancel.cloneNode(true);
+    oldConfirm.replaceWith(confirmBtn);
+    oldCancel.replaceWith(cancelBtn);
+    return { confirmBtn, cancelBtn };
+}
+
 function openModal(options = {}) {
     const {
         title        = 'Confirm',
@@ -46,16 +67,16 @@ function openModal(options = {}) {
         onCancel     = () => {}
     } = options;
 
-    const overlay    = _getModal();
-    const header     = overlay.querySelector('.app-modal-header');
-    const bodyEl     = overlay.querySelector('.app-modal-body');
-    const confirmBtn = overlay.querySelector('.modal-confirm-btn');
-    const cancelBtn  = overlay.querySelector('.modal-cancel-btn');
+    const overlay = _getModal();
+    const header   = overlay.querySelector('.app-modal-header');
+    const bodyEl   = overlay.querySelector('.app-modal-body');
+    const { confirmBtn, cancelBtn } = _resetModalButtons(overlay);
 
     // Set content
     header.textContent  = title;
     confirmBtn.textContent = confirmText;
     cancelBtn.textContent  = cancelText;
+    cancelBtn.style.display = ''; // openAlert hides this — make sure a reused overlay isn't stuck hidden
 
     // Build body — support \n as line breaks, render as <p> tags. NOT escaped here —
     // some callers (e.g. printRx's output-type picker) deliberately embed real HTML
@@ -79,23 +100,23 @@ function openModal(options = {}) {
         inputEl.addEventListener('input', () => {
             confirmBtn.disabled = inputEl.value !== requireTyping;
         });
-
-        _wireButtons(overlay, confirmBtn, cancelBtn, onConfirm, onCancel);
     } else {
         confirmBtn.disabled = false;
-        _wireButtons(overlay, confirmBtn, cancelBtn, onConfirm, onCancel);
     }
+    _wireButtons(overlay, confirmBtn, cancelBtn, onConfirm, onCancel);
 
     overlay.classList.add('active');
 
-    // ESC to close
+    // ESC to close — tracked on the overlay and cleaned up centrally in closeModal(),
+    // same as _outsideClick below, so it's removed no matter which of the four
+    // dismissal paths (confirm/cancel click, ESC, outside click) actually fires.
     const escHandler = (e) => {
         if (e.key === 'Escape') {
             closeModal();
             onCancel();
-            document.removeEventListener('keydown', escHandler);
         }
     };
+    overlay._escHandler = escHandler;
     document.addEventListener('keydown', escHandler);
 
     // Click outside to cancel
@@ -127,6 +148,10 @@ function closeModal() {
         _modal.removeEventListener('click', _modal._outsideClick);
         delete _modal._outsideClick;
     }
+    if (_modal._escHandler) {
+        document.removeEventListener('keydown', _modal._escHandler);
+        delete _modal._escHandler;
+    }
 }
 // openAlert(options) — single OK button, no cancel
 //
@@ -144,11 +169,10 @@ function openAlert(options = {}) {
         onOk   = () => {}
     } = options;
 
-    const overlay    = _getModal();
-    const header     = overlay.querySelector('.app-modal-header');
-    const bodyEl     = overlay.querySelector('.app-modal-body');
-    const confirmBtn = overlay.querySelector('.modal-confirm-btn');
-    const cancelBtn  = overlay.querySelector('.modal-cancel-btn');
+    const overlay = _getModal();
+    const header   = overlay.querySelector('.app-modal-header');
+    const bodyEl   = overlay.querySelector('.app-modal-body');
+    const { confirmBtn, cancelBtn } = _resetModalButtons(overlay);
 
     header.textContent      = title;
     confirmBtn.textContent  = okText;
@@ -167,15 +191,15 @@ function openAlert(options = {}) {
         onOk();
     }, { once: true });
 
-    // ESC or click outside also dismisses
+    // ESC or click outside also dismisses — same centralized cleanup as openModal
     const escHandler = (e) => {
         if (e.key === 'Escape') {
             cancelBtn.style.display = '';
             closeModal();
             onOk();
-            document.removeEventListener('keydown', escHandler);
         }
     };
+    overlay._escHandler = escHandler;
     document.addEventListener('keydown', escHandler);
 
     overlay._outsideClick = (e) => {

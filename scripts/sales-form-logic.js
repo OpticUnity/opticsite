@@ -199,6 +199,46 @@ function generateOrderID() {
     return newID;
 }
 
+//--------------- Job ID Generation ---------------
+// Same OR##AA0000-style scheme as Order/Customer/Patient IDs (JB prefix), but jobs
+// aren't a flat top-level Storage array like salesOrders/customers/patients — they're
+// nested inside salesOrders[].items[]. And unlike a single Order ID per save, one order
+// can mint SEVERAL Job IDs at once (one per soRowGetsJobStub-eligible item), so this
+// hands back a whole sequence rather than one ID like generateOrderID() does.
+
+// -- Find the next Job ID seed (series + number to continue from) --
+function _soNextJobIdSeed() {
+    const orders = JSON.parse(Storage.getItem('salesOrders') || '[]');
+    const currentYearShort = new Date().getFullYear().toString().slice(-2);
+
+    // Flatten every existing Job ID across every saved order, in save order —
+    // the last one is the most recently issued, same role lastRecord plays above.
+    const allJobIds = orders.flatMap(o => (o.items || []).filter(i => i.jobId).map(i => i.jobId));
+
+    if (allJobIds.length === 0) return { series: 'AA', nextNumber: 1, year: currentYearShort };
+
+    const lastID      = allJobIds[allJobIds.length - 1];
+    const lastYear     = lastID.substring(2, 4);
+    const lastSeries   = lastID.substring(4, 6);
+    const lastNumPart  = parseInt(lastID.substring(6));
+
+    if (lastYear !== currentYearShort) return { series: 'AA', nextNumber: 1, year: currentYearShort };
+    if (lastNumPart >= 9999) return { series: incrementSeries(lastSeries), nextNumber: 1, year: currentYearShort };
+    return { series: lastSeries, nextNumber: lastNumPart + 1, year: currentYearShort };
+}
+
+// -- Mint `count` sequential Job IDs in one go, for one order's worth of jobs --
+function _soMakeJobIdSequence(count) {
+    let { series, nextNumber, year } = _soNextJobIdSeed();
+    const ids = [];
+    for (let i = 0; i < count; i++) {
+        if (nextNumber > 9999) { series = incrementSeries(series); nextNumber = 1; }
+        ids.push(`JB${year}${series}${String(nextNumber).padStart(4, '0')}`);
+        nextNumber++;
+    }
+    return ids;
+}
+
 // -- Collision Guard: re-check at save time --
 function _resolveUniqueOrderID() {
     const inputEl     = document.getElementById('orderID');
@@ -233,51 +273,6 @@ function initSalesFormLogic() {
     // Walk-in button
     document.getElementById("walkInBtn")?.addEventListener("click", walkIn);
 
-    // Sample button (debug)
-    document.getElementById("customerSampleBtn")?.addEventListener("click", addSampleCustomers);
-
     // Initial table render
     renderSelectCustomerTable();
-}
-
-//--------------- DEBUG: Add 10 Sample Customers --------------- DELETE BEFORE FINAL PRODUCT ---------------
-
-function addSampleCustomers() {
-    const firstNames = ["Maria", "Jose", "Ana", "Juan", "Rosa", "Carlo", "Lena", "Marco", "Nina", "Diego"];
-    const lastNames  = ["Santos", "Reyes", "Cruz", "Bautista", "Garcia", "Mendoza", "Torres", "Flores", "Ramos", "Dela Cruz"];
-    const sexes      = ["Male", "Female"];
-    const streets    = ["123 Rizal St", "456 Mabini Ave", "789 Bonifacio Blvd", "321 Luna St", "654 Aguinaldo Rd"];
-    const cities     = ["Quezon City", "Manila", "Makati", "Pasig", "Caloocan"];
-
-    for (let i = 0; i < 10; i++) {
-        const customers = JSON.parse(Storage.getItem('customers') || '[]');
-
-        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-        const lastName  = lastNames[Math.floor(Math.random() * lastNames.length)];
-        const name      = `${firstName} ${lastName}`.toUpperCase();
-        const sex       = sexes[Math.floor(Math.random() * sexes.length)];
-        const address   = `${streets[Math.floor(Math.random() * streets.length)]}, ${cities[Math.floor(Math.random() * cities.length)]}`;
-
-        const age       = Math.floor(Math.random() * 70) + 10;
-        const birthYear = new Date().getFullYear() - age;
-        const birthMonth = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
-        const birthDay   = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
-        const birthday   = `${birthYear}-${birthMonth}-${birthDay}`;
-
-        const number = `09${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
-        const email  = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${Math.floor(Math.random() * 99)}@email.com`;
-
-        const now = new Date();
-        const dateCreated = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-        const id = generateID('customer');
-
-        const newCustomer = { id, dateCreated, name, number, email, sex, address, birthday, age: String(age) };
-        customers.push(newCustomer);
-        Storage.setItem('customers', JSON.stringify(customers));
-    }
-
-    openAlert({ title: 'Done', body: '10 sample customers added!' });
-    renderSelectCustomerTable();
-    generateID('customer');
 }

@@ -182,16 +182,20 @@ const dirtyGuardPages = {
     },
     '#viewRecordsMenu': {
         isDirty: () => {
-            // Check if user is mid-edit on a patient profile or in edit Rx mode
+            // Check if user is mid-edit on a patient/customer profile or in edit Rx mode
             return window._isEditRxActive === true
                 || (typeof window._isViewRecordsEditDirty === 'function'
-                    && window._isViewRecordsEditDirty());
+                    && window._isViewRecordsEditDirty())
+                || (typeof window._isViewRecordsCustomerEditDirty === 'function'
+                    && window._isViewRecordsCustomerEditDirty());
         },
         cleanup: () => {
             // Close edit Rx UI if active
             if (window._isEditRxActive && typeof closeEditRxUI === 'function') closeEditRxUI();
             // If patient edit mode is active, cancel it cleanly
             if (typeof exitEditMode === 'function') exitEditMode(true);
+            // If customer edit mode is active, cancel it cleanly too
+            if (typeof exitCustomerEditMode === 'function') exitCustomerEditMode(true);
             // Reset all sub-menus back to main menu
             document.getElementById('viewRecordsMainMenu')?.classList.remove('hidden');
             document.getElementById('viewRecordsCustomerMenu')?.classList.add('hidden');
@@ -199,9 +203,14 @@ const dirtyGuardPages = {
             // Also reset patient sub-sections in case user was deep in a profile
             document.getElementById('viewPatientProfileMenu')?.classList.add('hidden');
             document.getElementById('viewPatientSelectMenu')?.classList.remove('hidden');
-            // Clear the search bar
-            const searchBar = document.getElementById('viewPatientSearchBarInput');
-            if (searchBar) searchBar.value = '';
+            // Same for customer sub-sections
+            document.getElementById('viewCustomerProfileMenu')?.classList.add('hidden');
+            document.getElementById('viewCustomerSelectMenu')?.classList.remove('hidden');
+            // Clear the search bars
+            const patientSearchBar = document.getElementById('viewPatientSearchBarInput');
+            if (patientSearchBar) patientSearchBar.value = '';
+            const customerSearchBar = document.getElementById('viewCustomerSearchBarInput');
+            if (customerSearchBar) customerSearchBar.value = '';
         }
     }
 
@@ -226,6 +235,23 @@ const dirtyGuardPages = {
             if (document.getElementById('setupPrcNumber'))     document.getElementById('setupPrcNumber').value     = saved.prcNumber     || '';
             ['setupClinicName','setupClinicAddress','setupClinicContact','setupDoctorName','setupPrcNumber']
                 .forEach(id => document.getElementById(id)?.classList.remove('input-error'));
+        }
+    }
+
+    ,
+    // Sales/New Order — dirty the moment a customer/walk-in is picked (orderIdBlock
+    // becomes visible), same threshold #newPrescriptionMenu uses (patientSelected alone
+    // counts, not just non-empty fields) — mirrors that precedent rather than requiring
+    // actual item content, so this also covers the highest-stakes moment: mid-payment
+    // entry, where orderIdBlock has stayed visible the whole time. cleanup reuses
+    // changeCustomer() from sales-form-logic.js, which already does the full reset
+    // (profile fields, block visibility, soResetOrderForm()) — same reset onEnterNewOrder
+    // itself runs unconditionally on arrival; this just stops it from happening
+    // silently on the way OUT.
+    '#salesNewOrder': {
+        isDirty: () => !document.getElementById('orderIdBlock')?.classList.contains('hidden'),
+        cleanup: () => {
+            if (typeof changeCustomer === 'function') changeCustomer();
         }
     }
 

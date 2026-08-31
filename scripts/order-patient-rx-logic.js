@@ -297,7 +297,12 @@ function soExtractLensRxData(prescription) {
     if (!f) return null;
     return {
         odSph: f.od?.distSph || '', odCyl: f.od?.distCyl || '', odAxis: f.od?.distAxis || '', odAdd: f.od?.addSph || '',
-        osSph: f.os?.distSph || '', osCyl: f.os?.distCyl || '', osAxis: f.os?.distAxis || '', osAdd: f.os?.addSph || ''
+        osSph: f.os?.distSph || '', osCyl: f.os?.distCyl || '', osAxis: f.os?.distAxis || '', osAdd: f.os?.addSph || '',
+        // PD — both Distance and Near pulled here; which one actually lands in the
+        // lensOdPd/lensOsPd fields depends on Lens Type (see soApplyLensPdFromRx below),
+        // not a fixed key, so both are kept available rather than picked at extract time.
+        odDistPd: f.od?.distPd || '', odNearPd: f.od?.nearPd || '',
+        osDistPd: f.os?.distPd || '', osNearPd: f.os?.nearPd || ''
     };
 }
 
@@ -339,7 +344,39 @@ function soFillAndLockRxFields(type) {
         el.classList.add('so-rx-locked');
     });
     if (type === 'cl') soSetClFieldMode('rx');
-    if (type === 'lens') soUpdateLensTypeOptionsForAdd();
+    if (type === 'lens') {
+        soUpdateLensTypeOptionsForAdd();
+        soApplyLensPdFromRx();
+    }
+}
+
+// ── Lens PD — not a simple 1:1 pull like SPH/CYL/AXIS/ADD above, because which PD is
+// correct depends on Lens Type: Distance PD for Distance/Kryptok/Flattop/Progressive,
+// Near PD for Single Vision (Near) — a near-only lens has no distance component to
+// measure PD against. Re-run on every Rx pull AND every Lens Type change (see
+// soOnLensTypeChange in order-form-logic.js), so switching type after the Rx is already
+// pulled doesn't leave a stale PD sitting in the field. No-op in manual mode — PD is a
+// plain editable field there like everything else. ──
+function soApplyLensPdFromRx() {
+    if (!_soPendingLinkedRx || _soPendingLinkedRx.manual) return;
+    const data = _soPendingLinkedRx.data;
+    if (!data) return;
+
+    const lensType   = document.getElementById('lensType')?.value || '';
+    const useNearPd  = lensType === 'Single Vision (Near)';
+
+    const odPdEl = document.getElementById('lensOdPd');
+    const osPdEl = document.getElementById('lensOsPd');
+    if (odPdEl) {
+        odPdEl.value = (useNearPd ? data.odNearPd : data.odDistPd) || '';
+        odPdEl.readOnly = true;
+        odPdEl.classList.add('so-rx-locked');
+    }
+    if (osPdEl) {
+        osPdEl.value = (useNearPd ? data.osNearPd : data.osDistPd) || '';
+        osPdEl.readOnly = true;
+        osPdEl.classList.add('so-rx-locked');
+    }
 }
 
 // ── CL only — manual entry is for ready-made spherical lenses, so the grade is
@@ -383,7 +420,8 @@ function soSetClFieldMode(mode) {
 }
 
 // ── Unlock the grade fields — used when changing/clearing the Rx link, or switching
-// a CL row to manual entry ──
+// a CL row to manual entry. Lens PD is unlocked alongside — same reason it's not in
+// SO_RX_FIELD_MAP: it's outside the generic 1:1 map, so it needs its own line here. ──
 function soUnlockRxFields(type) {
     SO_RX_FIELD_MAP[type].ids.forEach(id => {
         const el = document.getElementById(id);
@@ -391,10 +429,22 @@ function soUnlockRxFields(type) {
         el.readOnly = false;
         el.classList.remove('so-rx-locked');
     });
+    if (type === 'lens') {
+        ['lensOdPd', 'lensOsPd'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.readOnly = false;
+            el.classList.remove('so-rx-locked');
+        });
+    }
 }
 
-// ── "Select Prescription" — auto-resolves if there's exactly one qualifying Rx,
-// opens a picker if there's more than one, alerts if there's none. ──
+// ── "Select Prescription" — always opens the picker when at least one qualifying Rx
+// exists (even just one), alerts if there's none. Previously auto-resolved a single
+// match without showing the picker — removed per Marc: that silently skipped the
+// explicit "Select Prescription" step the button promises, and made "Change" a dead
+// button when only one qualifying Rx existed (it would just re-select the same one
+// instantly instead of letting the user actually see/reconsider it). ──
 function soOpenRxSelectModal(type) {
     if (!_soPendingLinkedPatient) return;
     const qualifying = soGetQualifyingPrescriptions(_soPendingLinkedPatient.id, type);
@@ -406,11 +456,6 @@ function soOpenRxSelectModal(type) {
             body:  `${_soPendingLinkedPatient.name} has no recorded prescription with ${fieldLabel} on file.` +
                    (type === 'cl' ? ' You can still enter the grade manually.' : ' Select a different patient, or record a prescription for them first.')
         });
-        return;
-    }
-
-    if (qualifying.length === 1) {
-        soSelectRx(qualifying[0].id, type);
         return;
     }
 
@@ -489,8 +534,10 @@ function soEnterRxManuallyFromPicker() {
     soEnterRxManually(type);
 }
 
-// ── CL only — no Rx on file, or the cashier just prefers to type it in directly.
-// Fields stay fully editable since there's no record backing them. ──
+// ── CL only in practice — Lens never reaches this (no manual-entry gate button exists
+// for it; Lens always requires a linked Rx). Still branch-safe for 'lens' below rather
+// than assuming CL-only forever. Fields stay fully editable since there's no record
+// backing them. ──
 function soEnterRxManually(type) {
     _soPendingLinkedRx = { manual: true };
     soUnlockRxFields(type);
@@ -498,6 +545,12 @@ function soEnterRxManually(type) {
         const el = document.getElementById(id);
         if (el) el.value = ''; // clear anything left over from a previously-selected Rx
     });
+    if (type === 'lens') {
+        ['lensOdPd', 'lensOsPd'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+    }
     if (type === 'cl') soSetClFieldMode('manual');
     soUpdateLensClStage(type);
 }

@@ -392,6 +392,9 @@ function buildEditRxUI(rx) {
             <!-- Preliminary -->
             <div class="eye-examination-form flex-column">
                 <h4 class="preliminary-header">Preliminary</h4>
+                <label for="erx_eyeExamVisitNotes">Visit Notes : </label>
+                <textarea id="erx_eyeExamVisitNotes" class="patient-profile-textarea" maxlength="1000"
+                    placeholder="Presenting concern, hours of sleep, other notes for this visit">${pf(rx.visitNotes)}</textarea>
                 <div class="eye-examination-form-preliminary flex-row">
                     <div class="preliminary-uva flex-column">
                         <label class="eye-test-label-uva">UVA</label>

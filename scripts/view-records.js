@@ -5,12 +5,20 @@ function initViewRecordsNav() {
     // Note: customerMenuBtn, patientMenuBtn, viewRecordsCtmBackBtn, viewRecordsPtmBackBtn
     // are already wired in ui-and-navigation.js — only wire what's unique here.
 
+    // customerMenuBtn needs to also trigger table render, same shape as patientMenuBtn below
+    document.getElementById('customerMenuBtn')?.addEventListener('click', () => {
+        renderViewCustomerTable();
+    });
+
     // patientMenuBtn needs to also trigger table render, so we add just that listener
     document.getElementById('patientMenuBtn')?.addEventListener('click', () => {
         renderViewPatientTable();
     });
 
-    // Search bar
+    // Search bars
+    document.getElementById('viewCustomerSearchBarInput')?.addEventListener('input', (e) => {
+        renderViewCustomerTable(e.target.value);
+    });
     document.getElementById('viewPatientSearchBarInput')?.addEventListener('input', (e) => {
         renderViewPatientTable(e.target.value);
     });
@@ -35,18 +43,44 @@ function initSalesHistoryNav() {
     });
 }
 
-// ── Job status rollup for the list row — full per-job breakdown lives in the
-// expanded detail row, this is just an at-a-glance summary. ──
+// ── Job status rollup for the list row — full per-job breakdown lives in the expanded
+// detail row, this is just an at-a-glance summary. jobStatus (pending/processing/done) and
+// claimed are separate, orthogonal fields (see handleSaveOrder's comment on why) — "Ready
+// for Pickup" isn't stored anywhere, it's derived right here: every job done, but not
+// every job claimed yet. That's the actual answer to "what happens when a job goes Done" —
+// nothing is written anywhere, the order's rollup just naturally reads differently. ──
 function _soOrderJobStatusSummary(order) {
     const jobs = (order.items || []).filter(i => i.jobId);
     if (jobs.length === 0) return { label: '—', cls: 'none' };
-    if (jobs.some(j => j.jobStatus === 'pending')) return { label: 'Pending', cls: 'pending' };
-    if (jobs.some(j => j.jobStatus === 'ready'))   return { label: 'Ready for Pickup', cls: 'ready' };
+    if (jobs.some(j => j.jobStatus === 'pending'))    return { label: 'Pending', cls: 'pending' };
+    if (jobs.some(j => j.jobStatus === 'processing')) return { label: 'Processing', cls: 'processing' };
+    // every job is 'done' at this point — the only remaining question is claim status
+    if (jobs.some(j => !j.claimed)) return { label: 'Ready for Pickup', cls: 'ready' };
     return { label: 'Claimed', cls: 'claimed' };
 }
 
 const SO_PAYMENT_STATUS_LABELS = { unpaid: 'Unpaid', partial: 'Partial', paid: 'Paid' };
-const SO_JOB_STATUS_LABELS     = { pending: 'Pending', ready: 'Ready for Pickup', claimed: 'Claimed' };
+const SO_JOB_STATUS_LABELS     = { pending: 'Pending', processing: 'Processing', done: 'Done' };
+
+// ── Shared timestamp formatter — used here (payment/claim timestamps) and in
+// job-orders-logic.js (Started/Done columns). Locale-aware date + time, '—' for null. ──
+function _soFormatTimestamp(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// ── Two-line date for Sales History's Date column — "YYYY-MM-DD" was wrapping mid-string
+// (browser breaking after the first hyphen, cutting "2026-08-" from "29") since the column
+// narrows once a detail row is open. Splits cleanly instead: year alone on top, MM-DD below.
+// Expects the stored "YYYY-MM-DD" format (see setDateCreated in form-logic.js). ──
+function _soFormatDateTwoLine(dateStr) {
+    if (!dateStr) return '—';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return escapeHtml(dateStr); // unexpected format — show as-is rather than mangle it
+    const [yyyy, mm, dd] = parts;
+    return `${escapeHtml(yyyy)}<br>${escapeHtml(mm)}-${escapeHtml(dd)}`;
+}
 
 function renderSalesHistoryTable(filter = "", page = 1) {
     const tableBody = document.querySelector('#salesHistoryTable tbody');
@@ -114,14 +148,16 @@ function createOrderRow(order, customers) {
 
     row.innerHTML = `
         <td>${escapeHtml(order.id)}</td>
-        <td>${escapeHtml(order.dateCreated)}</td>
+        <td>${_soFormatDateTwoLine(order.dateCreated)}</td>
         <td class="uppercase">${escapeHtml(customerName)}</td>
         <td>${_soMoney(order.total)}</td>
         <td><span class="so-status-badge so-status-${order.paymentStatus}">${escapeHtml(payStatus)}</span></td>
         <td><span class="so-status-badge so-status-${jobSummary.cls}">${escapeHtml(jobSummary.label)}</span></td>
         <td>
-            <button class="toggle-btn" title="View">▼</button>
-            <button class="toggle-btn print-order-btn" title="Print"><i class="fa-solid fa-print"></i></button>
+            <div class="so-row-actions">
+                <button class="toggle-btn" title="View">▼</button>
+                <button class="toggle-btn print-order-btn" title="Print"><i class="fa-solid fa-print"></i></button>
+            </div>
         </td>
     `;
 
@@ -160,10 +196,11 @@ function createOrderDetailRow(order) {
             <td>${_soMoney(item.total)}</td>
             <td>${escapeHtml(item.jobId || '—')}</td>
             <td>${item.jobStatus ? escapeHtml(SO_JOB_STATUS_LABELS[item.jobStatus] || item.jobStatus) : '—'}</td>
+            <td>${item.jobId ? (item.claimed ? '✓ ' + _soFormatTimestamp(item.claimedAt) : 'No') : '—'}</td>
         </tr>`).join('');
 
     const paymentRows = (order.payments || []).map(p => `
-        <tr><td colspan="4" style="text-align:left;">${escapeHtml(soFormatPaymentLabel(p))}</td><td colspan="3">${_soMoney(p.amount)}</td></tr>`
+        <tr><td colspan="4" style="text-align:left;">${escapeHtml(soFormatPaymentLabel(p))} <span style="opacity:0.6;font-size:11px;">${_soFormatTimestamp(p.timestamp)}</span></td><td colspan="4">${_soMoney(p.amount)}</td></tr>`
     ).join('');
 
     detailRow.innerHTML = `
@@ -171,7 +208,7 @@ function createOrderDetailRow(order) {
             <table class="inner-table">
                 <thead>
                     <tr>
-                        <th>Item</th><th>Qty</th><th>Price</th><th>Disc.</th><th>Total</th><th>Job ID</th><th>Job Status</th>
+                        <th>Item</th><th>Qty</th><th>Price</th><th>Disc.</th><th>Total</th><th>Job ID</th><th>Job Status</th><th>Claimed</th>
                     </tr>
                 </thead>
                 <tbody>${itemRows}</tbody>
@@ -186,6 +223,169 @@ function createOrderDetailRow(order) {
 }
 
 // ---- Render Patient Select Table ----
+// ================================================================
+//  View Customer — mirrors View Patient's structure exactly (select
+//  table -> profile view -> edit mode -> delete), minus the two
+//  things a customer record doesn't have: no Rx table/Rx panel, and
+//  no notes fields (customer schema is id/dateCreated/name/number/
+//  email/sex/address/birthday/age only — see form-logic.js's
+//  handleFormSubmit record shape). Deliberately a full parallel
+//  implementation rather than a shared/generalized one — Patient's
+//  side is mature and already audited, so this doesn't touch or
+//  depend on it at all, same "near-duplicate but type-specific"
+//  pattern already used throughout (form-logic.js, sales-form-logic.js).
+// ================================================================
+
+function renderViewCustomerTable(filter = "", page = 1) {
+    const tableBody = document.querySelector('#viewCustomerTable tbody');
+    if (!tableBody) return;
+
+    const rowsPerPage = 10;
+    const customers = JSON.parse(Storage.getItem('customers') || '[]');
+
+    // --- Handle empty storage ---
+    if (customers.length === 0) {
+        tableBody.innerHTML = `
+            <tr><td colspan="4" style="color:gray;font-style:italic;padding:20px;text-align:center;">
+                No customers yet
+            </td></tr>`;
+        document.getElementById('viewCustomerPagination').innerHTML = '';
+        return;
+    }
+
+    const filtered = customers
+        .filter(c => {
+            const search = filter.toLowerCase();
+            const name   = (c.name   || '').toLowerCase();
+            const number = (c.number || '').toLowerCase();
+            const id     = (c.id     || '').toLowerCase();
+            return id.includes(search) || name.includes(search) || number.includes(search);
+        })
+        .reverse();
+
+    tableBody.innerHTML = '';
+
+    if (filtered.length === 0) {
+        tableBody.innerHTML = `
+            <tr><td colspan="4" style="color:gray;font-style:italic;padding:20px;text-align:center;">
+                No Match Found
+            </td></tr>`;
+        document.getElementById('viewCustomerPagination').innerHTML = '';
+        return;
+    }
+
+    const start = (page - 1) * rowsPerPage;
+    const pageItems = filtered.slice(start, start + rowsPerPage);
+
+    pageItems.forEach(customer => {
+        const isDeleted = customer.deleted === true;
+        const row = document.createElement('tr');
+        if (isDeleted) row.classList.add('record-deleted');
+        row.innerHTML = `
+            <td>${escapeHtml(customer.id)}</td>
+            <td class="uppercase">${isDeleted ? '[DELETED]' : escapeHtml(customer.name)}</td>
+            <td>${isDeleted ? '—' : escapeHtml(customer.number)}</td>
+            <td>${isDeleted
+                ? '<span class="deleted-label">Deleted</span>'
+                : '<button class="select-patient-button view-select-btn">Select</button>'
+            }</td>
+        `;
+        if (!isDeleted) {
+            row.querySelector('.view-select-btn').addEventListener('click', () => {
+                viewCustomer(customer);
+            });
+        }
+        tableBody.appendChild(row);
+    });
+
+    createPagination(
+        'viewCustomerPagination',
+        filtered,
+        page,
+        rowsPerPage,
+        (newPage) => renderViewCustomerTable(filter, newPage)
+    );
+}
+
+// ---- View Selected Customer ----
+function viewCustomer(customer) {
+    // Populate profile fields
+    document.getElementById('viewCustomerIdNumber').value    = customer.id;
+    document.getElementById('viewCustomerDateCreated').value = customer.dateCreated;
+    document.getElementById('viewCustomerName').value        = customer.name;
+    document.getElementById('viewCustomerNumber').value      = customer.number;
+    document.getElementById('viewCustomerEmail').value       = customer.email;
+    document.getElementById('viewCustomerSex').value         = customer.sex;
+    document.getElementById('viewCustomerAddress').value     = customer.address;
+    document.getElementById('viewCustomerBirthday').value    = customer.birthday;
+    document.getElementById('viewCustomerAge').value         = customer.age;
+
+    renderCustomerOrderHistory(customer.id);
+
+    // Show profile, hide select
+    document.getElementById('viewCustomerSelectMenu').classList.add('hidden');
+    document.getElementById('viewCustomerProfileMenu').classList.remove('hidden');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Order History (read-only) — a compact per-customer summary, not a re-implementation
+// of Sales History. Deliberately thin: Order ID/Date/Total/Payment/Job status only, no
+// itemized breakdown, no reprint, no expandable row — that richer detail already exists
+// in Sales History and duplicating it here would just be two copies to keep in sync.
+// Each row's "View" jumps into Sales History filtered to that one order instead. No
+// edit affordance anywhere — a saved order is a closed transaction, same append-only
+// treatment every other order-touching feature (Pending Orders, Job Orders) already
+// gives it. ──
+function renderCustomerOrderHistory(customerId) {
+    const tableBody = document.querySelector('#customerOrderHistoryTable tbody');
+    if (!tableBody) return;
+
+    const orders = JSON.parse(Storage.getItem('salesOrders') || '[]')
+        .filter(o => o.customerId === customerId)
+        .reverse(); // newest first, same convention as every other records table
+
+    if (orders.length === 0) {
+        tableBody.innerHTML = `
+            <tr><td colspan="5" style="color:gray;font-style:italic;padding:16px;text-align:center;">
+                No orders yet
+            </td></tr>`;
+        return;
+    }
+
+    tableBody.innerHTML = '';
+    orders.forEach(order => {
+        const payStatus   = SO_PAYMENT_STATUS_LABELS[order.paymentStatus] || order.paymentStatus;
+        const jobSummary  = _soOrderJobStatusSummary(order);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${escapeHtml(order.id)}</td>
+            <td>${escapeHtml(order.dateCreated)}</td>
+            <td>${_soMoney(order.total)}</td>
+            <td><span class="so-status-badge so-status-${order.paymentStatus}">${escapeHtml(payStatus)}</span></td>
+            <td><span class="so-status-badge so-status-${jobSummary.cls}">${escapeHtml(jobSummary.label)}</span></td>
+        `;
+        row.addEventListener('click', () => jumpToOrderInSalesHistory(order.id));
+        row.style.cursor = 'pointer';
+        tableBody.appendChild(row);
+    });
+}
+
+// ── Navigate to Sales History pre-filtered to one order. Sales History's own
+// data-on-entry hook (renderSalesHistoryTable, no args) fires on every arrival at
+// #salesSalesHistory regardless of how we got there — the setTimeout lets that run
+// first, then this overrides it with the filtered view. Harmless either way even if
+// timing assumptions shift someday: renderSalesHistoryTable is a pure display refresh,
+// calling it twice in a row just re-renders, no state to corrupt. ──
+function jumpToOrderInSalesHistory(orderId) {
+    window.location.hash = '#salesSalesHistory';
+    setTimeout(() => {
+        const searchBar = document.getElementById('salesHistorySearchBarInput');
+        if (searchBar) searchBar.value = orderId;
+        if (typeof renderSalesHistoryTable === 'function') renderSalesHistoryTable(orderId);
+    }, 0);
+}
+
 function renderViewPatientTable(filter = "", page = 1) {
     const tableBody = document.querySelector('#viewPatientTable tbody');
     if (!tableBody) return;
@@ -774,9 +974,10 @@ function openEditRxUI(rx) {
                 nearSphId:  `erx_${p}NearSph`,
                 nearCylId:  `erx_${p}NearCyl`,
                 nearAxisId: `erx_${p}NearAxis`,
-                addId:      `erx_${p}AddSph`
+                addId:      `erx_${p}AddSph`,
+                distPdId:   `erx_${p}DistancePd`,
+                nearPdId:   `erx_${p}NearPd`
             }, { syncing: false });
-            attachNearPdSync(`erx_${p}DistancePd`, `erx_${p}NearPd`);
         });
     }
 
@@ -789,9 +990,10 @@ function openEditRxUI(rx) {
                 nearSphId:  `erx_${p}NearSph`,
                 nearCylId:  `erx_${p}NearCyl`,
                 nearAxisId: `erx_${p}NearAxis`,
-                addId:      `erx_${p}AddSph`
+                addId:      `erx_${p}AddSph`,
+                distPdId:   `erx_${p}DistancePd`,
+                nearPdId:   `erx_${p}NearPd`
             }, { syncing: false });
-            attachNearPdSync(`erx_${p}DistancePd`, `erx_${p}NearPd`);
         });
     }
 
@@ -814,8 +1016,20 @@ function openEditRxUI(rx) {
     document.getElementById('saveEditRxBtn').addEventListener('click', () => {
         const patientId = document.getElementById('viewPatientIdNumber').value.trim();
 
-        // ── CYL / AXIS pair guard — distance only, near is optional ──
+        // ── CYL / AXIS pair guard — distance only, near is optional. VT7 checked first
+        // (same isEyeValid rule New Rx's handleGenerateRx() gates on before it'll even
+        // reveal Final Rx), then Final Rx itself — Edit Rx previously only checked Final
+        // Rx, leaving VT7 free to be blanked out or left CYL-without-AXIS since its av()
+        // validators above only do live formatting, not a save-time minimum-required
+        // check. ──
         if (rx.rxMethod === 'eyeExam') {
+            const vt7OdValid = isEyeValid('erx_vt7OdDistanceSph', 'erx_vt7OdDistanceCyl', 'erx_vt7OdDistanceAxis');
+            const vt7OsValid = isEyeValid('erx_vt7OsDistanceSph', 'erx_vt7OsDistanceCyl', 'erx_vt7OsDistanceAxis');
+            if (!vt7OdValid || !vt7OsValid) {
+                openAlert({ title: 'Invalid Rx', body: 'VT7: minimum required per eye is Distance SPH alone, or Distance CYL + AXIS together.' });
+                return;
+            }
+
             const odValid = isEyeValid('erx_frxOdDistanceSph', 'erx_frxOdDistanceCyl', 'erx_frxOdDistanceAxis');
             const osValid = isEyeValid('erx_frxOsDistanceSph', 'erx_frxOsDistanceCyl', 'erx_frxOsDistanceAxis');
             if (!odValid || !osValid) {
@@ -902,6 +1116,7 @@ function collectEditRxData(rx) {
         const clForm = document.getElementById('erx_frxClForm');
         const hasCl  = clForm && !clForm.classList.contains('hidden');
         return {
+            visitNotes: v('eyeExamVisitNotes'),
             uva: {
                 odDist: v('uvaOdDist'), odNear: v('uvaOdNear'),
                 osDist: v('uvaOsDist'), osNear: v('uvaOsNear'),
@@ -1402,6 +1617,325 @@ function isViewRecordsEditDirty() {
     return _editPatientSnapshot !== null && isEditDirty();
 }
 window._isViewRecordsEditDirty = isViewRecordsEditDirty;
+
+// ================================================================
+//  Edit Customer Profile — parallel to Edit Patient Profile above,
+//  minus notes fields (customer has none) and minus any Rx-delete
+//  cascade on delete (customer records don't reference prescriptions).
+//  Own module-level state (_editCustomerSnapshot, its own sex-select
+//  injection flag) — deliberately not sharing the Patient-side
+//  variables, so the two edit flows can't collide if somehow both
+//  were active at once.
+// ================================================================
+
+const EDIT_CUSTOMER_FIELDS = [
+    'viewCustomerName',
+    'viewCustomerNumber',
+    'viewCustomerEmail',
+    'viewCustomerAddress'
+];
+
+const CUSTOMER_SEX_INPUT_ID = 'viewCustomerSex';
+
+let _editCustomerSnapshot = null;
+let _customerSexSelectInjected = false;
+
+function _attachCustomerEditValidators() {
+    const nameEl = document.getElementById('viewCustomerName');
+    if (nameEl) {
+        nameEl._editUppercase = (e) => { e.target.value = e.target.value.toUpperCase(); };
+        nameEl.addEventListener('input', nameEl._editUppercase);
+    }
+
+    const numEl = document.getElementById('viewCustomerNumber');
+    if (numEl) {
+        numEl._editKeydown = (e) => {
+            const controlKeys = ['Backspace','Tab','ArrowLeft','ArrowRight','Delete','Enter'];
+            if (!/[0-9]/.test(e.key) && !controlKeys.includes(e.key)) e.preventDefault();
+        };
+        numEl.addEventListener('keydown', numEl._editKeydown);
+    }
+}
+
+function _detachCustomerEditValidators() {
+    const nameEl = document.getElementById('viewCustomerName');
+    if (nameEl?._editUppercase) {
+        nameEl.removeEventListener('input', nameEl._editUppercase);
+        delete nameEl._editUppercase;
+    }
+
+    const numEl = document.getElementById('viewCustomerNumber');
+    if (numEl?._editKeydown) {
+        numEl.removeEventListener('keydown', numEl._editKeydown);
+        delete numEl._editKeydown;
+    }
+}
+
+function enterCustomerEditMode() {
+    _editCustomerSnapshot = {};
+    EDIT_CUSTOMER_FIELDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) _editCustomerSnapshot[id] = el.value;
+    });
+    _editCustomerSnapshot[CUSTOMER_SEX_INPUT_ID] = document.getElementById(CUSTOMER_SEX_INPUT_ID)?.value || '';
+
+    EDIT_CUSTOMER_FIELDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.removeAttribute('readonly');
+    });
+
+    _injectCustomerSexSelect(_editCustomerSnapshot[CUSTOMER_SEX_INPUT_ID]);
+    _attachCustomerEditValidators();
+
+    document.getElementById('viewCustomerMainBtnContainer').classList.add('hidden');
+    document.getElementById('editCustomerActionBtns').classList.remove('hidden');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function exitCustomerEditMode(restoreSnapshot = false) {
+    const snapshotSexValue = (restoreSnapshot && _editCustomerSnapshot)
+        ? _editCustomerSnapshot[CUSTOMER_SEX_INPUT_ID]
+        : null;
+
+    if (restoreSnapshot && _editCustomerSnapshot) {
+        EDIT_CUSTOMER_FIELDS.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = _editCustomerSnapshot[id];
+        });
+    }
+
+    _restoreCustomerSexInput(snapshotSexValue);
+
+    EDIT_CUSTOMER_FIELDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.setAttribute('readonly', true);
+            el.classList.remove('input-error');
+        }
+    });
+
+    _detachCustomerEditValidators();
+
+    document.getElementById('editCustomerActionBtns').classList.add('hidden');
+    document.getElementById('viewCustomerMainBtnContainer').classList.remove('hidden');
+
+    _editCustomerSnapshot = null;
+}
+
+function isCustomerEditDirty() {
+    if (!_editCustomerSnapshot) return false;
+
+    for (const id of EDIT_CUSTOMER_FIELDS) {
+        const el = document.getElementById(id);
+        if (el && el.value !== _editCustomerSnapshot[id]) return true;
+    }
+
+    const sexEl = _customerSexSelectInjected
+        ? document.getElementById('viewCustomerSexSelect')
+        : document.getElementById(CUSTOMER_SEX_INPUT_ID);
+    if (sexEl && sexEl.value !== _editCustomerSnapshot[CUSTOMER_SEX_INPUT_ID]) return true;
+
+    return false;
+}
+
+function _injectCustomerSexSelect(currentValue) {
+    const input = document.getElementById(CUSTOMER_SEX_INPUT_ID);
+    if (!input || _customerSexSelectInjected) return;
+
+    const select = document.createElement('select');
+    select.id = 'viewCustomerSexSelect';
+    select.className = input.className;
+
+    const options = [
+        { value: '', label: '- SELECT -', disabled: true },
+        { value: 'male', label: 'MALE' },
+        { value: 'female', label: 'FEMALE' }
+    ];
+    options.forEach(({ value, label, disabled }) => {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = label;
+        if (disabled) opt.disabled = true;
+        select.appendChild(opt);
+    });
+
+    select.value = currentValue?.toLowerCase() || '';
+
+    input.replaceWith(select);
+    _customerSexSelectInjected = true;
+}
+
+function _restoreCustomerSexInput(displayValue) {
+    if (!_customerSexSelectInjected) return;
+
+    const select = document.getElementById('viewCustomerSexSelect');
+    if (!select) return;
+
+    const input = document.createElement('input');
+    input.id = CUSTOMER_SEX_INPUT_ID;
+    input.className = select.className;
+    input.setAttribute('readonly', true);
+
+    input.value = displayValue !== null && displayValue !== undefined
+        ? displayValue
+        : (select.value || '');
+
+    select.replaceWith(input);
+    _customerSexSelectInjected = false;
+}
+
+function _readCustomerSexValue() {
+    if (_customerSexSelectInjected) {
+        return document.getElementById('viewCustomerSexSelect')?.value || '';
+    }
+    return document.getElementById(CUSTOMER_SEX_INPUT_ID)?.value || '';
+}
+
+function validateEditCustomerForm() {
+    let valid = true;
+
+    const requiredFields = ['viewCustomerName', 'viewCustomerNumber', 'viewCustomerAddress'];
+
+    requiredFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (!el.value.trim()) {
+            el.classList.add('input-error');
+            valid = false;
+        } else {
+            el.classList.remove('input-error');
+        }
+    });
+
+    const sexVal = _readCustomerSexValue();
+    const sexEl = _customerSexSelectInjected
+        ? document.getElementById('viewCustomerSexSelect')
+        : document.getElementById(CUSTOMER_SEX_INPUT_ID);
+    if (!sexVal) {
+        sexEl?.classList.add('input-error');
+        valid = false;
+    } else {
+        sexEl?.classList.remove('input-error');
+    }
+
+    // Email: optional, but if filled must be a valid format — mirrors form-logic.js
+    const emailEl = document.getElementById('viewCustomerEmail');
+    if (emailEl) {
+        const emailVal = emailEl.value.trim();
+        if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+            emailEl.classList.add('input-error');
+            valid = false;
+        } else {
+            emailEl.classList.remove('input-error');
+        }
+    }
+
+    if (!valid) {
+        openAlert({ title: 'Required Fields', body: 'Please fill in all required fields correctly.' });
+    }
+
+    return valid;
+}
+
+function saveEditCustomer() {
+    if (!validateEditCustomerForm()) return;
+
+    const customerId = document.getElementById('viewCustomerIdNumber').value.trim();
+    const customers = JSON.parse(Storage.getItem('customers') || '[]');
+    const idx = customers.findIndex(c => c.id === customerId);
+
+    if (idx === -1) {
+        openAlert({ title: 'Error', body: 'Customer record not found. Cannot save.' });
+        return;
+    }
+
+    customers[idx].name    = document.getElementById('viewCustomerName').value.toUpperCase().trim();
+    customers[idx].number  = document.getElementById('viewCustomerNumber').value.trim();
+    customers[idx].email   = document.getElementById('viewCustomerEmail').value.trim();
+    customers[idx].sex     = _readCustomerSexValue();
+    customers[idx].address = document.getElementById('viewCustomerAddress').value.trim();
+
+    Storage.setItem('customers', JSON.stringify(customers));
+
+    openAlert({ title: 'Saved', body: `Customer ${customerId} updated successfully.` });
+    exitCustomerEditMode(false);
+}
+
+// ---- Delete Customer ----
+// Soft-delete only, same shape renderSelectCustomerTable already checks for
+// (customer.deleted === true) — no cascade needed, customer records don't
+// reference prescriptions or sales orders the way a patient references Rx IDs.
+function deleteCustomer(customerId) {
+    const customers = JSON.parse(Storage.getItem('customers') || '[]');
+    const idx = customers.findIndex(c => c.id === customerId);
+    if (idx === -1) return;
+
+    customers[idx] = {
+        id:          customers[idx].id,
+        dateCreated: customers[idx].dateCreated,
+        deleted:     true
+    };
+
+    Storage.setItem('customers', JSON.stringify(customers));
+
+    document.getElementById('viewCustomerProfileMenu').classList.add('hidden');
+    document.getElementById('viewCustomerSelectMenu').classList.remove('hidden');
+    renderViewCustomerTable();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ---- Wire Edit Customer Buttons ----
+function initEditCustomerProfile() {
+    document.getElementById('editCustomerProfileBtn')?.addEventListener('click', () => {
+        enterCustomerEditMode();
+    });
+
+    document.getElementById('cancelEditCustomerBtn')?.addEventListener('click', () => {
+        if (isCustomerEditDirty()) {
+            openModal({
+                title: 'Discard Changes',
+                body: 'You have unsaved changes. Discard and go back?',
+                confirmText: 'Discard',
+                cancelText: 'Keep Editing',
+                onConfirm: () => exitCustomerEditMode(true)
+            });
+        } else {
+            exitCustomerEditMode(true);
+        }
+    });
+
+    document.getElementById('saveEditCustomerBtn')?.addEventListener('click', () => {
+        saveEditCustomer();
+    });
+
+    document.getElementById('deleteCustomerBtn')?.addEventListener('click', () => {
+        const customerId   = document.getElementById('viewCustomerIdNumber').value.trim();
+        const customerName = document.getElementById('viewCustomerName').value.trim() || customerId;
+        openModal({
+            title: 'Delete Customer Record',
+            body: `You are about to delete ${escapeHtml(customerName)}.\nType DELETE to confirm.`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            requireTyping: 'DELETE',
+            onConfirm: () => deleteCustomer(customerId)
+        });
+    });
+
+    document.getElementById('viewCustomerToSelectionBackBtn')?.addEventListener('click', () => {
+        document.getElementById('viewCustomerProfileMenu').classList.add('hidden');
+        document.getElementById('viewCustomerSelectMenu').classList.remove('hidden');
+        const searchBar = document.getElementById('viewCustomerSearchBarInput');
+        if (searchBar) searchBar.value = '';
+        renderViewCustomerTable();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
+
+function isViewRecordsCustomerEditDirty() {
+    return _editCustomerSnapshot !== null && isCustomerEditDirty();
+}
+window._isViewRecordsCustomerEditDirty = isViewRecordsCustomerEditDirty;
 
 // ---- Init ----
 // initViewRecordsNav() and initEditPatientProfile() are called from main.js

@@ -25,7 +25,7 @@
 //      Storage.importBackup()
 //
 //  importBackup() validation chain:
-//      1. File must be readable and valid JSON          → hard reject
+//      1. File must be readable and valid JSON         → hard reject
 //      2. Must have a `version` key (OpticSite file)   → hard reject
 //      3. Version mismatch                             → warn, allow
 //      4. Missing patients / prescriptions keys        → warn, allow
@@ -450,9 +450,50 @@ function _importBackupBrowser() {
 }
 
 // ================================================================
+//  Cross-tab/cross-window ID collision guard — Web Locks API
+//  ────────────────────────────────────────────────────────────
+//  localStorage has no built-in cross-tab transaction guarantee: two
+//  tabs/windows can both read the same array, both compute the same
+//  next ID, and whichever writes second silently overwrites the
+//  first's save (not just an ID collision — actual record loss).
+//  The existing _resolveUnique*ID() functions narrow that window by
+//  re-checking right before save, but that's still a "read now,
+//  hope nothing else writes before I do" pattern — no real guarantee.
+//
+//  navigator.locks is a genuine mutex, scoped per browser origin —
+//  shared across every tab/window of the same app (in Tauri, every
+//  window of the same app, since they share one webview storage
+//  partition by default). Only one holder of a given lock name can
+//  run at a time; everyone else queues and waits their turn. This
+//  makes ID collision structurally impossible while the lock is
+//  held, not just unlikely.
+//
+//  Usage: await soWithStorageLock('salesOrders', async () => {
+//      ...generate ID, build record, Storage.setItem()...
+//      return record;
+//  });
+//  Only wrap the true critical section (ID check → write) — never
+//  validation/alerts, which don't touch shared storage and shouldn't
+//  make other tabs queue behind a user reading a dialog.
+//
+//  Falls back to calling criticalSectionFn() directly, unguarded, on
+//  any browser/webview old enough to lack navigator.locks — same
+//  best-effort behavior the app already had, never a hard failure.
+// ================================================================
+
+async function soWithStorageLock(lockName, criticalSectionFn) {
+    if (!navigator.locks) {
+        console.warn(`[Storage Lock] navigator.locks unavailable — running "${lockName}" unguarded.`);
+        return criticalSectionFn();
+    }
+    return navigator.locks.request(`opticsite:${lockName}`, criticalSectionFn);
+}
+
+// ================================================================
 //  Expose globally
 // ================================================================
 
 window.Storage            = Storage;
 window.initStorage        = initStorage;
 window.importBackupIntro  = importBackupIntro;
+window.soWithStorageLock  = soWithStorageLock;

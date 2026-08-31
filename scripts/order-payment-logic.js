@@ -197,8 +197,18 @@ function soConfirmPaymentModal() {
         });
         return;
     }
-    if (!amount || amount <= 0 || isNaN(amount)) {
-        openAlert({ title: 'Amount Required', body: 'Please enter a payment amount greater than zero.' });
+    // Zero is allowed only for Cash — an explicit "₱0 collected, on purpose" record (per
+    // Marc: distinguishes "customer intentionally pays nothing yet" from a cashier simply
+    // never touching Add Payment at all — see handleSaveOrder's own guard for the latter).
+    // Non-cash methods keep requiring > 0; a "₱0 e-wallet" isn't a meaningful concept, and
+    // allowing it here would collide with the clamp-to-already-covered check right below,
+    // which also lands on amount<=0 for a different reason (already fully paid elsewhere).
+    if (amount === null || amount === undefined || isNaN(amount) || amount < 0) {
+        openAlert({ title: 'Amount Required', body: 'Please enter a valid payment amount.' });
+        return;
+    }
+    if (amount === 0 && method !== 'cash') {
+        openAlert({ title: 'Amount Required', body: 'Only Cash can be recorded as ₱0. Please enter an amount greater than zero for this method.' });
         return;
     }
 
@@ -216,7 +226,12 @@ function soConfirmPaymentModal() {
         }
     }
 
-    const paymentEntry = methodDef?.needsProvider ? { method, provider, amount } : { method, amount };
+    // Preserve the original timestamp on edit — correcting a typo'd amount shouldn't erase
+    // when the payment was actually made. Only a genuinely new entry gets a fresh one.
+    const existingTimestamp = _soPaymentModalIndex !== null ? soPayments[_soPaymentModalIndex]?.timestamp : null;
+    const timestamp = existingTimestamp || new Date().toISOString();
+
+    const paymentEntry = methodDef?.needsProvider ? { method, provider, amount, timestamp } : { method, amount, timestamp };
 
     if (_soPaymentModalIndex === null) {
         soPayments.push(paymentEntry);
