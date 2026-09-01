@@ -6,13 +6,20 @@
 //  PLATFORM DETECTION — automatic, no manual switching needed.
 //
 //  ➜ Running inside Tauri (.exe):
-//      window.__TAURI__ exists → Tauri adapter activates.
-//      Uses readTextFile / writeTextFile via Tauri FS API.
+//      window.__TAURI_INTERNALS__ exists → Tauri adapter activates.
+//      (NOT window.__TAURI__ — that's only populated when withGlobalTauri
+//      is set in tauri.conf.json, which we do set, but __TAURI_INTERNALS__
+//      is always present regardless, so it's the more robust check.)
+//      Uses readTextFile / writeTextFile via Tauri FS API — available as
+//      window.__TAURI__.fs.* / .path.* / .dialog.* thanks to withGlobalTauri,
+//      backed by the tauri-plugin-fs / tauri-plugin-dialog Rust plugins
+//      (registered in lib.rs) with permissions granted in
+//      src-tauri/capabilities/default.json, scoped to $APPDATA.
 //      Atomic write (.tmp → rename) protects against corruption.
 //      Export uses native save dialog.
 //
 //  ➜ Running in a browser (web build):
-//      window.__TAURI__ is undefined → Browser adapter activates.
+//      window.__TAURI_INTERNALS__ is undefined → Browser adapter activates.
 //      Uses localStorage. No atomic write needed.
 //      Export triggers a file download.
 //
@@ -42,7 +49,7 @@ const DATA_VERSION = '0.1-emr';
 const DATA_KEY     = 'opticsite_data';   // browser localStorage key
 
 let _dataCache = null;
-const _IS_TAURI = !!(window.__TAURI__);
+const _IS_TAURI = !!(window.__TAURI_INTERNALS__);
 
 // ================================================================
 //  initStorage — detects platform and initializes the right adapter
