@@ -49,8 +49,6 @@
 
 <body>
 
-  <script src="scripts/lock.js"></script>
-
   <!-- Body Wrapper-->
   <div class="wrapper">
 
@@ -260,17 +258,28 @@
             <h3>Windows Version:</h3>
             <p>For a more reliable experience, download the Windows version.</p>
             <p>No internet connection required after installation.</p>
-            <a href="https://github.com/OpticUnity/opticsite/releases/download/v0.2.1/OpticSite_0.2.1_x64-setup.exe" target="_blank" style="margin-bottom: 10px;">
+            <a href="https://github.com/OpticUnity/opticsite/releases/download/v1.0.0-beta.2/OpticSite_1.0.0-beta.2_x64-setup.exe" target="_blank" style="margin-bottom: 10px;">
                 Download <i class="fa-brands fa-windows"></i>
             </a>
             <p>After the download, run the installer to install the main program (.exe)</p>
+            <p class="paragraph-spacing"> </p>
+            <p>OpticSite isn't code-signed yet (it's a small beta project), so Windows may show a security warning or block the installer outright.</p>
+            <p>This is expected — see "Windows Blocked the Installer?" below for what to do.</p>
           <p class="paragraph-spacing"> </p>
         </div>   
         <h3>Where are the data stored?</h3>
         <p>For Web Browser - It's locally saved in your web browser</p>
         <p>Be careful on clearing your web browser's cache as it will permanently delete all records.</p>
         <p>For Windows (Downloaded Version) - It's stored by default in this path:</p>
-        <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticunity.opticsite\</p>
+        <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticsite.app\</p>
+        <p class="paragraph-spacing"> </p>
+        <h3>Windows Blocked the Installer?</h3>
+        <p>Windows 11 has a feature called Smart App Control that blocks brand-new apps that don't yet have an established trust history with Microsoft, even if the app is completely safe.</p>
+        <p>Before doing anything, make sure Windows Update is fully current (Settings, Windows Update, Check for updates). This matters, since it changes whether the next step can be undone afterward.</p>
+        <p>Go to Settings, Privacy & security, Windows Security, App & browser control, Smart App Control settings, and switch it to Off.</p>
+        <p>Install and run OpticSite as normal.</p>
+        <p>Once done, you can switch Smart App Control back to On (or Evaluation) from that same settings page.</p>
+        <p>Your antivirus and other Windows protections stay active the entire time - this only affects one layer of protection, not everything.</p>
         <p class="paragraph-spacing"> </p>
         <p>Reach out on the email provided below for any concerns.</p>
         <p>Email : opticunity.dev@gmail.com</p>
@@ -1467,7 +1476,7 @@
           <h3 class="backup-panel-header">About Your Data</h3>
           <p>All your records are stored locally in a single JSON file on this computer.</p>
           <p>Default save location:</p>
-          <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticunity.opticsite\</p>
+          <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticsite.app\</p>
           <p class="paragraph-spacing"> </p>
           <p class="paragraph-spacing"> </p>
 
@@ -1531,6 +1540,7 @@
 </body>
 
 <!-- scripts -->
+<script src="scripts/lock.js"></script>
 <script src="scripts/storage.js"></script>
 <script src="scripts/forms.js"></script>
 <script src="scripts/form-logic.js"></script>
