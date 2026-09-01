@@ -13,13 +13,13 @@ initStorage().then(() => {
     if (typeof applyTheme === 'function') applyTheme(savedTheme);
 
     // ── Show Windows download section on browser only ─────────────
-    if (!window.__TAURI__) {
+    if (!window.__TAURI_INTERNALS__) {
         // [MAC-TODO] — This block shows the Windows-only download section on the browser build.
         // When shipping a macOS build, add a parallel 'macDownloadSection' element in index.html
-        // and show it here using platform detection. You can detect the OS via:
-        //   const { platform } = window.__TAURI__.os;  (or @tauri-apps/plugin-os if using v2 plugin)
-        //   const os = await platform(); // 'windows' | 'macos' | 'linux'
-        // Then toggle the correct section per platform.
+        // and show it here using platform detection. Tauri v2 detects OS via the plugin-os
+        // package (not a window.__TAURI__.os global like v1) — install @tauri-apps/plugin-os,
+        // then: import { platform } from '@tauri-apps/plugin-os'; const os = platform();
+        // Returns 'windows' | 'macos' | 'linux'. Then toggle the correct section per platform.
         document.getElementById('windowsDownloadSection').style.display = 'flex';
     }
 

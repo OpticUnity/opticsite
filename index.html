@@ -242,7 +242,6 @@
         <p>Export and Import of clinic saved data (cross-platform available)</p>
         <p class="paragraph-spacing"> </p>
         <h3>Features still on development:</h3>
-        <p>A downloadable offline Windows Version</p>
         <p>Additional EMR features (Graph for AR and VT7, for progression reference; UI polishing)</p>
         <p class="paragraph-spacing"> </p>
         <h3>System Flow</h3>
@@ -263,8 +262,8 @@
             </a>
             <p>After the download, run the installer to install the main program (.exe)</p>
             <p class="paragraph-spacing"> </p>
-            <p>OpticSite isn't code-signed yet (it's a small beta project), so Windows may show a security warning or block the installer outright.</p>
-            <p>This is expected — see "Windows Blocked the Installer?" below for what to do.</p>
+            <p>OpticSite isn't code-signed yet (it's a small beta project), so Windows may show a security warning when you run it.</p>
+            <p>This is expected - see "Windows Blocked the Installer?" below for what to do.</p>
           <p class="paragraph-spacing"> </p>
         </div>   
         <h3>Where are the data stored?</h3>
@@ -274,7 +273,13 @@
         <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticsite.app\</p>
         <p class="paragraph-spacing"> </p>
         <h3>Windows Blocked the Installer?</h3>
-        <p>Windows 11 has a feature called Smart App Control that blocks brand-new apps that don't yet have an established trust history with Microsoft, even if the app is completely safe.</p>
+        <p>OpticSite isn't code-signed yet (it's a small beta project), so Windows may flag it as untrusted the first time. There are two different warnings you might see - check which one applies first.</p>
+        <p class="paragraph-spacing"> </p>
+        <h3 class="guide-header">If you see a blue screen saying "Windows protected your PC"</h3>
+        <p>This is the more common one. Click <strong>More info</strong>, then click <strong>Run anyway</strong>. That's it - no settings changes needed.</p>
+        <p class="paragraph-spacing"> </p>
+        <h3 class="guide-header">If the installer is blocked with no way to continue at all</h3>
+        <p>This is a stricter Windows 11 feature called Smart App Control. It has no "run anyway" option, so a quick settings change is needed instead.</p>
         <p>Before doing anything, make sure Windows Update is fully current (Settings, Windows Update, Check for updates). This matters, since it changes whether the next step can be undone afterward.</p>
         <p>Go to Settings, Privacy & security, Windows Security, App & browser control, Smart App Control settings, and switch it to Off.</p>
         <p>Install and run OpticSite as normal.</p>
