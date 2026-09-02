@@ -542,8 +542,8 @@ function _buildReceiptShellHTML(title, bodyHTML) {
   .stub-item-desc { padding-left: 4px; }
   .stub-total-row { font-weight: 700; font-size: 12px; }
   .stub-footer { text-align: center; margin-top: 8px; font-size: 10px; }
-  .stub-grade-title { font-weight: 700; font-size: 10px; margin-top: 4px; }
-  .stub-grade-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 10px; margin-top: 2px; }
+  .stub-grade-title { font-weight: 700; font-size: 11px; margin-top: 4px; }
+  .stub-grade-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 11px; margin-top: 2px; }
   .stub-grade-table th, .stub-grade-table td { text-align: right; padding: 1px 2px; font-weight: 700; }
   .stub-grade-table th:first-child, .stub-grade-table td:first-child { text-align: left; font-weight: 700; }
 </style>
