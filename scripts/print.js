@@ -525,23 +525,23 @@ function _buildReceiptShellHTML(title, bodyHTML) {
   body {
     width: 72mm;
     font-family: 'Courier New', Courier, monospace;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.4;
     color: #000;
   }
   .stub { page-break-after: always; padding-bottom: 4mm; }
   .stub:last-child { page-break-after: auto; }
   .stub-center { text-align: center; }
-  .stub-clinic-name { font-size: 13px; font-weight: 700; }
-  .stub-clinic-sub { font-size: 10px; }
-  .stub-title { font-size: 12px; font-weight: 700; margin-top: 4px; }
+  .stub-clinic-name { font-size: 14px; font-weight: 700; }
+  .stub-clinic-sub { font-size: 11px; font-weight: 700; }
+  .stub-title { font-size: 13px; font-weight: 700; margin-top: 4px; }
   .stub-divider { border: none; border-top: 1px dashed #000; margin: 5px 0; }
-  .stub-row { display: flex; justify-content: space-between; gap: 6px; }
-  .stub-row .label { font-weight: 700; white-space: nowrap; }
-  .stub-item { margin-bottom: 5px; }
+  .stub-row { display: flex; justify-content: space-between; gap: 6px; font-weight: 700; }
+  .stub-row .label { white-space: nowrap; }
+  .stub-item { margin-bottom: 5px; font-weight: 700; }
   .stub-item-desc { padding-left: 4px; }
-  .stub-total-row { font-weight: 700; font-size: 12px; }
-  .stub-footer { text-align: center; margin-top: 8px; font-size: 10px; }
+  .stub-total-row { font-weight: 700; font-size: 13px; }
+  .stub-footer { text-align: center; margin-top: 8px; font-size: 11px; font-weight: 700; }
   .stub-grade-title { font-weight: 700; font-size: 11px; margin-top: 4px; }
   .stub-grade-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 11px; margin-top: 2px; }
   .stub-grade-table th, .stub-grade-table td { text-align: right; padding: 1px 2px; font-weight: 700; }
