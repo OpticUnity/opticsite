@@ -680,11 +680,22 @@ function buildPreliminaryBlock() {
 }
 
 // ---- Mount All Forms ----
-function mountForms() {
+// mountForms() is async — splits the work into two batches with a yield between
+// them (a plain setTimeout(resolve, 0), enough to let the browser breathe/paint
+// mid-boot without needing the stronger double-rAF guarantee used in main.js's
+// initial yield). Doesn't change WHEN forms exist relative to navigation — every
+// form still exists before the app is usable, same as before — just spreads the
+// same synchronous work across two smaller chunks instead of one long block.
+// Batch order: lighter/likely-needed-soonest forms first (customer/patient/Copy
+// Rx), heavier clinical Rx blocks (FRX/AR-CLP/Preliminary/HRX/VT7) second.
+async function mountForms() {
     document.getElementById('customerFormMount')?.replaceWith(buildPersonForm('customer'));
     document.getElementById('patientFormMount')?.replaceWith(buildPersonForm('patient'));
     document.getElementById('copyRxSpecsMount')?.replaceWith(buildCopyRxSpecsForm());
     document.getElementById('copyRxClMount')?.replaceWith(buildCopyRxClForm());
+
+    await new Promise(resolve => setTimeout(resolve, 0));
+
     document.getElementById('frxMount')?.replaceWith(buildFrxForm());
     document.getElementById('arClpMount')?.replaceWith(buildArClpBlock());
     document.getElementById('preliminaryMount')?.replaceWith(buildPreliminaryBlock());
