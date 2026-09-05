@@ -31,6 +31,9 @@
         if (input.value.toUpperCase() === _gateKey) {
             localStorage.setItem(_storageKey, "true");
             overlay.remove();
+            // Welcome / intro often lands mid-viewport after the overlay
+            // drops; pin to the header immediately.
+            window.scrollTo({ top: 0, behavior: 'auto' });
         } else {
             document.getElementById("lockError").textContent = "Incorrect access code.";
             input.value = "";

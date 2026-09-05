@@ -117,6 +117,12 @@ function handleRouting() {
     navLinksContainer.classList.remove('show');
   }
 
+  // Intro has no nav; pin scroll to the top so the welcome header isn't
+  // left mid-viewport after unlock or a direct visit to #introPage.
+  if (isIntro) {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
   // Remove preload guard now that the correct section is visible.
   document.documentElement.classList.remove('preload-hide-pages');
 }
