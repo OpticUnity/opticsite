@@ -568,17 +568,15 @@ function computeNearFromAdd(distSphId, addId, nearSphId, nearCylId, nearAxisId, 
     const nearSphEl  = document.getElementById(nearSphId);
     const nearCylEl  = document.getElementById(nearCylId);
     const nearAxisEl = document.getElementById(nearAxisId);
-    const nearPdEl   = (distPdId && nearPdId) ? document.getElementById(nearPdId) : null;
+    // nearPdEl / distPdId / nearPdId params kept (still passed in from every call site)
+    // but no longer acted on here — see removal note below.
     if (!nearSphEl || !nearCylEl || !nearAxisEl) return;
 
     if (isNaN(add) || add <= 0) {
-        // ADD cleared or invalid — wipe near fields, PD included (no near correction
-        // in use means no near PD needed either — same reasoning as the distance-only
-        // case).
+        // ADD cleared or invalid — wipe near fields.
         nearSphEl.value  = '';
         nearCylEl.value  = '';
         nearAxisEl.value = '';
-        if (nearPdEl) nearPdEl.value = '';
         return;
     }
 
@@ -596,31 +594,36 @@ function computeNearFromAdd(distSphId, addId, nearSphId, nearCylId, nearAxisId, 
     nearCylEl.value  = distCyl;
     nearAxisEl.value = distAxis;
 
-    // -- PD: dist PD - 1, same mirror-or-blank pattern as CYL/AXIS above — no dist PD
-    // means no near PD, not a placeholder value. --
-    if (nearPdEl) {
-        const distPd = parseFloat(document.getElementById(distPdId)?.value);
-        nearPdEl.value = (!isNaN(distPd) && distPd >= 1) ? (distPd - 1).toString() : '';
-    }
+    // -- PD Near auto-fill REMOVED per Marc (2026-09): the "-1" rule assumed every
+    // patient's near PD is exactly 1mm less than their distance PD. Common, but not
+    // universal — forcing it silently overwrote real measurements for the patients it
+    // didn't hold true for. Near PD is now a plain field a technician types directly;
+    // nothing auto-computes or overwrites it. Kept here, commented, as a straight
+    // copy-paste starting point if a future customizable-Rx-UI version wants to offer
+    // this as an opt-in shortcut rather than a forced default:
+    //
+    // if (nearPdEl) {
+    //     const distPd = parseFloat(document.getElementById(distPdId)?.value);
+    //     nearPdEl.value = (!isNaN(distPd) && distPd >= 1) ? (distPd - 1).toString() : '';
+    // }
 }
 
 function computeAddFromNear(distSphId, nearSphId, addId, distCylId, distAxisId, nearCylId, nearAxisId, distPdId = null, nearPdId = null) {
     const distSph = parseFloat(document.getElementById(distSphId)?.value);
     const nearSph = parseFloat(document.getElementById(nearSphId)?.value);
     const addEl   = document.getElementById(addId);
-    const nearPdEl = (distPdId && nearPdId) ? document.getElementById(nearPdId) : null;
+    // nearPdEl / distPdId / nearPdId params kept (still passed in from every call site)
+    // but no longer acted on here — see removal note below.
     if (!addEl) return;
 
     if (isNaN(distSph) || isNaN(nearSph)) {
         addEl.value = '';
-        if (nearPdEl) nearPdEl.value = '';
         return;
     }
 
     const add = roundToQuarter(nearSph - distSph);
     if (add <= 0) {
         addEl.value = '';
-        if (nearPdEl) nearPdEl.value = '';
         return;
     }
     addEl.value = '+' + add.toFixed(2);
@@ -634,19 +637,26 @@ function computeAddFromNear(distSphId, nearSphId, addId, distCylId, distAxisId, 
         if (nearAxisEl) nearAxisEl.value = document.getElementById(distAxisId)?.value.trim() || '';
     }
 
-    // -- PD: same mirror-or-blank pattern as CYL/AXIS --
-    if (nearPdEl) {
-        const distPd = parseFloat(document.getElementById(distPdId)?.value);
-        nearPdEl.value = (!isNaN(distPd) && distPd >= 1) ? (distPd - 1).toString() : '';
-    }
+    // -- PD Near auto-fill REMOVED per Marc (2026-09) — see matching note in
+    // computeNearFromAdd above for the full reasoning. Same commented-out starting
+    // point preserved here:
+    //
+    // if (nearPdEl) {
+    //     const distPd = parseFloat(document.getElementById(distPdId)?.value);
+    //     nearPdEl.value = (!isNaN(distPd) && distPd >= 1) ? (distPd - 1).toString() : '';
+    // }
 }
 
 // -- Wire up one eye's near↔add sync --
-// Needs: distSph, distCyl, distAxis, nearSph, nearCyl (readonly), nearAxis (readonly), add,
-// and now distPd/nearPd — folded in here rather than kept as the separate
-// attachNearPdSync system, so PD Near participates in the same ADD/Near-driven autofill
-// as CYL/AXIS: printing an ADD (or writing Near SPH straight off a lensometer) now also
-// fills PD Near, not just SPH/CYL/AXIS.
+// Needs: distSph, distCyl, distAxis, nearSph, nearCyl (readonly), nearAxis (readonly), add.
+// distPdId/nearPdId are still accepted as params (every call site still passes them) but
+// are no longer acted on — PD Near auto-fill was removed per Marc (2026-09): the "-1"
+// rule assumed near PD is always exactly 1mm less than distance PD, which held for most
+// patients but not all, and silently overwrote real measurements for the rest. Near PD
+// is now a plain field, typed directly, untouched by this sync. The old logic is
+// preserved as a comment inside computeNearFromAdd/computeAddFromNear above, ready to
+// reintroduce as an opt-in shortcut in a future customizable-Rx-UI version — not this
+// one, which is aiming for MVP.
 
 function attachNearAddSync(ids, flag) {
     // flag: { od: bool } or { os: bool } — passed by reference as object so mutation works
@@ -660,7 +670,7 @@ function attachNearAddSync(ids, flag) {
     const nearSphEl = document.getElementById(nearSphId);
     if (!addEl || !nearSphEl) return;
 
-    // ADD blur → recompute Near SPH + copy CYL/AXIS + PD
+    // ADD blur → recompute Near SPH + copy CYL/AXIS
     addEl.addEventListener('blur', () => {
         if (flag.syncing) return;
         flag.syncing = true;
@@ -668,7 +678,7 @@ function attachNearAddSync(ids, flag) {
         flag.syncing = false;
     });
 
-    // Dist SPH blur → recompute Near SPH (+CYL/AXIS/PD) if ADD already has a value
+    // Dist SPH blur → recompute Near SPH (+CYL/AXIS) if ADD already has a value
     document.getElementById(distSphId)?.addEventListener('blur', () => {
         if (flag.syncing) return;
         const addVal = document.getElementById(addId)?.value.trim();
@@ -678,8 +688,10 @@ function attachNearAddSync(ids, flag) {
         flag.syncing = false;
     });
 
-    // Dist CYL/AXIS/PD blur → refresh near CYL/AXIS/PD copy if ADD is present
-    [distCylId, distAxisId, distPdId].forEach(srcId => {
+    // Dist CYL/AXIS blur → refresh near CYL/AXIS copy if ADD is present.
+    // distPdId intentionally dropped from this list — its blur had no other purpose
+    // than refreshing near PD, which no longer auto-fills (see header comment above).
+    [distCylId, distAxisId].forEach(srcId => {
         if (!srcId) return;
         document.getElementById(srcId)?.addEventListener('blur', () => {
             if (flag.syncing) return;
@@ -691,7 +703,7 @@ function attachNearAddSync(ids, flag) {
         });
     });
 
-    // Near SPH blur → recompute ADD + copy dist CYL/AXIS/PD into near
+    // Near SPH blur → recompute ADD + copy dist CYL/AXIS into near
     nearSphEl.addEventListener('blur', () => {
         if (flag.syncing) return;
         flag.syncing = true;
@@ -763,10 +775,11 @@ function initNearAddSync() {
 
 // initNearAddSync is called from main.js after mountForms().
 //
-// PD Near is now handled entirely inside attachNearAddSync/computeNearFromAdd/
-// computeAddFromNear above (folded in per Marc's request), so the standalone
-// attachNearPdSync/initNearPdSync system that only fired off Dist PD's own blur has
-// been retired — it's fully superseded, not run alongside it.
+// PD Near auto-fill (previously folded into computeNearFromAdd/computeAddFromNear
+// above) was removed per Marc (2026-09) — see the header comment above
+// attachNearAddSync for the full reasoning. The old attachNearPdSync/initNearPdSync
+// standalone system this replaced was already fully retired before that; there is
+// no PD Near automation running anywhere in the app now, standalone or folded-in.
 
 // Force uppercase value on all .uppercase inputs
 document.addEventListener('input', (e) => {
