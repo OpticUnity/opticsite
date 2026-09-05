@@ -49,6 +49,40 @@
 
 <body>
 
+  <!-- Loading screen — plain HTML/CSS, no JS dependency, so it paints as early as
+       physically possible (before any script has even started running). Removed by
+       main.js once boot fully completes (mountForms + all init*() calls). Lower
+       z-index than lock.js's overlay on purpose: if the app is locked, the password
+       prompt shows on top of this; once unlocked, this is what's visible next if boot
+       isn't finished yet, instead of a raw half-initialized page underneath. Neutral
+       light background rather than theme-aware — the saved theme preference isn't
+       readable until Storage initializes, which is exactly the gap this covers. -->
+  <style>
+    #appLoadingScreen {
+      position: fixed; inset: 0; z-index: 9000;
+      background: #ffffff;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px;
+    }
+    #appLoadingScreen .app-loading-spinner {
+      width: 48px; height: 48px;
+      border: 4px solid #e0e0e0;
+      border-top-color: #000000;
+      border-radius: 50%;
+      animation: appLoadingSpin 0.8s linear infinite;
+    }
+    @keyframes appLoadingSpin { to { transform: rotate(360deg); } }
+    #appLoadingScreen p {
+      margin: 0; color: #555555; font-family: sans-serif; font-size: 14px;
+    }
+  </style>
+  <div id="appLoadingScreen">
+    <div class="app-loading-spinner"></div>
+    <p>Loading OpticSite…</p>
+  </div>
+
+  <script src="scripts/lock.js"></script>
+
   <!-- Body Wrapper-->
   <div class="wrapper">
 
@@ -1546,7 +1580,6 @@
 </body>
 
 <!-- scripts -->
-<script src="scripts/lock.js"></script>
 <script src="scripts/storage.js"></script>
 <script src="scripts/forms.js"></script>
 <script src="scripts/form-logic.js"></script>

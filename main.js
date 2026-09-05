@@ -6,7 +6,15 @@
 // ================================================================
 
 // Init storage on load — storage.js exposes window.initStorage
-initStorage().then(() => {
+initStorage().then(async () => {
+
+    // ── Yield to the browser before any heavy synchronous work below ───────
+    // Guarantees the #appLoadingScreen overlay (in index.html) actually gets
+    // painted before mountForms()/init*() block the main thread. A single
+    // yield isn't reliable here — the double-rAF pattern (wait two full paint
+    // cycles) is the standard, robust way to guarantee at least one real
+    // frame has been drawn before continuing.
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     // ── Restore theme preference ─────────────────────────────────
     const savedTheme = Storage.getItem('themePreference');
@@ -110,7 +118,7 @@ initStorage().then(() => {
     // explicitly so patientIdInput / customerIdInput are in the DOM
     // before initFormLogic() / generateID() try to write to them.
     console.log('[Main] Storage initialized. Bootstrapping app...');
-    if (typeof mountForms              === 'function') mountForms();
+    if (typeof mountForms              === 'function') await mountForms();
     if (typeof initValidation          === 'function') initValidation();
     if (typeof initNearAddSync         === 'function') initNearAddSync();
     if (typeof initFormLogic           === 'function') initFormLogic();
@@ -130,6 +138,14 @@ initStorage().then(() => {
 
     // ── Clinic Setup save button ──────────────────────────────────
     document.getElementById('saveClinicSetupBtn')?.addEventListener('click', _handleSaveClinicSetup);
+
+    // ── Boot fully complete — reveal the real app ──────────────────
+    // #appLoadingScreen lives in index.html as plain HTML/CSS (paints before
+    // any script runs at all) and sits BEHIND lock.js's overlay (lower
+    // z-index) — if the app is locked, the password prompt shows first;
+    // once unlocked, this is what's visible next if boot isn't finished yet,
+    // instead of a raw half-initialized page.
+    document.getElementById('appLoadingScreen')?.remove();
 
 });
 
