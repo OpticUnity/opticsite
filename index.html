@@ -307,20 +307,23 @@
         <p>For Windows (Downloaded Version) - It's stored by default in this path:</p>
         <p class="selectable-text">C:\Users\<strong class="selectable-text">YourName</strong>\AppData\Roaming\com.opticsite.app\</p>
         <p class="paragraph-spacing"> </p>
-        <h3>Windows Blocked the Installer?</h3>
-        <p>OpticSite isn't code-signed yet (it's a small beta project), so Windows may flag it as untrusted the first time. There are two different warnings you might see - check which one applies first.</p>
-        <p class="paragraph-spacing"> </p>
-        <h3 class="guide-header">If you see a blue screen saying "Windows protected your PC"</h3>
-        <p>This is the more common one. Click <strong>More info</strong>, then click <strong>Run anyway</strong>. That's it - no settings changes needed.</p>
-        <p class="paragraph-spacing"> </p>
-        <h3 class="guide-header">If the installer is blocked with no way to continue at all</h3>
-        <p>This is a stricter Windows 11 feature called Smart App Control. It has no "run anyway" option, so a quick settings change is needed instead.</p>
-        <p>Before doing anything, make sure Windows Update is fully current (Settings, Windows Update, Check for updates). This matters, since it changes whether the next step can be undone afterward.</p>
-        <p>Go to Settings, Privacy & security, Windows Security, App & browser control, Smart App Control settings, and switch it to Off.</p>
-        <p>Install and run OpticSite as normal.</p>
-        <p>Once done, you can switch Smart App Control back to On (or Evaluation) from that same settings page.</p>
-        <p>Your antivirus and other Windows protections stay active the entire time - this only affects one layer of protection, not everything.</p>
-        <p class="paragraph-spacing"> </p>
+        <!-- FOR BROWSER BLOCK ONLY — installer troubleshooting is for people downloading the Windows app from the web; the desktop app itself has no need for it. -->
+        <div id="windowsTroubleshootSection" style="display: none; flex-direction: column; align-items: center; width: 100%;">
+          <h3>Windows Blocked the Installer?</h3>
+          <p>OpticSite isn't code-signed yet (it's a small beta project), so Windows may flag it as untrusted the first time. There are two different warnings you might see - check which one applies first.</p>
+          <p class="paragraph-spacing"> </p>
+          <h3 class="guide-header">If you see a blue screen saying "Windows protected your PC"</h3>
+          <p>This is the more common one. Click <strong>More info</strong>, then click <strong>Run anyway</strong>. That's it - no settings changes needed.</p>
+          <p class="paragraph-spacing"> </p>
+          <h3 class="guide-header">If the installer is blocked with no way to continue at all</h3>
+          <p>This is a stricter Windows 11 feature called Smart App Control. It has no "run anyway" option, so a quick settings change is needed instead.</p>
+          <p>Before doing anything, make sure Windows Update is fully current (Settings, Windows Update, Check for updates). This matters, since it changes whether the next step can be undone afterward.</p>
+          <p>Go to Settings, Privacy & security, Windows Security, App & browser control, Smart App Control settings, and switch it to Off.</p>
+          <p>Install and run OpticSite as normal.</p>
+          <p>Once done, you can switch Smart App Control back to On (or Evaluation) from that same settings page.</p>
+          <p>Your antivirus and other Windows protections stay active the entire time - this only affects one layer of protection, not everything.</p>
+          <p class="paragraph-spacing"> </p>
+        </div>
         <p>Reach out on the email provided below for any concerns.</p>
         <p>Email : opticunity.dev@gmail.com</p>
         <p class="paragraph-spacing"> </p>

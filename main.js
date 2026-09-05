@@ -20,7 +20,9 @@ initStorage().then(async () => {
     const savedTheme = Storage.getItem('themePreference');
     if (typeof applyTheme === 'function') applyTheme(savedTheme);
 
-    // ── Show Windows download section on browser only ─────────────
+    // ── Show Windows download + installer troubleshoot on browser only ─
+    // Desktop (Tauri) builds already have the app installed — these blocks
+    // are only useful to people on the web version who need the .exe.
     if (!window.__TAURI_INTERNALS__) {
         // [MAC-TODO] — This block shows the Windows-only download section on the browser build.
         // When shipping a macOS build, add a parallel 'macDownloadSection' element in index.html
@@ -29,6 +31,7 @@ initStorage().then(async () => {
         // then: import { platform } from '@tauri-apps/plugin-os'; const os = platform();
         // Returns 'windows' | 'macos' | 'linux'. Then toggle the correct section per platform.
         document.getElementById('windowsDownloadSection').style.display = 'flex';
+        document.getElementById('windowsTroubleshootSection').style.display = 'flex';
     }
 
     // ── First launch check ────────────────────────────────────────

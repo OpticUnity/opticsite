@@ -340,13 +340,19 @@ input{
 }
 
 /* ---------------- Intro Page -------------------- */
-.intro-page {
+/* Higher specificity than .page-content so margin-top / justify-content
+   from the general page rule cannot push the welcome block down. */
+.page-content.intro-page {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
+    justify-content: flex-start; /* pin to top of viewport */
+    align-items: center; /* keep horizontally centered */
     text-align: center;
     background-color: #fff;
-    min-height: calc(100vh - 70px);
+    min-height: 100vh;
+    margin-top: 0; /* nav is hidden on intro */
+    margin-bottom: 0;
+    padding: 12px 20px 40px; /* minimal top inset — block sits higher */
 }
 
 .intro-step {
@@ -354,11 +360,11 @@ input{
     flex-direction: column;
     align-items: center;
     text-align: center;
-    justify-content: center;
+    justify-content: flex-start;
     max-width: 520px;
     width: 100%;
-    padding: 40px 20px;
-    gap: 20px;
+    padding: 12px 20px 40px; /* less top pad so logo sits higher; keep side/bottom */
+    gap: 20px; /* original gap between logo / copy / actions / dots */
 }
 
 .intro-content {
@@ -399,20 +405,22 @@ input{
     align-items: center;
     font-size: 13px;
     color: #666;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
 }
 
 .intro-divider {
     border: none;
     border-top: 1px solid #ddd;
-    margin: 16px 0;
+    margin: 20px 0;
 }
 
 .intro-content p {
     font-size: 14px;
     line-height: 1.7;
     text-align: left;
-    margin-bottom: 8px;
+    /* Match the old airy rhythm (was effectively ~20–30px from .page-content p) */
+    margin: 12px 0 20px;
+    max-width: none;
 }
 
 .intro-optional-note {
@@ -428,7 +436,7 @@ input{
 
 .intro-actions {
     margin-top: 30px;
-    margin-left: 50px;
+    margin-left: 0; /* was 50px — that offset looked off-center; centering stays clean */
     width: 100%;
     display: flex;
     justify-content: center;
